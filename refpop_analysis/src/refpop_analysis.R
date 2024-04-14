@@ -157,9 +157,14 @@ if (use_plot_tsne_) {
 # umap plots, much less computationally demanding than tsne and preferable
 
 # define refpop train data for umap : complete, accessions, progeny
-umap_refpop_train_data <- "complete"
+umap_refpop_train_data <- "accessions"
+
 # define label data for umap :  origin, family or genotype (genotype not recommended)
-use_origin_family_or_genotype_as_label_ <- "origin"
+use_origin_family_or_genotype_as_label_ <- "family"
+
+# predict umap for progeny
+predict_umap_progeny_ <- TRUE
+
 
 # set palette of colors according to label used
 set.seed(123)
@@ -212,27 +217,38 @@ if (identical(use_origin_family_or_genotype_as_label_, "genotype")) {
 }
 
 if (use_plotly_umap_) {
+  
   if (identical(umap_refpop_train_data, "complete")) {
+    
     # compute umap in 2D
     geno_umap_2d <- data.frame(umap(geno_df[, -idx_origin_geno_names],
       n_components = 2, random_state = 15
     )[["layout"]])
+
     # compute umap in 3D
     geno_umap_3d <- data.frame(umap(geno_df[, -idx_origin_geno_names],
       n_components = 3, random_state = 15
     )[["layout"]])
+
+    # save umap models for this case if predict_umap_progeny_ is true
   } else if (identical(umap_refpop_train_data, "accessions")) {
+    
     sub_geno_df <- geno_df[-which(geno_df$Origin %in% "P"), ]
 
     # compute umap in 2D
-    geno_umap_2d <- data.frame(umap(sub_geno_df[, -idx_origin_geno_names],
+    geno_umap_2d_model <- umap(sub_geno_df[, -idx_origin_geno_names],
       n_components = 2, random_state = 15
-    )[["layout"]])
+    )
+    geno_umap_2d <- data.frame(geno_umap_2d_model[["layout"]])
+
     # compute umap in 3D
-    geno_umap_3d <- data.frame(umap(sub_geno_df[, -idx_origin_geno_names],
+    geno_umap_3d_model <- umap(sub_geno_df[, -idx_origin_geno_names],
       n_components = 3, random_state = 15
-    )[["layout"]])
+    )
+    geno_umap_3d <- data.frame(geno_umap_3d_model[["layout"]])
+    
   } else if (identical(umap_refpop_train_data, "progeny")) {
+    
     sub_geno_df <- geno_df[which(geno_df$Origin %in% "P"), ]
 
     # compute umap in 2D
@@ -246,6 +262,7 @@ if (use_plotly_umap_) {
   }
 
   if (identical(use_origin_family_or_genotype_as_label_, "origin")) {
+    
     # define colors for labels
     labels_ <- unique(geno_df$Origin)
     n_origins <- length(labels_)
@@ -260,7 +277,9 @@ if (use_plotly_umap_) {
       geno_umap_2d$label <- sub_geno_df$Origin
       geno_umap_3d$label <- sub_geno_df$Origin
     }
+    
   } else if (identical(use_origin_family_or_genotype_as_label_, "family")) {
+    
     # define colors for labels
     labels_ <- unique(geno_df$Family)
     n_family <- length(labels_)
@@ -275,7 +294,9 @@ if (use_plotly_umap_) {
       geno_umap_2d$label <- sub_geno_df$Family
       geno_umap_3d$label <- sub_geno_df$Family
     }
+    
   } else if (identical(use_origin_family_or_genotype_as_label_, "genotype")) {
+    
     # define colors for labels
     labels_ <- unique(geno_df$Genotype)
     n_geno <- length(labels_)
@@ -290,16 +311,70 @@ if (use_plotly_umap_) {
       geno_umap_2d$label <- sub_geno_df$Genotype
       geno_umap_3d$label <- sub_geno_df$Genotype
     }
+    
+  }
+
+  # treat umap prediction for progenies based on unsupervised learning
+  # from accessions as a special case
+  if (identical(umap_refpop_train_data, "accessions") && predict_umap_progeny_) {
+    
+    sub_geno_df <- geno_df[which(geno_df$Origin %in% "P"), ]
+
+    # 2d umap prediction for progenies 
+    geno_umap_2d_progeny <- predict(
+      geno_umap_2d_model, sub_geno_df[, -idx_origin_geno_names]
+    )
+    if (identical(use_origin_family_or_genotype_as_label_, "family")) {
+      geno_umap_2d_progeny$label <- sub_geno_df$Family
+      
+    } else if (identical(use_origin_family_or_genotype_as_label_, "origin")) {
+      geno_umap_2d_progeny$label <- sub_geno_df$Origin
+      
+    }
+    geno_umap_2d <- rbind(geno_umap_2d, geno_umap_2d_progeny)
+
+    # 3d umap prediction for progenies 
+    geno_umap_3d_progeny <- predict(
+      geno_umap_3d_model, sub_geno_df[, -idx_origin_geno_names]
+    )
+    if (identical(use_origin_family_or_genotype_as_label_, "family")) {
+      geno_umap_3d_progeny$label <- sub_geno_df$Family
+      
+    } else if (identical(use_origin_family_or_genotype_as_label_, "origin")) {
+      geno_umap_3d_progeny$label <- sub_geno_df$Origin
+      
+    }
+    geno_umap_3d <- rbind(geno_umap_3d, geno_umap_3d_progeny)
   }
 
   # 2D plot
   # create base graphic
+  if (identical(umap_refpop_train_data, "accessions") && predict_umap_progeny_) {
+    umap_2d_title_ <- "UMAP 2D plot for REFPOP genotype data \n with umap trained
+    on accessions and progenies projected using trained model"
+    output_path_2d_umap <- paste0(
+      output_geno_graphics_path,
+      umap_refpop_train_data, "/",
+      umap_refpop_train_data, "_refpop_progeny_projected_umap_2d_",
+      use_origin_family_or_genotype_as_label_,
+      "_as_label.html"
+    )
+  }else{
+    umap_2d_title_ <- "UMAP 2D plot for REFPOP genotype data"
+    output_path_2d_umap <- paste0(
+      output_geno_graphics_path,
+      umap_refpop_train_data, "/",
+      umap_refpop_train_data, "_refpop_umap_2d_",
+      use_origin_family_or_genotype_as_label_,
+      "_as_label.html"
+    )
+  }
   fig_x_y <- plot_ly(
     type = "scatter", mode = "markers"
   ) %>%
     layout(
       plot_bgcolor = "#e5ecf6",
-      title = "UMAP 2D plot for REFPOP genotype data",
+      title = umap_2d_title_,
       xaxis = list(title = "first component"),
       yaxis = list(title = "second component")
     )
@@ -316,23 +391,38 @@ if (use_plotly_umap_) {
       )
   }
   # save graphics
-  saveWidget(fig_x_y, file = paste0(
-    output_geno_graphics_path,
-    umap_refpop_train_data, "/",
-    umap_refpop_train_data, "_refpop_umap_2d_",
-    use_origin_family_or_genotype_as_label_,
-    "_as_label.html"
-  ))
+  saveWidget(fig_x_y, file = output_path_2d_umap)
+  
 
   # 3D plot
   # create base graphic
+  if (identical(umap_refpop_train_data, "accessions") && predict_umap_progeny_) {
+    umap_3d_title_ <- "UMAP 3D plot for REFPOP genotype data \n with umap trained
+    on accessions and progenies projected using trained model"
+    output_path_3d_umap <- paste0(
+      output_geno_graphics_path,
+      umap_refpop_train_data, "/",
+      umap_refpop_train_data, "_refpop_progeny_projected_umap_3d_",
+      use_origin_family_or_genotype_as_label_,
+      "_as_label.html"
+    )
+  }else{
+    umap_3d_title_ <- "UMAP 3D plot for REFPOP genotype data"
+    output_path_3d_umap <- paste0(
+      output_geno_graphics_path,
+      umap_refpop_train_data, "/",
+      umap_refpop_train_data, "_refpop_umap_3d_",
+      use_origin_family_or_genotype_as_label_,
+      "_as_label.html"
+    )
+  }
   fig_x_y_z <- plot_ly(
     type = "scatter3d",
     mode = "markers"
   ) %>%
     layout(
       plot_bgcolor = "#e5ecf6",
-      title = "UMAP 3D plot for REFPOP genotype data",
+      title = umap_3d_title_,
       xaxis = list(title = "first component"),
       yaxis = list(title = "second component"),
       zaxis = list(title = "third component")
@@ -351,13 +441,7 @@ if (use_plotly_umap_) {
       )
   }
   # save graphics
-  saveWidget(fig_x_y_z, file = paste0(
-    output_geno_graphics_path,
-    umap_refpop_train_data, "/",
-    umap_refpop_train_data, "_refpop_umap_3d_",
-    use_origin_family_or_genotype_as_label_,
-    "_as_label.html"
-  ))
+  saveWidget(fig_x_y_z, file = output_path_3d_umap)
 }
 
 if (use_ggplot_umap_) {
