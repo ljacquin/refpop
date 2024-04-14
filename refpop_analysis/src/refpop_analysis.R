@@ -352,7 +352,7 @@ if (use_plotly_umap_) {
   # 2D plot
   # create base graphic
   if (identical(umap_refpop_train_data, "accessions") && predict_umap_progeny_) {
-    umap_2d_title_ <- "UMAP 2D plot for REFPOP genotype data \n with umap trained
+    umap_2d_title_ <- "UMAP 2D plot for REFPOP genotype data with umap trained
     on accessions and progenies projected using trained model"
     output_path_2d_umap <- paste0(
       output_geno_graphics_path,
@@ -399,7 +399,7 @@ if (use_plotly_umap_) {
   # 3D plot
   # create base graphic
   if (identical(umap_refpop_train_data, "accessions") && predict_umap_progeny_) {
-    umap_3d_title_ <- "UMAP 3D plot for REFPOP genotype data \n with umap trained
+    umap_3d_title_ <- "UMAP 3D plot for REFPOP genotype data with umap trained
     on accessions and progenies projected using trained model"
     output_path_3d_umap <- paste0(
       output_geno_graphics_path,
