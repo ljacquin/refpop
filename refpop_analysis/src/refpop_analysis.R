@@ -321,9 +321,9 @@ if (use_plotly_umap_) {
     sub_geno_df <- geno_df[which(geno_df$Origin %in% "P"), ]
 
     # 2d umap prediction for progenies 
-    geno_umap_2d_progeny <- predict(
+    geno_umap_2d_progeny <- as.data.frame(predict(
       geno_umap_2d_model, sub_geno_df[, -idx_origin_geno_names]
-    )
+    ))
     if (identical(use_origin_family_or_genotype_as_label_, "family")) {
       geno_umap_2d_progeny$label <- sub_geno_df$Family
       
@@ -331,12 +331,13 @@ if (use_plotly_umap_) {
       geno_umap_2d_progeny$label <- sub_geno_df$Origin
       
     }
+    colnames(geno_umap_2d_progeny) <- colnames(geno_umap_2d)
     geno_umap_2d <- rbind(geno_umap_2d, geno_umap_2d_progeny)
 
     # 3d umap prediction for progenies 
-    geno_umap_3d_progeny <- predict(
+    geno_umap_3d_progeny <- as.data.frame(predict(
       geno_umap_3d_model, sub_geno_df[, -idx_origin_geno_names]
-    )
+    ))
     if (identical(use_origin_family_or_genotype_as_label_, "family")) {
       geno_umap_3d_progeny$label <- sub_geno_df$Family
       
@@ -344,13 +345,14 @@ if (use_plotly_umap_) {
       geno_umap_3d_progeny$label <- sub_geno_df$Origin
       
     }
+    colnames(geno_umap_3d_progeny) <- colnames(geno_umap_3d)
     geno_umap_3d <- rbind(geno_umap_3d, geno_umap_3d_progeny)
   }
 
   # 2D plot
   # create base graphic
   if (identical(umap_refpop_train_data, "accessions") && predict_umap_progeny_) {
-    umap_2d_title_ <- "UMAP 2D plot for REFPOP genotype data \n with umap trained
+    umap_2d_title_ <- "UMAP 2D plot for REFPOP genotype data with umap trained
     on accessions and progenies projected using trained model"
     output_path_2d_umap <- paste0(
       output_geno_graphics_path,
@@ -397,7 +399,7 @@ if (use_plotly_umap_) {
   # 3D plot
   # create base graphic
   if (identical(umap_refpop_train_data, "accessions") && predict_umap_progeny_) {
-    umap_3d_title_ <- "UMAP 3D plot for REFPOP genotype data \n with umap trained
+    umap_3d_title_ <- "UMAP 3D plot for REFPOP genotype data with umap trained
     on accessions and progenies projected using trained model"
     output_path_3d_umap <- paste0(
       output_geno_graphics_path,
