@@ -1,3 +1,7 @@
-data/
+data/genotype_data/*
+data/phenotype_data/*
+data/graphics/*
+data/progeny_data/*
+data/supplementary_data/*
 refpop_analysis/src/.Rhistory
 refpop_analysis/src/.RData
