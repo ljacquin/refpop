@@ -39,16 +39,27 @@ geno_data_path <- "../../data/genotype_data/"
 pheno_data_path <- "../../data/phenotype_data/"
 progeny_data_path <- "../../data/progeny_data/"
 output_geno_graphics_path <- "../../data/graphics/geno_graphics/"
+
+bed_file <- paste0(geno_data_path, "refpop_genotype.bed")
+bim_file <- paste0(geno_data_path, "refpop_genotype.bim")
+fam_file <- paste0(geno_data_path, "refpop_genotype.fam")
+
 read_with_bigsnpr <- TRUE
 read_with_snpStats <- FALSE # possible issue with the package or wrong usage
 use_plot_tsne_ <- FALSE # computationally too demanding
 use_ggplot_umap_ <- FALSE
 use_plotly_umap_ <- TRUE # I prefer plotly, its a matter of personal taste
 
-# set path for .bim, .bed and .fam files
-bed_file <- paste0(geno_data_path, "refpop_genotype.bed")
-bim_file <- paste0(geno_data_path, "refpop_genotype.bim")
-fam_file <- paste0(geno_data_path, "refpop_genotype.fam")
+# define umap training and plot paraemeters
+
+# define refpop train data for umap : complete, accessions, progeny
+umap_refpop_train_data <- "complete"
+
+# define label data for umap :  origin, family or genotype (genotype not recommended)
+use_origin_family_or_genotype_as_label_ <- "family"
+
+# predict umap for progeny
+predict_umap_progeny_ <- TRUE
 
 # ---------- genotype data analysis
 
@@ -123,48 +134,7 @@ idx_origin_geno_names <- which(colnames(geno_df) %in% c(
   "Origin"
 ))
 
-# t-SNE plots, sample columns if necessary to prevent stack overflow
-if (use_plot_tsne_) {
-  set.seed(42)
-  sample_size_ <- 15000
-
-  sel_cols_ <- sort(sample(
-    x = 1:ncol(geno_df),
-    size = sample_size_,
-    replace = FALSE
-  ))
-
-  sel_cols_ <- c(
-    -idx_origin_geno_names,
-    sel_cols_
-  )
-
-  # Rtsne with snpR
-  Rtsne_out <- Rtsne(
-    geno_df[, sel_cols_],
-    perplexity = 30
-  )
-  plot(Rtsne_out$Y)
-
-  # tsne with M3C
-  tsne_out <- tsne(
-    unique(geno_df[, sel_cols_]),
-    perplex = 30
-  )
-  plot(tsne_out$Y)
-}
-
-# umap plots, much less computationally demanding than tsne and preferable
-
-# define refpop train data for umap : complete, accessions, progeny
-umap_refpop_train_data <- "accessions"
-
-# define label data for umap :  origin, family or genotype (genotype not recommended)
-use_origin_family_or_genotype_as_label_ <- "family"
-
-# predict umap for progeny
-predict_umap_progeny_ <- TRUE
-
+# umap plots
 
 # set palette of colors according to label used
 set.seed(123)
@@ -353,7 +323,7 @@ if (use_plotly_umap_) {
   # create base graphic
   if (identical(umap_refpop_train_data, "accessions") && predict_umap_progeny_) {
     umap_2d_title_ <- "UMAP 2D plot for REFPOP genotype data with umap trained
-    on accessions and progenies projected using trained model"
+    on accessions, and progenies projected using trained model"
     output_path_2d_umap <- paste0(
       output_geno_graphics_path,
       umap_refpop_train_data, "/",
@@ -394,13 +364,12 @@ if (use_plotly_umap_) {
   }
   # save graphics
   saveWidget(fig_x_y, file = output_path_2d_umap)
-  
 
   # 3D plot
   # create base graphic
   if (identical(umap_refpop_train_data, "accessions") && predict_umap_progeny_) {
     umap_3d_title_ <- "UMAP 3D plot for REFPOP genotype data with umap trained
-    on accessions and progenies projected using trained model"
+    on accessions, and progenies projected using trained model"
     output_path_3d_umap <- paste0(
       output_geno_graphics_path,
       umap_refpop_train_data, "/",
@@ -475,5 +444,35 @@ if (use_ggplot_umap_) {
     )
 }
 
+# t-SNE plots, sample columns if necessary to prevent stack overflow
+if (use_plot_tsne_) {
+  set.seed(42)
+  sample_size_ <- 15000
+  
+  sel_cols_ <- sort(sample(
+    x = 1:ncol(geno_df),
+    size = sample_size_,
+    replace = FALSE
+  ))
+  
+  sel_cols_ <- c(
+    -idx_origin_geno_names,
+    sel_cols_
+  )
+  
+  # Rtsne with snpR
+  Rtsne_out <- Rtsne(
+    geno_df[, sel_cols_],
+    perplexity = 30
+  )
+  plot(Rtsne_out$Y)
+  
+  # tsne with M3C
+  tsne_out <- tsne(
+    unique(geno_df[, sel_cols_]),
+    perplex = 30
+  )
+  plot(tsne_out$Y)
+}
 
 # ---------- phenotype data analysis
