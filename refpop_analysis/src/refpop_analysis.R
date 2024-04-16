@@ -576,7 +576,6 @@ filtered_df <- na.omit(merged_df[, na_count/nrow(merged_df) <= threshold])
 colnames(filtered_df)[str_detect(colnames(filtered_df), "_lsmean")] <-
   str_replace_all(colnames(filtered_df)[str_detect(colnames(filtered_df), "_lsmean")],
                   pattern = "_lsmean", replacement = '')
-                    
 
 # compute correlation matrix
 cor_matrix <- cor(filtered_df[, -1])  
@@ -604,8 +603,6 @@ heatmap_pearson <- heatmap_pearson %>%
 # display the heatmap_pearson
 saveWidget(heatmap_pearson, file = paste0(output_pheno_graphics_path,
                      'pearson_cor_adj_pheno_ls_means_per_geno_all_env.html'))
-
-
 
 # create a bar chart for the multi-location clonal mean h2
 traits <- names(multi_env_clonal_h2_traits_)
