@@ -97,22 +97,23 @@ compute_indiv_location_clonal_mean_h2 <- function(lmer_mod_, nr_bar_) {
 }
 
 # function which multi-location clonal mean heritability (WIP)
-# compute_multi_location_clonal_mean_h2 <- function(lmer_mod_, nr_bar_, nl) {
-#   tryCatch(
-#     {
-#       var_cov <- VarCorr(lmer_mod_)
-#       sigma2G <- as.numeric(attr(var_cov$Genotype, "stddev")^2)
-#       sigma2E <- as.numeric(sigma(lmer_mod_)^2)
-#       h2 <- sigma2G / (sigma2G + sigma2E / nr_bar_)
-#       return(h2)
-#     },
-#     error = function(e) {
-#       cat(
-#         "Error with : ", conditionMessage(e), "\n"
-#       )
-#     }
-#   )
-# }
+compute_multi_location_clonal_mean_h2 <- function(lmer_mod_, nr_bar_, nl) {
+  tryCatch(
+    {
+      var_cov <- VarCorr(lmer_mod_)
+      sigma2G <- as.numeric(attr(var_cov$Genotype, "stddev")^2)
+      sigma2Gl <- as.numeric(attr(var_cov$`Genotype:Envir`, "stddev")^2)
+      sigma2E <- as.numeric(sigma(lmer_mod_)^2)
+      h2 <- sigma2G / (sigma2G + sigma2Gl/nl + sigma2E/(nr_bar_*nl))
+      return(h2)
+    },
+    error = function(e) {
+      cat(
+        "Error with : ", conditionMessage(e), "\n"
+      )
+    }
+  )
+}
 
 # (DEPRECATED) functions which corrects for trait spatial heterogeneity in raw_data
 correct_trait_spatial_heterogeneity_raw_data <- function(

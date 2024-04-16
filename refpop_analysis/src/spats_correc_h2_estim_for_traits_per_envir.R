@@ -30,7 +30,7 @@ selected_traits_ <- c(
   "Weight_sample"
 )
 convert_date_to_days_ <- FALSE
-use_ggplot2_ <- TRUE
+use_ggplot2_ <- FALSE
 threshold_min_indiv_location_clonal_mean_h2_ <- 0.1
 min_obs_lmer_ <- 5 # cannot fit lmer if less than that.. Note  5 is pretty small
 # and doesn't necessarily make sense either, its somewhat arbitrary
@@ -217,6 +217,17 @@ for (trait_ in selected_traits_) {
     ), dpi = 600)
   }
 
+  # define rename exceptions
+  exception_cols <- c("Genotype", "Envir", trait_)
+  
+  # rename columns excluding the exception columns
+  new_names <- colnames(df_)
+  new_names[!(new_names %in% exception_cols)] <- paste0(new_names[
+    !(new_names %in% exception_cols)], "_", tolower(trait_))
+  
+  # replace the existing column names with the new names
+  colnames(df_) <- new_names
+  
   # write long format data
   fwrite(df_, paste0(
     output_file_path, trait_,
