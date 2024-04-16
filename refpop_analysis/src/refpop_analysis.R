@@ -7,7 +7,6 @@ options(expressions = 5e5)
 options(warn = -1)
 emm_options(rg.limit = 20000)
 
-
 # source libraries
 library(bigsnpr)
 library(reticulate)
