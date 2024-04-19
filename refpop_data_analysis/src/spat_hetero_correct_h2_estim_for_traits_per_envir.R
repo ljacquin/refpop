@@ -19,8 +19,7 @@ pheno_file_path_ <- "../../data/phenotype_data/phenotype_data.csv"
 output_file_path <- "../../data/phenotype_data/spats_adjusted_phenotypes/"
 output_pheno_graphics_path <- "../../data/graphics/pheno_graphics/"
 
-# define trait_ and parameters for computations
-# trait_ <- "Flowering_begin"
+# define selected_traits_, vars_to_keep_ for output and parameters for computations
 selected_traits_ <- c(
   "Harvest_date", "Fruit_weight", "Fruit_number",
   "Fruit_weight_single", "Color_over", "Russet_freq_all",
@@ -30,12 +29,11 @@ selected_traits_ <- c(
 )
 vars_to_keep_ <- c("Envir", "Management", "Row", "Position", "Genotype")
 
-convert_date_to_days_ <- FALSE
+convert_date_to_days_ <- FALSE # true only if Flowering_begin has not already been converted to days 
 use_ggplot2_ <- FALSE
-threshold_min_indiv_location_clonal_mean_h2_ <- 0.1
 h2_mad_value_factor <- 2.5
-min_obs_lmer_ <- 5  # cannot fit lmer if less than that.. Note  5 is pretty small
-                    # and doesn't necessarily make sense either, its somewhat arbitrary
+min_obs_lmer_ <- 5            # cannot fit lmer if less than that.. Note  5 is pretty small
+                              # and doesn't necessarily make sense either, its somewhat arbitrary
 
 for (trait_ in selected_traits_) {
   
@@ -84,7 +82,7 @@ for (trait_ in selected_traits_) {
             trait_lmer_mod_, nr_bar_
           )
         },
-        silent = FALSE
+        silent = TRUE
       )
     }
   }
@@ -129,6 +127,9 @@ for (trait_ in selected_traits_) {
       )
     }
   }
+  
+  # keep envir with h2 different from zero (i.e. envir with no data)
+  env_h2_adj_pheno_list_ <- env_h2_adj_pheno_list_[env_h2_adj_pheno_list_>0]
   
   # apply mad to detect outlier(s)
   h2_mad_value <- mad(env_h2_adj_pheno_list_, constant = 1)
@@ -209,12 +210,14 @@ for (trait_ in selected_traits_) {
   }
 
   # define rename exceptions
-  exception_cols <- c("Genotype", "Envir", trait_)
+  exception_cols <- c("Genotype", "Envir",
+                      "Management", "Row", "Position",
+                      "R", "P", trait_)
   
   # rename columns excluding the exception columns
   new_names <- colnames(df_)
-  new_names[!(new_names %in% exception_cols)] <- paste0(new_names[
-    !(new_names %in% exception_cols)], "_", tolower(trait_))
+  new_names[!(new_names %in% exception_cols)] <- paste0(trait_, "_", new_names[
+    !(new_names %in% exception_cols)])
   
   # replace the existing column names with the new names
   colnames(df_) <- new_names
