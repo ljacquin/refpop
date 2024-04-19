@@ -37,6 +37,9 @@ source("../../functions.R")
 pheno_data_path <- "../../data/phenotype_data/"
 output_pheno_graphics_path <- "../../data/graphics/pheno_graphics/"
 
+# define selected variables
+vars_to_keep_ <- c("Envir", "Management", "Genotype")
+
 # threshold for removing columns with too much na
 threshold_na <- 0.3
 
@@ -58,7 +61,7 @@ for ( file_ in files_names_spats_adj_pheno){
   print(paste0("computation for file : ", file_))
   
   df_ <- as.data.frame(fread(paste0(path_spats_adj_pheno, file_)))
-  df_ <- df_[, c('Genotype','Envir',colnames(df_)[str_detect(colnames(df_), 
+  df_ <- df_[, c(vars_to_keep_,colnames(df_)[str_detect(colnames(df_), 
                                            'spats_adj_pheno_')])]
   Y <- colnames(df_)[str_detect(colnames(df_),'spats_adj_pheno_')]
 
