@@ -26,8 +26,7 @@ selected_traits_ <- c(
   "Fruit_weight_single", "Color_over", "Russet_freq_all",
   "Trunk_diameter", "Trunk_increment", "Flowering_intensity",
   "Flowering_begin", "Flowering_full", "Flowering_end",
-  "Scab", "Powdery_mildew", "Scab_fruits", "Sample_size",
-  "Weight_sample"
+  "Scab", "Powdery_mildew", "Scab_fruits", "Weight_sample"
 )
 vars_to_keep_ <- c("Envir", "Management", "Row", "Position", "Genotype")
 
