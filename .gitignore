@@ -3,6 +3,7 @@ data/graphics/*
 data/phenotype_data/*
 data/progeny_data/*
 data/supplementary_data/*
+references/~BROMIUM/Leys_et_al_2013.pdf
 refpop_data_analysis/src/.Rhistory
 refpop_data_analysis/src/.RData
 refpop_data_analysis/old_/*
