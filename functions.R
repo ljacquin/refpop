@@ -1,5 +1,5 @@
 # functions which corrects for trait spatial heterogeneity for a site
-correct_trait_spatial_heterogeneity_envir <- function(trait_, envir_, df_,
+spat_hetero_env_correct_trait <- function(trait_, envir_, df_,
                                                       min_obs_ = 5) {
   tryCatch(
     {
@@ -32,7 +32,7 @@ correct_trait_spatial_heterogeneity_envir <- function(trait_, envir_, df_,
     },
     error = function(e) {
       cat(
-        "Error with correct_trait_spatial_heterogeneity_envir,
+        "Error with spat_hetero_env_correct_trait,
       here is the possible issue with data and/or computation : ",
         conditionMessage(e), "\n"
       )

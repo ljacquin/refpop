@@ -29,19 +29,23 @@ selected_traits_ <- c(
   "Scab", "Powdery_mildew", "Scab_fruits", "Sample_size",
   "Weight_sample"
 )
+vars_to_keep_ <- c("Envir", "Management", "Row", "Position", "Genotype")
+
 convert_date_to_days_ <- FALSE
 use_ggplot2_ <- FALSE
 threshold_min_indiv_location_clonal_mean_h2_ <- 0.1
-min_obs_lmer_ <- 5 # cannot fit lmer if less than that.. Note  5 is pretty small
-# and doesn't necessarily make sense either, its somewhat arbitrary
+h2_mad_value_factor <- 2.5
+min_obs_lmer_ <- 5  # cannot fit lmer if less than that.. Note  5 is pretty small
+                    # and doesn't necessarily make sense either, its somewhat arbitrary
 
 for (trait_ in selected_traits_) {
+  
   print(paste0("performing computation for ", trait_))
 
   # get pheno_df
   df_ <- as.data.frame(fread(pheno_file_path_))
-  vars_to_keep_ <- c("Row", "Position", "Genotype", "Envir", trait_)
-  df_ <- df_[, vars_to_keep_]
+  vars_to_keep <- c(vars_to_keep_, trait_)
+  df_ <- df_[, vars_to_keep]
 
   # if trait_ is flowering start, convert date to days if necessary
   if (identical(trait_, "Flowering_begin") && convert_date_to_days_) {
@@ -81,23 +85,17 @@ for (trait_ in selected_traits_) {
             trait_lmer_mod_, nr_bar_
           )
         },
-        silent = TRUE
+        silent = FALSE
       )
     }
   }
-
-  # detect environment(s) to be excluded, identified from raw pheno computed h2
-  idx_env_to_exclude_h2_pheno_ <- which(env_h2_pheno_list_ <
-    threshold_min_indiv_location_clonal_mean_h2_)
-  env_to_exclude_h2_pheno_ <- names(env_h2_pheno_list_)[
-    idx_env_to_exclude_h2_pheno_
-  ]
 
   # perform a spatial heterogeneity correction for each environment
   list_spats_envir_ <- vector("list", length(env_list_))
   names(list_spats_envir_) <- env_list_
   for (env_ in env_list_) {
-    list_spats_envir_[[env_]] <- correct_trait_spatial_heterogeneity_envir(
+    print(env_)
+    list_spats_envir_[[env_]] <- spat_hetero_env_correct_trait(
       trait_,
       env_,
       df_
@@ -132,26 +130,22 @@ for (trait_ in selected_traits_) {
       )
     }
   }
-
+  
+  # apply mad to detect outlier(s)
+  h2_mad_value <- mad(env_h2_adj_pheno_list_, constant = 1)
+  h2_median <- median(env_h2_adj_pheno_list_)
+  h2_threshold <- h2_mad_value_factor * h2_mad_value
+  
   # detect environment(s) to be excluded from adjusted pheno computed h2
-  idx_env_to_exclude_h2_adj_pheno_ <- which(env_h2_adj_pheno_list_ <
-    threshold_min_indiv_location_clonal_mean_h2_)
+  idx_env_to_exclude_h2_adj_pheno_ <-  which(abs(env_h2_adj_pheno_list_ - 
+                                        h2_median) > h2_threshold &
+                                      env_h2_adj_pheno_list_ < h2_median)
+  
   env_to_exclude_h2_adj_pheno_ <- names(env_h2_adj_pheno_list_)[
     idx_env_to_exclude_h2_adj_pheno_
   ]
 
-  # some comparisons and statistics
-
-  # test if the detected env to be excluded are the same between raw and adjusted pheno
-  print(identical(env_to_exclude_h2_pheno_, env_to_exclude_h2_adj_pheno_))
-
   # remove the environments to be excluded from the lists of heritabilities
-  if (length(idx_env_to_exclude_h2_pheno_) > 0) {
-    env_h2_pheno_list_ <- env_h2_pheno_list_[-match(
-      env_to_exclude_h2_pheno_,
-      names(env_h2_pheno_list_)
-    )]
-  }
   if (length(idx_env_to_exclude_h2_adj_pheno_) > 0) {
     env_h2_adj_pheno_list_ <- env_h2_adj_pheno_list_[-match(
       env_to_exclude_h2_adj_pheno_,
@@ -161,12 +155,10 @@ for (trait_ in selected_traits_) {
 
   # exclude identified environments by keeping only those with an h2 over
   # the defined threshold
-  env_to_keep_ <- unique(
-    names(env_h2_pheno_list_),
-    names(env_h2_adj_pheno_list_)
-  )
+  env_to_keep_ <- unique(names(env_h2_adj_pheno_list_))
   df_ <- df_[which(df_$Envir %in% env_to_keep_), ]
-
+  
+  # boxplots of heritabilities
   if (use_ggplot2_) {
     # convert to df
     df_h2_adj <- data.frame(
