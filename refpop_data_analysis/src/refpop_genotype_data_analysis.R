@@ -39,21 +39,22 @@ setwd(dirname(getActiveDocumentContext()$path))
 source("../../functions.R")
 
 # set paths and booleans
-geno_data_path <- "../../data/genotype_data/"
+geno_dir_path <- "../../data/genotype_data/"
+pheno_dir_path <- "../../data/phenotype_data/"
 progeny_data_path <- "../../data/progeny_data/"
 output_geno_graphics_path <- "../../data/graphics/geno_graphics/"
 
-bed_file <- paste0(geno_data_path, "refpop_genotype.bed")
-bim_file <- paste0(geno_data_path, "refpop_genotype.bim")
-fam_file <- paste0(geno_data_path, "refpop_genotype.fam")
+bed_file <- paste0(geno_dir_path, "refpop_genotype.bed")
+bim_file <- paste0(geno_dir_path, "refpop_genotype.bim")
+fam_file <- paste0(geno_dir_path, "refpop_genotype.fam")
 
 read_with_bigsnpr <- TRUE
 read_with_snpStats <- FALSE # possible issue with the package or wrong usage
-perform_umap_ <- FALSE 
+perform_umap_ <- FALSE
 
 # umap parameters, most sensitive ones
-random_state_umap_ <- 15  # 15, 30 and 50
-n_neighbors_umap_ <- 15   # 15, 30, 50
+random_state_umap_ <- 15 # 15, 30 and 50
+n_neighbors_umap_ <- 15 # 15, 30, 50
 min_dist_ <- 0.2
 
 # define umap training and plot paraemeters
@@ -67,17 +68,15 @@ use_origin_family_or_genotype_as_label_ <- "family"
 # predict umap for progeny
 predict_umap_progeny_ <- FALSE
 
-# ---------- genotype data analysis
-
 # read plink genotype data
 if (read_with_bigsnpr) {
   # reading the bedfile for the first time or its associated rds file if exists
   # note .bed and .fam files should be in the same directory
-  if (!file.exists(paste0(geno_data_path, "refpop_genotype.rds"))) {
+  if (!file.exists(paste0(geno_dir_path, "refpop_genotype.rds"))) {
     df_ <- snp_readBed(bed_file)
-    df_ <- readRDS(paste0(geno_data_path, "refpop_genotype.rds"))
+    df_ <- readRDS(paste0(geno_dir_path, "refpop_genotype.rds"))
   } else {
-    df_ <- readRDS(paste0(geno_data_path, "refpop_genotype.rds"))
+    df_ <- readRDS(paste0(geno_dir_path, "refpop_genotype.rds"))
   }
   fam_df <- df_[["fam"]]
   map_df <- df_[["map"]]
@@ -103,7 +102,7 @@ if (read_with_snpStats) {
 
 # get geographical origins of genotypes
 geno_origin_ <- as.data.frame(fread(paste0(
-  geno_data_path,
+  geno_dir_path,
   "genotype_geographical_origins.csv"
 )))
 
@@ -114,7 +113,7 @@ colnames(geno_origin_)[
 
 # get families of genotypes
 geno_fam_ <- as.data.frame(fread(paste0(
-  geno_data_path,
+  geno_dir_path,
   "genotype_family_patterns.csv"
 )))
 
@@ -140,63 +139,70 @@ idx_origin_geno_names <- which(colnames(geno_df) %in% c(
   "Origin"
 ))
 
+# useful : save genotype, family and origin information to genotype and phenotype
+# data folders
+fwrite(geno_df[,c("Genotype", "Family", "Origin")], 
+       file=paste0(geno_dir_path, 'genotype_family_origin_information.csv'),
+       sep =',')
+
+fwrite(geno_df[,c("Genotype", "Family", "Origin")], 
+       file=paste0(pheno_dir_path, 'genotype_family_origin_information.csv'),
+       sep =',')
+
 # umap plots
 
+if (perform_umap_) {
+  # set palette of colors according to label used
+  set.seed(123)
 
-# set palette of colors according to label used
-set.seed(123)
+  # set arbitrary colors for unique genotypes
+  if (identical(use_origin_family_or_genotype_as_label_, "genotype")) {
+    colfunc <- colorRampPalette(c(
+      "black", "blue", "red", "orange",
+      "yellow", "green"
+    ))
+    color_palette <- colfunc(length(unique(geno_df$Genotype)))
 
-# set arbitrary colors for unique genotypes
-if (identical(use_origin_family_or_genotype_as_label_, "genotype")) {
-  colfunc <- colorRampPalette(c(
-    "black", "blue", "red", "orange",
-    "yellow", "green"
-  ))
-  color_palette <- colfunc(length(unique(geno_df$Genotype)))
+    # set color labels for families (28 counts)
+  } else if (identical(use_origin_family_or_genotype_as_label_, "family")) {
+    color_palette <- c(
+      "black",
+      "lightblue",
+      colorRampPalette(c("blue", "deepskyblue"))(10),
+      colorRampPalette(c("orange", "orange2"))(2),
+      colorRampPalette(c("aquamarine"))(1),
+      colorRampPalette(c("magenta", "magenta2"))(2),
+      colorRampPalette(c("firebrick3", "firebrick4"))(2),
+      colorRampPalette(c("green", "darkgreen"))(5),
+      colorRampPalette(c("darkorchid4"))(1),
+      colorRampPalette(c("gold1", "gold2"))(2),
+      colorRampPalette(c("lightcoral"))(1)
+    )
+    # if population is not complete select the corresponding color for subset
+    if (identical(umap_refpop_train_data, "accessions")) {
+      color_palette <- color_palette[1]
+    } else if (identical(umap_refpop_train_data, "progeny")) {
+      color_palette <- color_palette[-1]
+    }
 
-  # set color labels for families (28 counts)
-} else if (identical(use_origin_family_or_genotype_as_label_, "family")) {
-  color_palette <- c(
-    "black",
-    "lightblue",
-    colorRampPalette(c("blue", "deepskyblue"))(10),
-    colorRampPalette(c("orange", "orange2"))(2),
-    colorRampPalette(c("aquamarine"))(1),
-    colorRampPalette(c("magenta", "magenta2"))(2),
-    colorRampPalette(c("firebrick3", "firebrick4"))(2),
-    colorRampPalette(c("green", "darkgreen"))(5),
-    colorRampPalette(c("darkorchid4"))(1),
-    colorRampPalette(c("gold1", "gold2"))(2),
-    colorRampPalette(c("lightcoral"))(1)
-  )
-  # if population is not complete select the corresponding color for subset
-  if (identical(umap_refpop_train_data, "accessions")) {
-    color_palette <- color_palette[1]
-  } else if (identical(umap_refpop_train_data, "progeny")) {
-    color_palette <- color_palette[-1]
+    # set color labels for origins (11 counts)
+  } else {
+    color_palette <- c(
+      "magenta",
+      "lightblue",
+      "blue",
+      "orange",
+      "aquamarine",
+      "red",
+      "green",
+      "darkorchid4",
+      "gold2",
+      "lightcoral",
+      "yellow"
+    )
   }
 
-  # set color labels for origins (11 counts)
-} else {
-  color_palette <- c(
-    "magenta",
-    "lightblue",
-    "blue",
-    "orange",
-    "aquamarine",
-    "red",
-    "green",
-    "darkorchid4",
-    "gold2",
-    "lightcoral",
-    "yellow"
-  )
-}
-
-if (perform_umap_) {
-  
   if (identical(umap_refpop_train_data, "complete")) {
-    
     # compute umap in 2D
     geno_umap_2d <- data.frame(umap(geno_df[, -idx_origin_geno_names],
       n_components = 2, random_state = random_state_umap_,
@@ -211,7 +217,6 @@ if (perform_umap_) {
 
     # save umap models for this case if predict_umap_progeny_ is true
   } else if (identical(umap_refpop_train_data, "accessions")) {
-    
     sub_geno_df <- geno_df[-which(geno_df$Origin %in% "P"), ]
 
     # compute umap in 2D
@@ -227,9 +232,7 @@ if (perform_umap_) {
       n_neighbors = n_neighbors_umap_, min_dist = min_dist_
     )
     geno_umap_3d <- data.frame(geno_umap_3d_model[["layout"]])
-    
   } else if (identical(umap_refpop_train_data, "progeny")) {
-    
     sub_geno_df <- geno_df[which(geno_df$Origin %in% "P"), ]
 
     # compute umap in 2D
@@ -245,7 +248,6 @@ if (perform_umap_) {
   }
 
   if (identical(use_origin_family_or_genotype_as_label_, "origin")) {
-    
     # define colors for labels
     labels_ <- unique(geno_df$Origin)
     n_origins <- length(labels_)
@@ -260,9 +262,7 @@ if (perform_umap_) {
       geno_umap_2d$label <- sub_geno_df$Origin
       geno_umap_3d$label <- sub_geno_df$Origin
     }
-    
   } else if (identical(use_origin_family_or_genotype_as_label_, "family")) {
-    
     # define colors for labels
     labels_ <- unique(geno_df$Family)
     n_family <- length(labels_)
@@ -277,9 +277,7 @@ if (perform_umap_) {
       geno_umap_2d$label <- sub_geno_df$Family
       geno_umap_3d$label <- sub_geno_df$Family
     }
-    
   } else if (identical(use_origin_family_or_genotype_as_label_, "genotype")) {
-    
     # define colors for labels
     labels_ <- unique(geno_df$Genotype)
     n_geno <- length(labels_)
@@ -294,39 +292,33 @@ if (perform_umap_) {
       geno_umap_2d$label <- sub_geno_df$Genotype
       geno_umap_3d$label <- sub_geno_df$Genotype
     }
-    
   }
 
   # treat umap prediction for progenies based on unsupervised learning
   # from accessions as a special case
   if (identical(umap_refpop_train_data, "accessions") && predict_umap_progeny_) {
-    
     sub_geno_df <- geno_df[which(geno_df$Origin %in% "P"), ]
 
-    # 2d umap prediction for progenies 
+    # 2d umap prediction for progenies
     geno_umap_2d_progeny <- as.data.frame(predict(
       geno_umap_2d_model, sub_geno_df[, -idx_origin_geno_names]
     ))
     if (identical(use_origin_family_or_genotype_as_label_, "family")) {
       geno_umap_2d_progeny$label <- sub_geno_df$Family
-      
     } else if (identical(use_origin_family_or_genotype_as_label_, "origin")) {
       geno_umap_2d_progeny$label <- sub_geno_df$Origin
-      
     }
     colnames(geno_umap_2d_progeny) <- colnames(geno_umap_2d)
     geno_umap_2d <- rbind(geno_umap_2d, geno_umap_2d_progeny)
 
-    # 3d umap prediction for progenies 
+    # 3d umap prediction for progenies
     geno_umap_3d_progeny <- as.data.frame(predict(
       geno_umap_3d_model, sub_geno_df[, -idx_origin_geno_names]
     ))
     if (identical(use_origin_family_or_genotype_as_label_, "family")) {
       geno_umap_3d_progeny$label <- sub_geno_df$Family
-      
     } else if (identical(use_origin_family_or_genotype_as_label_, "origin")) {
       geno_umap_3d_progeny$label <- sub_geno_df$Origin
-      
     }
     colnames(geno_umap_3d_progeny) <- colnames(geno_umap_3d)
     geno_umap_3d <- rbind(geno_umap_3d, geno_umap_3d_progeny)
@@ -344,7 +336,7 @@ if (perform_umap_) {
       use_origin_family_or_genotype_as_label_,
       "_as_label.html"
     )
-  }else{
+  } else {
     umap_2d_title_ <- "UMAP 2D plot for REFPOP genotype data"
     output_path_2d_umap <- paste0(
       output_geno_graphics_path,
@@ -354,20 +346,24 @@ if (perform_umap_) {
       "_as_label.html"
     )
   }
-  
+
   # modify fig_title_ for family special case
-  if ( identical(use_origin_family_or_genotype_as_label_, 'family')&&
-       !identical(umap_refpop_train_data, 'progeny') ) {
-    fig_title_ <- paste0('<b> ',
-                         str_to_title(use_origin_family_or_genotype_as_label_), 
-                         ' (except accession)',
-                         '</b>')
-  }else{
-    fig_title_ <- paste0('<b> ',
-                         str_to_title(use_origin_family_or_genotype_as_label_), 
-                         '</b>')
+  if (identical(use_origin_family_or_genotype_as_label_, "family") &&
+    !identical(umap_refpop_train_data, "progeny")) {
+    fig_title_ <- paste0(
+      "<b> ",
+      str_to_title(use_origin_family_or_genotype_as_label_),
+      " (except accession)",
+      "</b>"
+    )
+  } else {
+    fig_title_ <- paste0(
+      "<b> ",
+      str_to_title(use_origin_family_or_genotype_as_label_),
+      "</b>"
+    )
   }
-  
+
   fig_x_y <- plot_ly(
     type = "scatter", mode = "markers"
   ) %>%
@@ -388,9 +384,10 @@ if (perform_umap_) {
         marker = list(color = color_labels_[label_]),
         name = label_
       )
-  }      
-  fig_x_y <- fig_x_y %>%layout(  
-    legend=list(title=list(text=fig_title_)))
+  }
+  fig_x_y <- fig_x_y %>% layout(
+    legend = list(title = list(text = fig_title_))
+  )
   # save graphics
   saveWidget(fig_x_y, file = output_path_2d_umap)
 
@@ -406,7 +403,7 @@ if (perform_umap_) {
       use_origin_family_or_genotype_as_label_,
       "_as_label.html"
     )
-  }else{
+  } else {
     umap_3d_title_ <- "UMAP 3D plot for REFPOP genotype data"
     output_path_3d_umap <- paste0(
       output_geno_graphics_path,
@@ -440,19 +437,16 @@ if (perform_umap_) {
         name = label_
       )
   }
-  fig_x_y_z <- fig_x_y_z %>%layout(  
-    legend=list(title=list(text=fig_title_)))
+  fig_x_y_z <- fig_x_y_z %>% layout(
+    legend = list(title = list(text = fig_title_))
+  )
   # save graphics
   saveWidget(fig_x_y_z, file = output_path_3d_umap)
-  
 }
 
 # get phased genotype data
-phased_geno <- readRDS(paste0(geno_data_path,
-                      'phased_data/phased_genotypes.RDS'))
-genotype_names <- colnames(phased_geno)[-match('chromosome',
-                                      colnames(phased_geno))]
-fam_df$sample.ID[fam_df$sample.ID %in% genotype_names]
-
-
-
+# phased_geno <- readRDS(paste0(geno_dir_path,
+#                       'phased_data/phased_genotypes.RDS'))
+# genotype_names <- colnames(phased_geno)[-match('chromosome',
+#                                       colnames(phased_geno))]
+# fam_df$sample.ID[fam_df$sample.ID %in% genotype_names]
