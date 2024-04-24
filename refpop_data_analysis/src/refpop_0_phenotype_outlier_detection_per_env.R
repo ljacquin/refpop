@@ -45,7 +45,7 @@ size_value_ <- 20
 # define level of risk alpha_ for outlier detection
 alpha_ <- 0.01
 
-# read raw pheno data
+# read raw pheno data and define proxy for outlier detection
 df_raw_ <- as.data.frame(fread(raw_pheno_file_path))
 df_proxy_ <- df_raw_
 
@@ -177,8 +177,8 @@ for (env_ in env_list_) {
 
   # get location and scale parameters used for outlier detection
   df_loc_scale_ <- data.frame(
-    "mcd_mean_used_for_out_detection" = location_,
-    "mcd_standard_deviation_used_for_out_detection" = scale_
+    "mean_used_for_out_detection" = location_,
+    "standard_deviation_used_for_out_detection" = scale_
   )
 
   # write results
