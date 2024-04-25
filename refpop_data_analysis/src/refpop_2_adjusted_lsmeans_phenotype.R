@@ -41,7 +41,7 @@ output_pheno_graphics_path <- "../../data/graphics/pheno_graphics/"
 vars_to_keep_ <- c("Envir", "Management", "Genotype")
 
 # threshold for removing columns with too much na
-threshold_na <- 0.3
+# threshold_na <- 0.3
 
 # adjusted phenotype data analysis
 files_names_spats_adj_pheno <- list.files(path_spats_adj_pheno)
@@ -137,14 +137,14 @@ merged_df <- Reduce(
 # convert merge object to data.frame
 merged_df <- as.data.frame(merged_df)
 na_count <- colSums(is.na(merged_df))
-filtered_df <- merged_df[, na_count / nrow(merged_df) <= threshold_na]
-colnames(filtered_df)[str_detect(colnames(filtered_df), "_lsmean")] <-
-  str_replace_all(colnames(filtered_df)[str_detect(colnames(filtered_df), "_lsmean")],
+# merged_df <- merged_df[, na_count / nrow(merged_df) <= threshold_na]
+colnames(merged_df)[str_detect(colnames(merged_df), "_lsmean")] <-
+  str_replace_all(colnames(merged_df)[str_detect(colnames(merged_df), "_lsmean")],
     pattern = "_lsmean", replacement = ""
   )
 
 # compute correlation matrix
-cor_matrix <- cor(filtered_df[, -1])
+cor_matrix <- cor(merged_df[, -1])
 
 # create an interactif heatmap
 my_colors <- colorRampPalette(c("red", "black"))(100)

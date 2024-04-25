@@ -11,6 +11,7 @@ library(foreach)
 library(parallel)
 library(missForest)
 library(Matrix)
+options(warn = -1)
 setwd(dirname(getActiveDocumentContext()$path))
 source("../../functions.R")
 
@@ -18,7 +19,7 @@ source("../../functions.R")
 pheno_dir_path <- "../../data/phenotype_data/"
 pheno_out_dir_path <- "../../data/phenotype_data/outliers_per_env_phenotypes/"
 raw_pheno_file_path <- paste0(pheno_dir_path, "phenotype_raw_data.csv")
-clean_pheno_file_path <- paste0(pheno_dir_path, "phenotype_data.csv")
+clean_pheno_file_path <- paste0(pheno_dir_path, "phenotype_raw_data_no_outliers.csv")
 
 # define selected_traits_ and vars_to_keep_ for output
 selected_traits_ <- c(
@@ -53,7 +54,7 @@ df_proxy_ <- df_raw_
 if (use_miss_forest_imput_for_outlier_detection_ &&
   !file.exists(paste0(
     pheno_dir_path,
-    "phenotype_miss_forest_imputed_data.csv"
+    "phenotype_miss_forest_imputed_data_proxy.csv"
   ))) {
   # set cluster for parallelized computations
   cl <- makeCluster(n_traits_)
@@ -73,14 +74,14 @@ if (use_miss_forest_imput_for_outlier_detection_ &&
   fwrite(df_proxy_,
     file = paste0(
       pheno_dir_path,
-      "phenotype_miss_forest_imputed_data.csv"
+      "phenotype_miss_forest_imputed_data_proxy.csv"
     ),
     sep = ","
   )
 } else if (use_miss_forest_imput_for_outlier_detection_) {
   df_proxy_ <- as.data.frame(fread(paste0(
     pheno_dir_path,
-    "phenotype_miss_forest_imputed_data.csv"
+    "phenotype_miss_forest_imputed_data_proxy.csv"
   ), sep = ","))
 }
 
@@ -177,6 +178,7 @@ for (env_ in env_list_) {
 
   # get location and scale parameters used for outlier detection
   df_loc_scale_ <- data.frame(
+    "trait" = names(location_),
     "mean_used_for_out_detection" = location_,
     "standard_deviation_used_for_out_detection" = scale_
   )
@@ -186,10 +188,12 @@ for (env_ in env_list_) {
     pheno_out_dir_path, env_,
     "_phenotype_outliers.csv"
   ))
-  fwrite(df_loc_scale_, file = paste0(
-    pheno_out_dir_path, env_,
-    "_location_scale_parameters.csv"
-  ))
+  fwrite(df_loc_scale_,
+    file = paste0(
+      pheno_out_dir_path, env_,
+      "_location_scale_parameters.csv"
+    )
+  )
 }
 
 # get all indices for outliers
