@@ -3,6 +3,7 @@ data/graphics/*
 data/phenotype_data/*
 data/progeny_data/*
 data/supplementary_data/*
+data/pedigree_data/*
 references/'~BROMIUM'
 refpop_data_analysis/src/.Rhistory
 refpop_data_analysis/src/.RData
