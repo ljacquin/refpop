@@ -28,11 +28,16 @@ library(htmlwidgets)
 library(rstudioapi)
 library(stringr)
 library(lsmeans)
+library(foreach)
+library(doParallel)
 
 # set options to increase memory and suppress warnings
 options(expressions = 5e5)
 options(warn = -1)
 emm_options(rg.limit = 20000)
+
+# detect the number of cores to use
+num_cores <- detectCores()
 
 # detect and set script path automatically, and source functions
 setwd(dirname(getActiveDocumentContext()$path))
@@ -63,7 +68,7 @@ min_dist_ <- 0.1
 umap_refpop_train_data <- "complete"
 
 # define label data for umap :  origin, family or genotype (genotype not recommended)
-use_origin_family_or_genotype_as_label_ <- "family"
+use_origin_family_or_genotype_as_label_ <- "origin"
 
 # if umap_refpop_train_data = "accessions", should progenies be projected using umap ?
 predict_umap_progeny_ <- FALSE
@@ -457,9 +462,41 @@ if (perform_umap_) {
   saveWidget(fig_x_y_z, file = output_path_3d_umap)
 }
 
-# get phased genotype data
-# phased_geno <- readRDS(paste0(geno_dir_path,
-#                       'phased_data/phased_genotypes.RDS'))
-# genotype_names <- colnames(phased_geno)[-match('chromosome',
-#                                       colnames(phased_geno))]
-# fam_df$sample.ID[fam_df$sample.ID %in% genotype_names]
+# get phased genotype data and split their columns according to each phase
+phased_geno_df <- readRDS(paste0(geno_dir_path, "phased_data/phased_genotypes.RDS"))
+genotype_names <- colnames(phased_geno_df)[-match(
+  "chromosome",
+  colnames(phased_geno_df)
+)]
+chromosome_num_col_ <- phased_geno_df$chromosome
+
+fam_df$sample.ID[fam_df$sample.ID %in% genotype_names]
+
+# initialize the cluster
+cl <- makeCluster(num_cores)
+
+# register the cluster
+registerDoParallel(cl)
+
+# apply the function to each column of phased_geno_df in parallel
+phased_geno_split_list <- foreach(
+  col = phased_geno_df[, genotype_names],
+  .combine = cbind
+) %dopar% {
+  split_column(col)
+}
+
+# stop the cluster
+stopCluster(cl)
+
+# convert the list to a dataframe
+phased_geno_split_df <- do.call(cbind, phased_geno_split_list)
+phased_geno_split_df <- as.data.frame(phased_geno_split_df)
+
+# rename the columns of the result
+colnames(phased_geno_split_df) <- rep(genotype_names, each = 2)
+
+# add chromosome number column
+phased_geno_split_df <- cbind(chromosome_num_col_, phased_geno_split_df)
+colnames(phased_geno_split_df)[1] <- 'chromosome'
+

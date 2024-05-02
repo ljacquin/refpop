@@ -447,6 +447,19 @@ create_pedig_incid_mat_2 <- function(df_) {
     incid_df_[incid_df_$Genotype == genotype, family] <- 1
     incid_df_[incid_df_$Genotype == genotype, origin] <- 1
   }
-
   return(incid_df_)
+}
+
+# function to split values of a column
+split_column <- function(col) {
+  # split values of the form "0|0", "0|1", etc.
+  split_values <- strsplit(col, "\\|")
+  # create two new columns
+  allele1 <- sapply(split_values, `[`, 1)
+  allele2 <- sapply(split_values, `[`, 2)
+  # return the two new columns
+  return(data.frame(
+    allele1 = as.integer(allele1),
+    allele2 = as.integer(allele2)
+  ))
 }
