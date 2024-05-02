@@ -53,20 +53,58 @@ read_with_snpStats <- FALSE # possible issue with the package or wrong usage
 perform_umap_ <- FALSE
 
 # umap parameters, most sensitive ones
-random_state_umap_ <- 15 # 15, 30 and 50
-n_neighbors_umap_ <- 15 # 15, 30, 50
-min_dist_ <- 0.2
+random_state_umap_ <- 15
+n_neighbors_umap_ <- 15
+min_dist_ <- 0.1
 
 # define umap training and plot paraemeters
 
 # define refpop train data for umap : complete, accessions, progeny
-umap_refpop_train_data <- "progeny"
+umap_refpop_train_data <- "complete"
 
 # define label data for umap :  origin, family or genotype (genotype not recommended)
 use_origin_family_or_genotype_as_label_ <- "family"
 
-# predict umap for progeny
+# if umap_refpop_train_data = "accessions", should progenies be projected using umap ?
 predict_umap_progeny_ <- FALSE
+
+# color function and palettes for genotypes, families and origins
+
+# color function for genotypes
+col_func_genotype <- colorRampPalette(c(
+  "black", "blue", "red", "orange",
+  "yellow", "green"
+))
+
+# color palette for families (28 counts)
+color_palette_family <- c(
+  "black",
+  "lightblue",
+  colorRampPalette(c("blue", "deepskyblue"))(10),
+  colorRampPalette(c("orange", "orange2"))(2),
+  colorRampPalette(c("aquamarine"))(1),
+  colorRampPalette(c("magenta", "magenta2"))(2),
+  colorRampPalette(c("firebrick3", "firebrick4"))(2),
+  colorRampPalette(c("green", "darkgreen"))(5),
+  colorRampPalette(c("darkorchid4"))(1),
+  colorRampPalette(c("gold1", "gold2"))(2),
+  colorRampPalette(c("lightcoral"))(1)
+)
+
+# color palette for origins (11 counts)
+color_palette_origin <- c(
+  "magenta",
+  "lightblue",
+  "blue",
+  "orange",
+  "aquamarine",
+  "red",
+  "green",
+  "darkorchid4",
+  "gold2",
+  "lightcoral",
+  "yellow"
+)
 
 # read plink genotype data
 if (read_with_bigsnpr) {
@@ -141,13 +179,15 @@ idx_origin_geno_names <- which(colnames(geno_df) %in% c(
 
 # useful : save genotype, family and origin information to genotype and phenotype
 # data folders
-fwrite(geno_df[,c("Genotype", "Family", "Origin")], 
-       file=paste0(geno_dir_path, 'genotype_family_origin_information.csv'),
-       sep =',')
+fwrite(geno_df[, c("Genotype", "Family", "Origin")],
+  file = paste0(geno_dir_path, "genotype_family_origin_information.csv"),
+  sep = ","
+)
 
-fwrite(geno_df[,c("Genotype", "Family", "Origin")], 
-       file=paste0(pheno_dir_path, 'genotype_family_origin_information.csv'),
-       sep =',')
+fwrite(geno_df[, c("Genotype", "Family", "Origin")],
+  file = paste0(pheno_dir_path, "genotype_family_origin_information.csv"),
+  sep = ","
+)
 
 # umap plots
 
@@ -157,27 +197,12 @@ if (perform_umap_) {
 
   # set arbitrary colors for unique genotypes
   if (identical(use_origin_family_or_genotype_as_label_, "genotype")) {
-    colfunc <- colorRampPalette(c(
-      "black", "blue", "red", "orange",
-      "yellow", "green"
-    ))
-    color_palette <- colfunc(length(unique(geno_df$Genotype)))
+    color_palette <- col_func_genotype(length(unique(geno_df$Genotype)))
 
     # set color labels for families (28 counts)
   } else if (identical(use_origin_family_or_genotype_as_label_, "family")) {
-    color_palette <- c(
-      "black",
-      "lightblue",
-      colorRampPalette(c("blue", "deepskyblue"))(10),
-      colorRampPalette(c("orange", "orange2"))(2),
-      colorRampPalette(c("aquamarine"))(1),
-      colorRampPalette(c("magenta", "magenta2"))(2),
-      colorRampPalette(c("firebrick3", "firebrick4"))(2),
-      colorRampPalette(c("green", "darkgreen"))(5),
-      colorRampPalette(c("darkorchid4"))(1),
-      colorRampPalette(c("gold1", "gold2"))(2),
-      colorRampPalette(c("lightcoral"))(1)
-    )
+    color_palette <- color_palette_family
+
     # if population is not complete select the corresponding color for subset
     if (identical(umap_refpop_train_data, "accessions")) {
       color_palette <- color_palette[1]
@@ -187,19 +212,7 @@ if (perform_umap_) {
 
     # set color labels for origins (11 counts)
   } else {
-    color_palette <- c(
-      "magenta",
-      "lightblue",
-      "blue",
-      "orange",
-      "aquamarine",
-      "red",
-      "green",
-      "darkorchid4",
-      "gold2",
-      "lightcoral",
-      "yellow"
-    )
+    color_palette <- color_palette_origin
   }
 
   if (identical(umap_refpop_train_data, "complete")) {
@@ -294,7 +307,7 @@ if (perform_umap_) {
     }
   }
 
-  # treat umap prediction for progenies based on unsupervised learning
+  # make umap prediction for progenies based on unsupervised learning
   # from accessions as a special case
   if (identical(umap_refpop_train_data, "accessions") && predict_umap_progeny_) {
     sub_geno_df <- geno_df[which(geno_df$Origin %in% "P"), ]
@@ -347,17 +360,17 @@ if (perform_umap_) {
     )
   }
 
-  # modify fig_title_ for family special case
+  # modify label_title_ for family special case
   if (identical(use_origin_family_or_genotype_as_label_, "family") &&
     !identical(umap_refpop_train_data, "progeny")) {
-    fig_title_ <- paste0(
+    label_title_ <- paste0(
       "<b> ",
       str_to_title(use_origin_family_or_genotype_as_label_),
       " (except accession)",
       "</b>"
     )
   } else {
-    fig_title_ <- paste0(
+    label_title_ <- paste0(
       "<b> ",
       str_to_title(use_origin_family_or_genotype_as_label_),
       "</b>"
@@ -386,7 +399,7 @@ if (perform_umap_) {
       )
   }
   fig_x_y <- fig_x_y %>% layout(
-    legend = list(title = list(text = fig_title_))
+    legend = list(title = list(text = label_title_))
   )
   # save graphics
   saveWidget(fig_x_y, file = output_path_2d_umap)
@@ -438,7 +451,7 @@ if (perform_umap_) {
       )
   }
   fig_x_y_z <- fig_x_y_z %>% layout(
-    legend = list(title = list(text = fig_title_))
+    legend = list(title = list(text = label_title_))
   )
   # save graphics
   saveWidget(fig_x_y_z, file = output_path_3d_umap)
