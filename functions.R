@@ -31,6 +31,7 @@ spat_hetero_env_correct_trait <- function(trait_, envir_, df_,
       }
     },
     error = function(e) {
+      return(data.frame())
       cat(
         "Error with spat_hetero_env_correct_trait,
       here is the possible issue with data and/or computation : ",
@@ -205,14 +206,14 @@ convert_col_char_to_fact <- function(col) {
 # functions which performs imputation using column means
 impute_mean <- function(x) {
   mean_value <- mean(x, na.rm = TRUE)
-  x[is.na(x)] <- (mean_value + rnorm(1, 0, 10))
+  x[is.na(x)] <- mean_value
   return(x)
 }
 
 # function which computes the number of necessary components to reach at least percent_explained_variance_
 n_comp_required_for_percent_explained_var <- function(facto_mine_pca_model_,
                                                       percent_explained_var) {
-  return(as.numeric(which(facto_mine_pca_model_$eig[, 3] >=
+  return(as.numeric(which(facto_mine_pca_model_$eig[, 3] >
     percent_explained_var))[1])
 }
 
@@ -309,377 +310,143 @@ recode_matrix_values <- function(df_, df_new_code) {
   return(result_df)
 }
 
-# a modified version of the mahalanobis distance function from the robustbase
-# package
-mahalanobis_dist_ <- function(x, center, cov, inverted = FALSE, ...) {
-  x <- if (is.vector(x)) {
-    matrix(x, ncol = length(x))
-  } else {
-    as.matrix(x)
+# function which uses median absolute deviation (MAD) to get outliers and their indices
+get_outliers_vect_mad <- function(vect_, h2_mad_value_factor) {
+  # apply mad to detect outlier(s)
+  h2_mad_value <- mad(vect_, constant = 1)
+  h2_median <- median(vect_)
+  h2_threshold <- h2_mad_value_factor * h2_mad_value
+
+  # detect environment(s) to be excluded from adjusted pheno computed h2
+  idx_outliers <- which(abs(vect_ - h2_median) > h2_threshold & vect_ < h2_median)
+  names_outliers <- names(vect_)[idx_outliers]
+
+  # remove the environments to be excluded from the lists of heritabilities
+  if (length(idx_outliers) > 0) {
+    vect_ <- vect_[-match(names_outliers, names(vect_))]
   }
-  if (!isFALSE(center)) {
-    x <- sweep(x, 2L, center)
-  }
-  if (!inverted) {
-    cov <- as.matrix(nearPD(cov)$mat)
-  }
-  cov <- solve(cov, ...)
-  setNames(rowSums(x %*% cov * x), rownames(x))
+
+  return(list(
+    "names_outliers" = names_outliers,
+    "idx_outliers" = idx_outliers,
+    "data_no_outliers" = vect_
+  ))
 }
 
-# a modified version of the minimum covariance determinant (MCD) function
-# from the robustbase package
-covMcd_ <- function(x, cor = FALSE, raw.only = FALSE, alpha = control$alpha,
-                    nsamp = control$nsamp, nmini = control$nmini, kmini = control$kmini,
-                    scalefn = control$scalefn, maxcsteps = control$maxcsteps,
-                    initHsets = NULL, save.hsets = FALSE, names = TRUE, seed = control$seed,
-                    tolSolve = control$tolSolve, trace = control$trace, use.correction = control$use.correction,
-                    wgtFUN = control$wgtFUN, control = rrcov.control()) {
-  logdet.Lrg <- 50
-  if (length(seed) > 0) {
-    if (length(seed) < 3L || seed[1L] < 100L) {
-      stop("invalid 'seed'. Must be compatible with .Random.seed !")
+
+# function which uses median absolute deviation (MAD) to get outliers and their indices
+get_outliers_list_mad <- function(list_, h2_mad_value_factor) {
+  # apply mad to detect outlier(s)
+  mad_values <- lapply(list_, mad, constant = 1)
+  medians <- sapply(list_, median)
+
+  h2_thresholds <- lapply(1:length(list_), function(i) {
+    h2_mad_value <- mad_values[[i]]
+    h2_median <- medians[i]
+    h2_mad_value_factor * h2_mad_value
+  })
+
+  idx_outliers <- lapply(1:length(list_), function(i) {
+    abs_vals <- abs(list_[[i]] - medians[i])
+    which(abs_vals > h2_thresholds[[i]] & list_[[i]] < medians[i])
+  })
+
+  names_outliers <- lapply(1:length(list_), function(i) {
+    names(list_[[i]])[idx_outliers[[i]]]
+  })
+
+  # remove the environments to be excluded from the lists of heritabilities
+  list_no_outliers <- lapply(1:length(list_), function(i) {
+    if (length(idx_outliers[[i]]) > 0) {
+      list_[[i]] <- list_[[i]][-idx_outliers[[i]]]
     }
-    if (!is.null(seed.keep <- get0(".Random.seed",
-      envir = .GlobalEnv,
-      inherits = FALSE
-    ))) {
-      on.exit(assign(".Random.seed", seed.keep, envir = .GlobalEnv))
-    }
-    assign(".Random.seed", seed, envir = .GlobalEnv)
-  }
-  defCtrl <- if (missing(control)) {
-    control
-  } else {
-    rrcov.control()
-  }
-  if (missing(wgtFUN)) {
-    getDefCtrl("wgtFUN", defCtrl)
-  }
-  if (is.null(nmini)) {
-    getDefCtrl("nmini", defCtrl)
-  }
-  if (is.numeric(nsamp) && nsamp <= 0) {
-    stop("Invalid number of trials nsamp = ", nsamp, "!")
-  }
-  if (is.data.frame(x)) {
-    x <- data.matrix(x, rownames.force = FALSE)
-  } else if (!is.matrix(x)) {
-    x <- matrix(x, length(x), 1, dimnames = if (names) {
-      list(names(x), deparse(substitute(x)))
-    })
-  }
-  if (!names) {
-    dimnames(x) <- NULL
-  }
-  ok <- is.finite(x %*% rep.int(1, ncol(x)))
-  x <- x[ok, , drop = FALSE]
-  if (!length(dx <- dim(x))) {
-    stop("All observations have missing values!")
-  }
-  n <- dx[1]
-  p <- dx[2]
-  if (names) {
-    dimn <- dimnames(x)
-  }
-  h <- h.alpha.n(alpha, n, p)
-  if (n <= p + 1) {
-    stop(if (n <= p) {
-      "n <= p -- you can't be serious!"
-    } else {
-      "n == p+1  is too small sample size for MCD"
-    })
-  }
-  if (n < 2 * p) {
-    warning("n < 2 * p, i.e., possibly too small sample size")
-  }
-  if (h > n) {
-    stop("Sample size n  <  h(alpha; n,p) := size of \"good\" subsample")
-  } else if (2 * h < n) {
-    warning("subsample size\t h < n/2  may be too small")
-  }
-  if (is.character(wgtFUN)) {
-    if (is.function(mkWfun <- .wgtFUN.covMcd[[wgtFUN]])) {
-      wgtFUN <- mkWfun(p = p, n = n, control)
-    }
-  }
-  if (!is.function(wgtFUN)) {
-    stop(
-      gettextf(
-        "'wgtFUN' must be a function or one of the strings %s.",
-        pasteK(paste0("\"", names(.wgtFUN.covMcd), "\""))
-      ),
-      domain = NA
-    )
-  }
-  raw.cnp2 <- cnp2 <- c(1, 1)
-  ans <- list(call = match.call(), nsamp = nsamp, method = sprintf(
-    "MCD(alpha=%g ==> h=%d)",
-    alpha, h
+    return(list_[[i]])
+  })
+
+  return(list(
+    "names_outliers" = names_outliers,
+    "idx_outliers" = idx_outliers,
+    "data_no_outliers" = list_no_outliers
   ))
-  if (h == n) {
-    mcd <- cov(x)
-    loc <- as.vector(colMeans(x))
-    obj <- determinant(mcd, logarithm = TRUE)$modulus[1]
-    if (-obj / p > logdet.Lrg) {
-      ans$cov <- mcd
-      if (names) {
-        dimnames(ans$cov) <- list(dimn[[2]], dimn[[2]])
-      }
-      if (cor) {
-        ans$cor <- cov2cor(ans$cov)
-      }
-      ans$center <- loc
-      if (names && length(dimn[[2]])) {
-        names(ans$center) <- dimn[[2]]
-      }
-      ans$n.obs <- n
-      ans$singularity <- list(kind = "classical")
-      weights <- 1
-    } else {
-      mah <- mahalanobis_dist_(x, loc, mcd, tol = tolSolve)
-      weights <- wgtFUN(mah)
-      sum.w <- sum(weights)
-      ans <- c(ans, cov.wt(x, wt = weights, cor = cor))
-      if (sum.w != n) {
-        cnp2[1] <- .MCDcons(p, sum.w / n)
-        ans$cov <- ans$cov * cnp2[1]
-      }
-      obj <- determinant(mcd, logarithm = TRUE)$modulus[1]
-      if (-obj / p > logdet.Lrg) {
-        ans$singularity <- list(kind = "reweighted.MCD")
-      } else {
-        mah <- mahalanobis_dist_(x, ans$center, ans$cov, tol = tolSolve)
-        weights <- wgtFUN(mah)
-      }
+}
+
+# function which replace missing values of parents by genotype values
+replace_missing_parent_by_genotype <- function(df_) {
+  for (i in 1:nrow(df_)) {
+    if (is.na(df_$P1[i]) || df_$P1[i] == "-") {
+      df_$P1[i] <- df_$Genotype[i]
     }
-    ans$alpha <- alpha
-    ans$quan <- h
-    ans$raw.cov <- mcd
-    ans$raw.center <- loc
-    if (names && !is.null(nms <- dimn[[2]])) {
-      names(ans$raw.center) <- nms
-      dimnames(ans$raw.cov) <- list(nms, nms)
-    }
-    ans$crit <- obj
-    ans$method <- paste(
-      ans$method, "\nalpha = 1: The minimum covariance determinant estimates based on",
-      n, "observations \nare equal to the classical estimates."
-    )
-    ans$mcd.wt <- rep.int(NA, length(ok))
-    ans$mcd.wt[ok] <- weights
-    if (names && length(dimn[[1]])) {
-      names(ans$mcd.wt) <- dimn[[1]]
-    }
-    ans$wt <- NULL
-    ans$X <- x
-    if (names) {
-      if (length(dimn[[1]])) {
-        dimnames(ans$X)[[1]] <- names(ans$mcd.wt)[ok]
-      } else {
-        dimnames(ans$X) <- list(
-          seq(along = ok)[ok],
-          NULL
-        )
-      }
-    }
-    if (trace) {
-      cat(ans$method, "\n")
-    }
-    ans$raw.cnp2 <- raw.cnp2
-    ans$cnp2 <- cnp2
-    class(ans) <- "mcd"
-    return(ans)
-  }
-  mcd <- if (nsamp == "deterministic") {
-    ans$method <- paste("Deterministic", ans$method)
-    .detmcd(x, h,
-      hsets.init = initHsets, save.hsets = save.hsets,
-      scalefn = scalefn, maxcsteps = maxcsteps, trace = as.integer(trace),
-      names = names
-    )
-  } else {
-    ans$method <- paste0(
-      "Fast ", ans$method, "; nsamp = ",
-      nsamp, "; (n,k)mini = (", nmini, ",", kmini, ")"
-    )
-    .fastmcd(x, h, nsamp, nmini, kmini, trace = as.integer(trace))
-  }
-  calpha <- .MCDcons(p, h / n)
-  correct <- if (use.correction) {
-    .MCDcnp2(p, n, alpha)
-  } else {
-    1
-  }
-  raw.cnp2 <- c(calpha, correct)
-  if (p == 1) {
-    ans$method <- paste("Univariate", ans$method)
-    scale <- sqrt(calpha * correct) * as.double(mcd$initcovariance)
-    center <- as.double(mcd$initmean)
-    if (abs(scale - 0) < 1e-07) {
-      ans$singularity <- list(kind = "identicalObs", q = h)
-      ans$raw.cov <- ans$cov <- matrix(0)
-      ans$raw.center <- ans$center <- center
-      ans$n.obs <- n
-      ans$alpha <- alpha
-      ans$quan <- h
-      if (names && !is.null(nms <- dimn[[2]][1])) {
-        names(ans$raw.center) <- names(ans$center) <- nms
-        dimnames(ans$raw.cov) <- dimnames(ans$cov) <- list(
-          nms,
-          nms
-        )
-      }
-      ans$crit <- -Inf
-      weights <- as.numeric(abs(x - center) < 1e-07)
-    } else {
-      weights <- wgtFUN(((x - center) / scale)^2)
-      sum.w <- sum(weights)
-      ans <- c(ans, cov.wt(x, wt = weights, cor = cor))
-      if (sum.w != n) {
-        cdelta.rew <- .MCDcons(p, 0.975)
-        correct.rew <- if (use.correction) {
-          .MCDcnp2.rew(p, n, alpha)
-        } else {
-          1
-        }
-        cnp2 <- c(cdelta.rew, correct.rew)
-        ans$cov <- cdelta.rew * correct.rew * ans$cov
-      }
-      ans$alpha <- alpha
-      ans$quan <- h
-      ans$raw.cov <- as.matrix(scale^2)
-      ans$raw.center <- as.vector(center)
-      if (names && !is.null(nms <- dimn[[2]][1])) {
-        dimnames(ans$raw.cov) <- list(nms, nms)
-        names(ans$raw.center) <- nms
-      }
-      ans$crit <- log(sum(sort((x - as.double(mcd$initmean))^2,
-        partial = h
-      )[1:h]) / max(1, h - 1))
-      center <- ans$center
-      scale <- as.vector(sqrt(ans$cov))
-      weights <- wgtFUN(((x - center) / scale)^2)
-    }
-  } else {
-    mcd$initcovariance <- matrix(
-      calpha * correct * mcd$initcovariance,
-      p, p
-    )
-    if (raw.only || mcd$exactfit != 0) {
-      if (!is.null(mcd$coeff)) {
-        dim(mcd$coeff) <- c(5, p)
-      }
-      ans$cov <- ans$raw.cov <- mcd$initcovariance
-      ans$center <- ans$raw.center <- as.vector(mcd$initmean)
-      if (names && !is.null(nms <- dimn[[2]])) {
-        dimnames(ans$cov) <- list(nms, nms)
-        names(ans$center) <- nms
-      }
-      ans$n.obs <- n
-      if (mcd$exactfit != 0) {
-        if (!(mcd$exactfit %in% c(1, 2, 3))) {
-          stop(
-            "Unexpected 'exactfit' code ", mcd$exactfit,
-            ". Please report!"
-          )
-        }
-        ans$singularity <- list(
-          kind = "on.hyperplane",
-          exactCode = mcd$exactfit, p = p, h = h, count = mcd$kount,
-          coeff = mcd$coeff[1, ]
-        )
-        ans$crit <- -Inf
-        weights <- mcd$weights
-      } else {
-        ans$raw.only <- TRUE
-        ans$crit <- mcd$mcdestimate
-        weights <- mcd$weights
-        if (is.null(mcd$weights)) {
-          mah <- mahalanobis_dist_(x, mcd$initmean, mcd$initcovariance,
-            tol = tolSolve
-          )
-          weights <- wgtFUN(mah)
-        }
-      }
-      ans$alpha <- alpha
-      ans$quan <- h
-      if (names && !is.null(nms <- dimn[[2]])) {
-        names(ans$raw.center) <- nms
-        dimnames(ans$raw.cov) <- list(nms, nms)
-      }
-    } else {
-      mah <- mahalanobis_dist_(x, mcd$initmean, mcd$initcovariance,
-        tol = tolSolve
-      )
-      weights <- wgtFUN(mah)
-      sum.w <- sum(weights)
-      ans <- c(ans, cov.wt(x, wt = weights, cor = cor))
-      sing.rewt <- any(apply(ans$cov == 0, 2, all))
-      if (!sing.rewt && sum.w != n) {
-        cdelta.rew <- .MCDcons(p, 0.975)
-        correct.rew <- if (use.correction) {
-          .MCDcnp2.rew(p, n, alpha)
-        } else {
-          1
-        }
-        cnp2 <- c(cdelta.rew, correct.rew)
-        ans$cov <- cdelta.rew * correct.rew * ans$cov
-      }
-      ans$best <- sort(as.vector(mcd$best))
-      ans$alpha <- alpha
-      ans$quan <- h
-      ans$raw.cov <- mcd$initcovariance
-      ans$raw.center <- as.vector(mcd$initmean)
-      if (names && !is.null(nms <- dimn[[2]])) {
-        names(ans$raw.center) <- nms
-        dimnames(ans$raw.cov) <- list(nms, nms)
-      }
-      ans$raw.weights <- weights
-      ans$crit <- mcd$mcdestimate
-      ans$raw.mah <- mah
-      if (sing.rewt || -determinant(ans$cov, logarithm = TRUE)$modulus[1] / p >
-        logdet.Lrg) {
-        ans$singularity <- list(kind = paste0(
-          "reweighted.MCD",
-          if (sing.rewt) "(zero col.)"
-        ))
-        ans$mah <- mah
-      } else {
-        mah <- mahalanobis_dist_(x, ans$center, ans$cov, tol = tolSolve)
-        ans$mah <- mah
-        weights <- wgtFUN(mah)
-      }
+    if (is.na(df_$P2[i]) || df_$P2[i] == "-") {
+      df_$P2[i] <- df_$Genotype[i]
     }
   }
-  ans$mcd.wt <- rep.int(NA, length(ok))
-  ans$mcd.wt[ok] <- weights
-  if (names) {
-    if (length(dimn[[1]])) {
-      names(ans$mcd.wt) <- dimn[[1]]
-    }
-    if (length(dimn[[1]])) {
-      dimnames(x)[[1]] <- names(ans$mcd.wt)[ok]
-    } else {
-      dimnames(x) <- list(seq(along = ok)[ok], NULL)
-    }
+  return(df_)
+}
+
+# function which creates pedigree incidence matrix
+create_pedig_incid_mat <- function(df_) {
+  # get unique genotypes, parents, families and origin
+  genotypes <- unique(df_$Genotype)
+  parents <- unique(c(df_$P1, df_$P2))
+
+  # initialize incidence data with an empty data frame
+  incid_df_ <- data.frame(Genotype = genotypes)
+
+  # add columns for parent
+  for (parent in parents) {
+    incid_df_[[parent]] <- 0
   }
-  ans$X <- x
-  ans$wt <- NULL
-  if (trace) {
-    cat(ans$method, "\n")
+
+  # fill the incidence matrix
+  for (i in 1:nrow(df_)) {
+    genotype <- df_$Genotype[i]
+    parent_1 <- df_$P1[i]
+    parent_2 <- df_$P2[i]
+
+    # assign 1 to indicate relatedness, family membership and origin
+    incid_df_[incid_df_$Genotype == genotype, parent_1] <- 1
+    incid_df_[incid_df_$Genotype == genotype, parent_2] <- 1
   }
-  ans$raw.cnp2 <- raw.cnp2
-  ans$cnp2 <- cnp2
-  if (nsamp == "deterministic") {
-    ans <- c(ans, mcd[c("iBest", "n.csteps", if (save.hsets) "initHsets")])
+
+  return(incid_df_)
+}
+
+# function which creates pedigree incidence matrix
+create_pedig_incid_mat_2 <- function(df_) {
+  # get unique genotypes, parents, families and origin
+  genotypes <- unique(df_$Genotype)
+  parents <- unique(c(df_$P1, df_$P2))
+  families <- unique(df_$Family)
+  origins <- unique(df_$Origin)
+
+  # initialize incidence data with an empty data frame
+  incid_df_ <- data.frame(Genotype = genotypes)
+
+  # add columns for parent, family and origin
+  for (parent in parents) {
+    incid_df_[[parent]] <- 0
   }
-  class(ans) <- "mcd"
-  if (is.list(ans$singularity)) {
-    warning(paste(strwrap(.MCDsingularityMsg(
-      ans$singularity,
-      ans$n.obs
-    )), collapse = "\n"), domain = NA)
+  for (family in families) {
+    incid_df_[[family]] <- 0
   }
-  ans
+  for (origin in origins) {
+    incid_df_[[origin]] <- 0
+  }
+
+  # fill the incidence matrix
+  for (i in 1:nrow(df_)) {
+    genotype <- df_$Genotype[i]
+    parent_1 <- df_$P1[i]
+    parent_2 <- df_$P2[i]
+    family <- df_$Family[i]
+    origin <- df_$Origin[i]
+
+    # assign 1 to indicate relatedness, family membership and origin
+    incid_df_[incid_df_$Genotype == genotype, parent_1] <- 1
+    incid_df_[incid_df_$Genotype == genotype, parent_2] <- 1
+    incid_df_[incid_df_$Genotype == genotype, family] <- 1
+    incid_df_[incid_df_$Genotype == genotype, origin] <- 1
+  }
+
+  return(incid_df_)
 }
