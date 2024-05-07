@@ -42,7 +42,7 @@ spat_hetero_env_correct_trait <- function(trait_, envir_, df_,
 }
 
 
-# function to re-order column names according to a specified order
+# function which re-orders column names according to a specified order
 reordered_cols <- function(col_names, prefix_order_patterns) {
   tryCatch(
     {
@@ -65,7 +65,7 @@ reordered_cols <- function(col_names, prefix_order_patterns) {
   )
 }
 
-# function to detect dates (does not work for all dates format, be careful)
+# function which detects dates (does not work for all dates format, be careful)
 contains_date <- function(string) {
   tryCatch(
     {
@@ -97,7 +97,7 @@ compute_indiv_location_clonal_mean_h2 <- function(lmer_mod_, nr_bar_) {
   )
 }
 
-# function which multi-location clonal mean heritability (WIP)
+# function which computes multi-location clonal mean heritability
 compute_multi_location_clonal_mean_h2 <- function(lmer_mod_, nr_bar_, nl) {
   tryCatch(
     {
@@ -111,84 +111,6 @@ compute_multi_location_clonal_mean_h2 <- function(lmer_mod_, nr_bar_, nl) {
     error = function(e) {
       cat(
         "Error with : ", conditionMessage(e), "\n"
-      )
-    }
-  )
-}
-
-# (DEPRECATED) functions which corrects for trait spatial heterogeneity in raw_data
-correct_trait_spatial_heterogeneity_raw_data <- function(
-    trait_, geno_df_, df_year_, raw_data_site_names_, year_) {
-  tryCatch(
-    {
-      for (site_name_ in raw_data_site_names_) {
-        df_site_ <- df_year_ %>% subset(Country == site_name_)
-        df_site_ <- df_site_[, -match("Country", colnames(df_site_))]
-        df_site_ <- drop_na(df_site_)
-        df_site_$R <- as.factor(df_site_$Row)
-        df_site_$P <- as.factor(df_site_$Position)
-        df_site_$Genotype <- as.factor(df_site_$Genotype)
-        spats_formula <- as.formula(~ PSANOVA(Position, Row))
-        spats_model <- SpATS(
-          response = trait_,
-          spatial = spats_formula,
-          genotype = "Genotype", genotype.as.random = TRUE, fixed = NULL,
-          random = ~ R + P, data = df_site_,
-          control = controlSpATS()
-        )
-        spats_pred <- predict(spats_model, which = "Genotype")
-        spats_pred <- spats_pred[, c("Genotype", "predicted.values")]
-        colnames(spats_pred)[2] <- paste0(site_name_, "_", year_)
-        spats_pred$Genotype <- as.character(spats_pred$Genotype)
-        geno_df_ <- merge(geno_df_, spats_pred, by = "Genotype", all = TRUE)
-      }
-      return(geno_df_)
-    },
-    error = function(e) {
-      cat(
-        "Error with correct_trait_spatial_heterogeneity_raw_data,
-      here is the possible issue with data and/or computation : ",
-        conditionMessage(e), "\n"
-      )
-    }
-  )
-}
-
-# (DEPRECATED) functions which corrects for trait spatial heterogeneity in raw_data
-correct_trait_spatial_heterogeneity_munq_data <- function(
-    trait_, geno_df_, list_df_year_, data_site_names_year_) {
-  tryCatch(
-    {
-      for (site_name_ in data_site_names_year_) {
-        print(site_name_)
-        df_site_ <- list_df_year_[[site_name_]]
-        df_site_[is.na(df_site_$MUNQ), "MUNQ"] <- df_site_[is.na(df_site_$MUNQ), "Genotype"]
-        df_site_ <- df_site_[, -match("Genotype", colnames(df_site_))]
-        df_site_ <- drop_na(df_site_)
-        df_site_$R <- as.factor(df_site_$Row)
-        df_site_$P <- as.factor(df_site_$Position)
-        df_site_$MUNQ <- as.factor(df_site_$MUNQ)
-        spats_formula <- as.formula(~ PSANOVA(Position, Row))
-        spats_model <- SpATS(
-          response = trait_,
-          spatial = spats_formula,
-          genotype = "MUNQ", genotype.as.random = TRUE, fixed = NULL,
-          random = ~ R + P, data = df_site_,
-          control = controlSpATS()
-        )
-        spats_pred <- predict(spats_model, which = "MUNQ")
-        spats_pred <- spats_pred[, c("MUNQ", "predicted.values")]
-        spats_pred$MUNQ <- as.character(spats_pred$MUNQ)
-        colnames(spats_pred) <- c("Genotype", site_name_)
-        geno_df_ <- merge(geno_df_, spats_pred, by = "Genotype", all = TRUE)
-      }
-      return(geno_df_)
-    },
-    error = function(e) {
-      cat(
-        "Error with correct_trait_spatial_heterogeneity_raw_data,
-      here is the possible issue with data and/or computation : ",
-        conditionMessage(e), "\n"
       )
     }
   )
@@ -210,7 +132,8 @@ impute_mean <- function(x) {
   return(x)
 }
 
-# function which computes the number of necessary components to reach at least percent_explained_variance_
+# function which computes the number of necessary components to reach at 
+# least percent_explained_variance_
 n_comp_required_for_percent_explained_var <- function(facto_mine_pca_model_,
                                                       percent_explained_var) {
   return(as.numeric(which(facto_mine_pca_model_$eig[, 3] >
@@ -218,7 +141,7 @@ n_comp_required_for_percent_explained_var <- function(facto_mine_pca_model_,
 }
 
 
-# function which divide a vector of indices into a list of n pieces
+# function which divides a vector of indices into a list of n pieces
 divide_indices <- function(indices, n) {
   if (n <= 0) {
     stop("The number of pieces should be superior to n")
@@ -247,12 +170,12 @@ divide_indices <- function(indices, n) {
   return(pieces)
 }
 
-# function which test if a matrix is a squared one
+# function which tests if a matrix is a squared one
 is_square <- function(mat) {
   nrow(mat) == ncol(mat)
 }
 
-# function which recode values for biallelic markers with codes A and B
+# function which recodes values for biallelic markers with codes A and B
 recode_values <- function(value, row_index, df_new_code) {
   if (is.na(value)) {
     return(value)
@@ -277,7 +200,7 @@ recode_values <- function(value, row_index, df_new_code) {
   }
 }
 
-# function which recode values of a matrix for biallelic markers codes as A and B
+# function which recodes values of a matrix for biallelic markers codes as A and B
 recode_matrix_values <- function(df_, df_new_code) {
   # get row indices for replacement
   row_indices <- match(rownames(df_), df_new_code[, 1])
@@ -369,7 +292,7 @@ get_outliers_list_mad <- function(list_, h2_mad_value_factor) {
   ))
 }
 
-# function which replace missing values of parents by genotype values
+# function which replaces missing values of parents by genotype values
 replace_missing_parent_by_genotype <- function(df_) {
   for (i in 1:nrow(df_)) {
     if (is.na(df_$P1[i]) || df_$P1[i] == "-") {
@@ -410,46 +333,7 @@ create_pedig_incid_mat <- function(df_) {
   return(incid_df_)
 }
 
-# function which creates pedigree incidence matrix
-create_pedig_incid_mat_2 <- function(df_) {
-  # get unique genotypes, parents, families and origin
-  genotypes <- unique(df_$Genotype)
-  parents <- unique(c(df_$P1, df_$P2))
-  families <- unique(df_$Family)
-  origins <- unique(df_$Origin)
-
-  # initialize incidence data with an empty data frame
-  incid_df_ <- data.frame(Genotype = genotypes)
-
-  # add columns for parent, family and origin
-  for (parent in parents) {
-    incid_df_[[parent]] <- 0
-  }
-  for (family in families) {
-    incid_df_[[family]] <- 0
-  }
-  for (origin in origins) {
-    incid_df_[[origin]] <- 0
-  }
-
-  # fill the incidence matrix
-  for (i in 1:nrow(df_)) {
-    genotype <- df_$Genotype[i]
-    parent_1 <- df_$P1[i]
-    parent_2 <- df_$P2[i]
-    family <- df_$Family[i]
-    origin <- df_$Origin[i]
-
-    # assign 1 to indicate relatedness, family membership and origin
-    incid_df_[incid_df_$Genotype == genotype, parent_1] <- 1
-    incid_df_[incid_df_$Genotype == genotype, parent_2] <- 1
-    incid_df_[incid_df_$Genotype == genotype, family] <- 1
-    incid_df_[incid_df_$Genotype == genotype, origin] <- 1
-  }
-  return(incid_df_)
-}
-
-# function to split values of a column
+# function which splits values of a column
 split_column <- function(col) {
   # split values of the form "0|0", "0|1", etc.
   split_values <- strsplit(col, "\\|")
@@ -463,7 +347,7 @@ split_column <- function(col) {
   ))
 }
 
-# function which tune mtry for ranger random forest
+# function which tunes mtry for ranger random forest
 tune_mtry_ranger_rf <- function(X, Y, 
                                 mtry_grid_,
                                 num_trees_ = 500,
@@ -484,7 +368,7 @@ tune_mtry_ranger_rf <- function(X, Y,
           num.trees = num_trees_
         )
         # correlate out-of-bag (OOB) predictions (almost asymptotically 
-		# equivalent to LOOCV on large samples) with observed values
+        # equivalent to LOOCV on large samples) with observed values
         acc_ <- cor(rf_model$predictions, Y)
         names(acc_) <- as.character(mtry_)
         acc_
@@ -505,74 +389,6 @@ tune_mtry_ranger_rf <- function(X, Y,
 }
 
 # function which tunes the epsilon hyperparameter for support vector regression
-tune_eps_ksvm_reg <- function(X, Y, kpar_, type_, kernel_, c_par_,
-                              epsilon_grid_, n_folds_) {
-  expected_loss_grid_ <- rep(Inf, length(epsilon_grid_))
-  n <- length(Y)
-  Folds <- cvFolds(n, n_folds_, type = "consecutive")
-
-  tryCatch(
-    {
-      l <- 1
-      for (eps_ in epsilon_grid_)
-      {
-        vect_loss_folds <- rep(0, n_folds_)
-
-        for (fold_ in 1:n_folds_)
-        {
-          idx_fold_ <- which(Folds$which == fold_)
-
-          # valid set
-          y_val_ <- Y[idx_fold_]
-          x_val_ <- X[idx_fold_, ]
-
-          # train set
-          y_train_ <- Y[-idx_fold_]
-          x_train_ <- X[-idx_fold_, ]
-
-          # build ksvm model on train set
-          ksvm_model <- ksvm(
-            x = X_minus_fold_, y = Y_minus_fold_, kpar = kpar_,
-            type = type_, kernel = kernel_,
-            C = c_par_, epsilon = eps_
-          )
-
-          f_hat_val_ <- predict(ksvm_model, x_val_)
-
-          # loss for fold_
-          vect_loss_folds[fold_] <- sum((y_val_ - f_hat_val_)^2)
-        }
-
-        expected_loss_grid_[l] <- mean(vect_loss_folds)
-        l <- l + 1
-      }
-    },
-    error = function(e) {
-      cat(
-        "Error with : ", conditionMessage(e), "\n"
-      )
-    }
-  )
-
-  # get the optimal epsilon
-  optimal_eps_ <- epsilon_grid_[which.min(expected_loss_grid_)]
-
-  # train the "optimal" model
-  tuned_model <- ksvm(
-    x = X, y = Y, kpar = kpar_, type = type_,
-    kernel = kernel_, C = c_par_,
-    epsilon = optimal_eps_
-  )
-
-  return(list(
-    "tuned_ksvm" = tuned_model, "optimal_eps_" = optimal_eps_,
-    "expected_loss_grid_" = expected_loss_grid_,
-    "epsilon_grid_" = epsilon_grid_
-  ))
-}
-
-# function which parallelizes the tuning of the epsilon hyperparameter 
-# for support vector regression
 tune_eps_ksvm_reg_parallel <- function(X, Y, kpar_, type_, kernel_, c_par_,
                                        epsilon_grid_, n_folds_, pkgs_to_export_) {
   expected_loss_grid_ <- rep(Inf, length(epsilon_grid_))
@@ -644,7 +460,7 @@ tune_eps_ksvm_reg_parallel <- function(X, Y, kpar_, type_, kernel_, c_par_,
   ))
 }
 
-# function which remove monomorphic markers
+# function which removes monomorphic markers
 remove_monomorphic_markers <- function(geno_df) {
   # identify monomorphic markers
   monomorphic_markers <- apply(
@@ -665,8 +481,7 @@ remove_monomorphic_markers <- function(geno_df) {
   ))
 }
 
-
-# function to remove columns with variance below a threshold
+# function which removes columns with variance below a threshold
 remove_low_variance_columns <- function(geno_df, threshold) {
   # calculate variance for each column
   variances <- apply(geno_df[, -match("Genotype", colnames(geno_df))], 2, var)
@@ -689,8 +504,10 @@ remove_low_variance_columns <- function(geno_df, threshold) {
 
 # function to calculate the weighted sum of genotype columns without weights
 sum_weighted_genotypes <- function(train_genotypes, test_genotype) {
-  # calculate the Hamming distance between the test genotype and every genotype in the training data
-  hamming_distances <- apply(train_genotypes, 1, function(row) hamming.distance(test_genotype, row))
+  # calculate the Hamming distance between the test genotype and 
+  # every genotype in the training data
+  hamming_distances <- apply(train_genotypes, 1, function(row) 
+    hamming.distance(test_genotype, row))
 
   # use Hamming distance as inverse weighting
   weights <- 1 / (hamming_distances + 1)
@@ -715,7 +532,7 @@ reduce_genotype_matrix <- function(genotype_matrix, n) {
 
   # loop over each chunk
   for (i in 1:n_chunks) {
-    # Define the start and end columns for the current chunk
+    # define the start and end columns for the current chunk
     start_col <- (i - 1) * n + 1
     end_col <- i * n
 
