@@ -1,3 +1,4 @@
+data/genomic_pred_result_data/*
 data/genotype_data/*
 data/graphics/*
 data/phenotype_data/*
