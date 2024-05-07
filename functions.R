@@ -218,7 +218,7 @@ n_comp_required_for_percent_explained_var <- function(facto_mine_pca_model_,
 }
 
 
-# function which divide a vector of indices into a list ofn pieces
+# function which divide a vector of indices into a list of n pieces
 divide_indices <- function(indices, n) {
   if (n <= 0) {
     stop("The number of pieces should be superior to n")
@@ -252,7 +252,7 @@ is_square <- function(mat) {
   nrow(mat) == ncol(mat)
 }
 
-# function which recode values for biallelic markers codes as A and B
+# function which recode values for biallelic markers with codes A and B
 recode_values <- function(value, row_index, df_new_code) {
   if (is.na(value)) {
     return(value)
@@ -332,7 +332,6 @@ get_outliers_vect_mad <- function(vect_, h2_mad_value_factor) {
     "data_no_outliers" = vect_
   ))
 }
-
 
 # function which uses median absolute deviation (MAD) to get outliers and their indices
 get_outliers_list_mad <- function(list_, h2_mad_value_factor) {
@@ -464,7 +463,7 @@ split_column <- function(col) {
   ))
 }
 
-# function which tune mtry for ranger random foest
+# function which tune mtry for ranger random forest
 tune_mtry_ranger_rf <- function(X, Y, 
                                 mtry_grid_,
                                 num_trees_ = 500,
@@ -484,8 +483,8 @@ tune_mtry_ranger_rf <- function(X, Y,
           mtry = mtry_,
           num.trees = num_trees_
         )
-        # correlate out-of-bag (OOB) predictions (asymptotically equivalent to 
-        # LOOCV on large samples) with observed values
+        # correlate out-of-bag (OOB) predictions (almost asymptotically 
+		# equivalent to LOOCV on large samples) with observed values
         acc_ <- cor(rf_model$predictions, Y)
         names(acc_) <- as.character(mtry_)
         acc_
@@ -572,7 +571,8 @@ tune_eps_ksvm_reg <- function(X, Y, kpar_, type_, kernel_, c_par_,
   ))
 }
 
-# function which tunes the epsilon hyperparameter for support vector regression
+# function which parallelizes the tuning of the epsilon hyperparameter 
+# for support vector regression
 tune_eps_ksvm_reg_parallel <- function(X, Y, kpar_, type_, kernel_, c_par_,
                                        epsilon_grid_, n_folds_, pkgs_to_export_) {
   expected_loss_grid_ <- rep(Inf, length(epsilon_grid_))
@@ -726,15 +726,3 @@ reduce_genotype_matrix <- function(genotype_matrix, n) {
   # return the reduced genotype matrix
   return(reduced_matrix)
 }
-
-# # example usage
-# train_genotypes <- matrix(c(1, 0, 0, 1, 1, 0), nrow = 2, byrow = TRUE)
-# test_genotype <- c(0, 1, 0)
-#
-# # calculate the weighted sum of genotype columns for the test genotype
-# result <- sum_weighted_genotypes(train_genotypes, test_genotype)
-# print(result)
-#
-# # example usage for reducing genotype matrix
-# reduced_matrix <- reduce_genotype_matrix(train_genotypes, 2)
-# print(reduced_matrix)
