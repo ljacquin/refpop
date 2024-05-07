@@ -47,7 +47,7 @@ source("../../functions.R")
 geno_dir_path <- "../../data/genotype_data/"
 pheno_dir_path <- "../../data/phenotype_data/"
 progeny_data_path <- "../../data/progeny_data/"
-output_geno_graphics_path <- "../../data/graphics/geno_graphics/"
+output_geno_graphics_path <- "../../data/graphics/genotype_graphics/"
 
 bed_file <- paste0(geno_dir_path, "refpop_genotype.bed")
 bim_file <- paste0(geno_dir_path, "refpop_genotype.bim")
@@ -131,6 +131,9 @@ if (read_with_bigsnpr) {
   colnames(geno_df) <- map_df$marker.ID
   geno_df$Genotype <- fam_df$sample.ID
   geno_df <- geno_df %>% select(Genotype, everything())
+  if (!file.exists(paste0(geno_dir_path, "genotype_data.csv"))) {
+    fwrite(geno_df, paste0(geno_dir_path, "genotype_data.csv"))
+  }
 }
 
 # possible other way to read plink genotype data but
@@ -498,5 +501,4 @@ colnames(phased_geno_split_df) <- rep(genotype_names, each = 2)
 
 # add chromosome number column
 phased_geno_split_df <- cbind(chromosome_num_col_, phased_geno_split_df)
-colnames(phased_geno_split_df)[1] <- 'chromosome'
-
+colnames(phased_geno_split_df)[1] <- "chromosome"

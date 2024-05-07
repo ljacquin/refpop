@@ -463,3 +463,278 @@ split_column <- function(col) {
     allele2 = as.integer(allele2)
   ))
 }
+
+# function which tune mtry for ranger random foest
+tune_mtry_ranger_rf <- function(X, Y, 
+                                mtry_grid_,
+                                num_trees_ = 500,
+                                pkgs_to_export_
+                                ) {
+  # initialize the cluster
+  cl <- makeCluster(detectCores())
+  registerDoParallel(cl)
+  tryCatch(
+    {
+      vect_acc_ <- foreach(mtry_ = mtry_grid_, .combine = c,
+                           .packages = pkgs_to_export_) %dopar% {
+        # build model on train data
+        rf_model <- ranger(
+          y = Y,
+          x = X,
+          mtry = mtry_,
+          num.trees = num_trees_
+        )
+        # correlate out-of-bag (OOB) predictions (asymptotically equivalent to 
+        # LOOCV on large samples) with observed values
+        acc_ <- cor(rf_model$predictions, Y)
+        names(acc_) <- as.character(mtry_)
+        acc_
+      }
+    },
+    error = function(e) {
+      cat(
+        "Error with : ", conditionMessage(e), "\n"
+      )
+    }
+  )
+  # stop the cluster
+  stopCluster(cl)
+  return(list(
+    "vect_acc_" = vect_acc_,
+    "opt_mtry" = as.numeric(names(which.max(vect_acc_)))
+  ))
+}
+
+# function which tunes the epsilon hyperparameter for support vector regression
+tune_eps_ksvm_reg <- function(X, Y, kpar_, type_, kernel_, c_par_,
+                              epsilon_grid_, n_folds_) {
+  expected_loss_grid_ <- rep(Inf, length(epsilon_grid_))
+  n <- length(Y)
+  Folds <- cvFolds(n, n_folds_, type = "consecutive")
+
+  tryCatch(
+    {
+      l <- 1
+      for (eps_ in epsilon_grid_)
+      {
+        vect_loss_folds <- rep(0, n_folds_)
+
+        for (fold_ in 1:n_folds_)
+        {
+          idx_fold_ <- which(Folds$which == fold_)
+
+          # valid set
+          y_val_ <- Y[idx_fold_]
+          x_val_ <- X[idx_fold_, ]
+
+          # train set
+          y_train_ <- Y[-idx_fold_]
+          x_train_ <- X[-idx_fold_, ]
+
+          # build ksvm model on train set
+          ksvm_model <- ksvm(
+            x = X_minus_fold_, y = Y_minus_fold_, kpar = kpar_,
+            type = type_, kernel = kernel_,
+            C = c_par_, epsilon = eps_
+          )
+
+          f_hat_val_ <- predict(ksvm_model, x_val_)
+
+          # loss for fold_
+          vect_loss_folds[fold_] <- sum((y_val_ - f_hat_val_)^2)
+        }
+
+        expected_loss_grid_[l] <- mean(vect_loss_folds)
+        l <- l + 1
+      }
+    },
+    error = function(e) {
+      cat(
+        "Error with : ", conditionMessage(e), "\n"
+      )
+    }
+  )
+
+  # get the optimal epsilon
+  optimal_eps_ <- epsilon_grid_[which.min(expected_loss_grid_)]
+
+  # train the "optimal" model
+  tuned_model <- ksvm(
+    x = X, y = Y, kpar = kpar_, type = type_,
+    kernel = kernel_, C = c_par_,
+    epsilon = optimal_eps_
+  )
+
+  return(list(
+    "tuned_ksvm" = tuned_model, "optimal_eps_" = optimal_eps_,
+    "expected_loss_grid_" = expected_loss_grid_,
+    "epsilon_grid_" = epsilon_grid_
+  ))
+}
+
+# function which tunes the epsilon hyperparameter for support vector regression
+tune_eps_ksvm_reg_parallel <- function(X, Y, kpar_, type_, kernel_, c_par_,
+                                       epsilon_grid_, n_folds_, pkgs_to_export_) {
+  expected_loss_grid_ <- rep(Inf, length(epsilon_grid_))
+  n <- length(Y)
+  Folds <- cvFolds(n, n_folds_, type = "consecutive")
+
+  # initialize the cluster
+  cl <- makeCluster(detectCores())
+  registerDoParallel(cl)
+  tryCatch(
+    {
+      expected_loss_grid_ <- foreach(
+        eps_ = epsilon_grid_, .packages = pkgs_to_export_,
+        .combine = "c"
+      ) %dopar% {
+        vect_loss_folds <- foreach(fold_ = 1:n_folds_, .combine = "c") %dopar% {
+          idx_fold_ <- which(Folds$which == fold_)
+
+          # valid set
+          y_val_ <- Y[idx_fold_]
+          x_val_ <- X[idx_fold_, ]
+
+          # train set
+          y_train_ <- Y[-idx_fold_]
+          x_train_ <- X[-idx_fold_, ]
+
+          # build ksvm model on train set
+          ksvm_model <- ksvm(
+            x = x_train_, y = y_train_,
+            scaled = F, type = type_,
+            kernel = kernel_,
+            kpar = kpar_, C = c_par_, epsilon = eps_
+          )
+
+          f_hat_val_ <- predict(ksvm_model, x_val_)
+
+          # loss for fold_
+          sum((y_val_ - f_hat_val_)^2)
+        }
+        mean(vect_loss_folds)
+      }
+    },
+    error = function(e) {
+      cat(
+        "Error with : ", conditionMessage(e), "\n"
+      )
+    }
+  )
+
+  # stop the cluster
+  stopCluster(cl)
+
+  # get the optimal epsilon
+  optimal_eps_ <- epsilon_grid_[which.min(expected_loss_grid_)]
+
+  # train the "optimal" model
+  tuned_model <- ksvm(
+    x = X, y = Y,
+    scaled = F,
+    kpar = kpar_, type = type_,
+    kernel = kernel_, C = c_par_,
+    epsilon = optimal_eps_
+  )
+
+  return(list(
+    "tuned_ksvm" = tuned_model, "optimal_eps_" = optimal_eps_,
+    "expected_loss_grid_" = expected_loss_grid_,
+    "epsilon_grid_" = epsilon_grid_
+  ))
+}
+
+# function which remove monomorphic markers
+remove_monomorphic_markers <- function(geno_df) {
+  # identify monomorphic markers
+  monomorphic_markers <- apply(
+    geno_df[, -match("Genotype", colnames(geno_df))],
+    2, function(col) length(unique(col)) == 1
+  )
+
+  # filter the monomorphic markers
+  geno_df_filtered <- geno_df[, !monomorphic_markers]
+
+  # get the names of the monomorphic markers
+  monomorphic_marker_names <- colnames(geno_df)[monomorphic_markers]
+
+  # return the filtered data frame and the list of monomorphic markers
+  return(list(
+    "filtered_df" = geno_df_filtered,
+    "monomorphic_markers" = monomorphic_marker_names
+  ))
+}
+
+
+# function to remove columns with variance below a threshold
+remove_low_variance_columns <- function(geno_df, threshold) {
+  # calculate variance for each column
+  variances <- apply(geno_df[, -match("Genotype", colnames(geno_df))], 2, var)
+
+  # identify columns with variance below the threshold
+  low_variance_columns <- variances < threshold
+
+  # filter out low variance columns
+  geno_df_filtered <- geno_df[, !low_variance_columns]
+
+  # get the names of the low variance columns
+  low_variance_column_names <- colnames(geno_df)[low_variance_columns]
+
+  # return the filtered data frame and the list of low variance column names
+  return(list(
+    "filtered_df" = geno_df_filtered,
+    "low_variance_columns" = low_variance_column_names
+  ))
+}
+
+# function to calculate the weighted sum of genotype columns without weights
+sum_weighted_genotypes <- function(train_genotypes, test_genotype) {
+  # calculate the Hamming distance between the test genotype and every genotype in the training data
+  hamming_distances <- apply(train_genotypes, 1, function(row) hamming.distance(test_genotype, row))
+
+  # use Hamming distance as inverse weighting
+  weights <- 1 / (hamming_distances + 1)
+
+  # weighted sum of genotypes
+  weighted_sums <- colSums(weights * train_genotypes)
+
+  # return the weighted sums of genotypes for the test genotype
+  return(weighted_sums)
+}
+
+# function to reduce genotype matrix by chunks of size n
+reduce_genotype_matrix <- function(genotype_matrix, n) {
+  # number of columns in the genotype matrix
+  n_cols <- ncol(genotype_matrix)
+
+  # number of chunks
+  n_chunks <- n_cols %/% n
+
+  # initialize a matrix to store the reduced genotypes
+  reduced_matrix <- matrix(0, nrow = nrow(genotype_matrix), ncol = n_chunks)
+
+  # loop over each chunk
+  for (i in 1:n_chunks) {
+    # Define the start and end columns for the current chunk
+    start_col <- (i - 1) * n + 1
+    end_col <- i * n
+
+    # Reduce the chunk by summing up columns
+    reduced_matrix[, i] <- rowSums(genotype_matrix[, start_col:end_col])
+  }
+
+  # return the reduced genotype matrix
+  return(reduced_matrix)
+}
+
+# # example usage
+# train_genotypes <- matrix(c(1, 0, 0, 1, 1, 0), nrow = 2, byrow = TRUE)
+# test_genotype <- c(0, 1, 0)
+#
+# # calculate the weighted sum of genotype columns for the test genotype
+# result <- sum_weighted_genotypes(train_genotypes, test_genotype)
+# print(result)
+#
+# # example usage for reducing genotype matrix
+# reduced_matrix <- reduce_genotype_matrix(train_genotypes, 2)
+# print(reduced_matrix)

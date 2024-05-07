@@ -28,7 +28,7 @@ raw_pheno_file_path <- paste0(pheno_dir_path, "phenotype_raw_data.csv")
 pheno_out_dir_path <- paste0(pheno_dir_path, "outliers_per_env_phenotypes/")
 pheno_out_file_path <- paste0(pheno_dir_path, "phenotype_raw_data_outliers.csv")
 pheno_no_out_file_path <- paste0(pheno_dir_path, "phenotype_raw_data_no_outliers.csv")
-output_pheno_graphics_path <- "../../data/graphics/pheno_graphics/"
+output_pheno_graphics_path <- "../../data/graphics/phenotype_graphics/"
 
 # define selected_traits_ and vars_to_keep_ for output
 selected_traits_ <- c(
