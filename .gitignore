@@ -8,3 +8,8 @@ references/'~BROMIUM'
 refpop_data_analysis/src/.Rhistory
 refpop_data_analysis/src/.RData
 refpop_data_analysis/old_/*
+refpop_predictive_modeling/old_/*
+functions_dopar.R
+functions_future.R
+refpop_predictive_modeling/src/refpop_genomic_prediction_and_analysis_dopar_parallelized.R
+refpop_predictive_modeling/src/refpop_genomic_prediction_and_analysis_future_parallelized.R

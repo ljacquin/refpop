@@ -28,7 +28,7 @@ source("../../functions.R")
 pheno_dir_path_ <- "../../data/phenotype_data/"
 pheno_file_path_ <- paste0(pheno_dir_path_, "phenotype_raw_data_no_outliers.csv")
 spats_out_file_path <- paste0(pheno_dir_path_, "spats_per_env_adjusted_phenotypes/")
-output_pheno_graphics_path <- "../../data/graphics/pheno_graphics/"
+output_pheno_graphics_path <- "../../data/graphics/phenotype_graphics/"
 
 # define function(s) and package(s) to export for parallelization
 func_to_export_ <- c("fread")

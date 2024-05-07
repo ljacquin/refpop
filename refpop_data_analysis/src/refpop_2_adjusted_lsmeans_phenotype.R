@@ -41,7 +41,7 @@ source("../../functions.R")
 
 # set paths
 pheno_dir_path <- "../../data/phenotype_data/"
-output_pheno_graphics_path <- "../../data/graphics/pheno_graphics/"
+output_pheno_graphics_path <- "../../data/graphics/phenotype_graphics/"
 spats_adj_pheno_path <- paste0(pheno_dir_path, "spats_per_env_adjusted_phenotypes/")
 
 # define selected variables

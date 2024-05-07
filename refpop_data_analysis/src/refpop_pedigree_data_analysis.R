@@ -21,7 +21,7 @@ source("../../functions.R")
 pedig_dir_path <- "../../data/pedigree_data/"
 pheno_dir_path <- "../../data/phenotype_data/"
 geno_dir_path <- "../../data/genotype_data/"
-output_pedig_graphics_path <- "../../data/graphics/pedig_graphics/"
+output_pedig_graphics_path <- "../../data/graphics/pedigree_graphics/"
 
 # umap parameters, most sensitive ones
 random_state_umap_ <- 15 
