@@ -24,7 +24,6 @@ library(stringr)
 library(lme4)
 library(tidyr)
 library(lsmeans)
-
 # set options to increase memory and suppress warnings
 options(expressions = 5e5)
 options(warn = -1)
@@ -37,12 +36,14 @@ min_dist_ <- 0.1
 
 # detect and set script path automatically, and source functions
 setwd(dirname(getActiveDocumentContext()$path))
-source("../../functions.R")
+source("../functions.R")
 
 # set paths
+# input and output data paths
 pheno_dir_path <- "../../data/phenotype_data/"
-output_pheno_graphics_path <- "../../data/graphics/phenotype_graphics/"
 spats_adj_pheno_path <- paste0(pheno_dir_path, "spats_per_env_adjusted_phenotypes/")
+# output result path for phenotype graphics
+output_pheno_graphics_path <- "../../results/graphics/phenotype_graphics/"
 
 # define selected variables
 vars_to_keep_ <- c("Envir", "Management", "Genotype")
@@ -235,12 +236,15 @@ if (length(idx_exclu_pseudo_trait_) > 0) {
 traits <- names(multi_env_clonal_h2_traits)
 values <- as.numeric(multi_env_clonal_h2_traits)
 
-# create the bar chart
-bar_plot <- plot_ly(
+# create the scatter plot with diamond markers
+scatter_plot <- plot_ly(
   x = traits,
   y = values,
-  type = "bar",
+  type = "scatter",
+  mode = "markers",
   marker = list(
+    symbol = "diamond",
+    size = 10,
     color = "rgb(158,202,225)",
     line = list(
       color = "rgb(8,48,107)",
@@ -251,12 +255,12 @@ bar_plot <- plot_ly(
   layout(
     title = "Multi-location clonal mean heritability (h2) computed from adjusted phenotypes",
     xaxis = list(title = "Trait"),
-    yaxis = list(title = "Heritability (h2)")
+    yaxis = list(title = "Heritability (h2)", range = c(0, 1.0))
   )
 
-saveWidget(bar_plot, file = paste0(
+saveWidget(scatter_plot, file = paste0(
   output_pheno_graphics_path,
-  "multi_location_clonal_h2_bar_plot_multi_location_clonal_mean_h2.html"
+  "multi_location_clonal_h2_scatter_plot_multi_location_clonal_mean_h2.html"
 ))
 
 # get family and origin informations

@@ -10,14 +10,11 @@ if (install_other_requirements) {
   install.packages("BiocManager")
   library(BiocManager)
   BiocManager::install("snpStats")
-  BiocManager::install("M3C")
   install.packages("remotes")
   remotes::install_github("hemstrow/snpR")
   py_install("umap-learn", pip = T, pip_ignore_installed = T)
 }
 library(snpR)
-library(M3C)
-library(Rtsne)
 library(snpStats)
 library(data.table)
 library(plotly)
@@ -27,27 +24,26 @@ library(dplyr)
 library(htmlwidgets)
 library(rstudioapi)
 library(stringr)
-library(lsmeans)
 library(foreach)
 library(doParallel)
 
 # set options to increase memory and suppress warnings
 options(expressions = 5e5)
 options(warn = -1)
-emm_options(rg.limit = 20000)
 
 # detect the number of cores to use
 num_cores <- detectCores()
 
 # detect and set script path automatically, and source functions
 setwd(dirname(getActiveDocumentContext()$path))
-source("../../functions.R")
+source("../functions.R")
 
 # set paths and booleans
 geno_dir_path <- "../../data/genotype_data/"
 pheno_dir_path <- "../../data/phenotype_data/"
 progeny_data_path <- "../../data/progeny_data/"
-output_geno_graphics_path <- "../../data/graphics/genotype_graphics/"
+# output result path for genotype graphics
+output_geno_graphics_path <- "../../results/graphics/genotype_graphics/"
 
 bed_file <- paste0(geno_dir_path, "refpop_genotype.bed")
 bim_file <- paste0(geno_dir_path, "refpop_genotype.bim")

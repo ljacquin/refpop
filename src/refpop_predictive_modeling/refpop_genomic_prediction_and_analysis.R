@@ -19,7 +19,6 @@ library(rgl)
 library(cvTools)
 library(ggplot2)
 library(plotly)
-library(ranger)
 library(htmlwidgets)
 library(dplyr)
 library(reticulate)
@@ -42,6 +41,8 @@ if (install_other_requirements) {
 }
 library(KRMM)
 library(kernlab)
+library(glmnet)
+library(ranger)
 library(tensorflow)
 library(keras3)
 library(umap)
@@ -50,30 +51,32 @@ py_module_available("keras") # must return TRUE
 py_module_available("tensorflow") # must return TRUE
 py_discover_config("keras") # more info on the python env, tf and keras
 setwd(dirname(getActiveDocumentContext()$path)) # set automated wd detection for script
-source("../../functions.R")
+source("../functions.R")
 
 # define function(s) and package(s) to export for parallelization
 pkgs_to_export_ <- c(
   "ranger",
   "kernlab",
   "KRMM",
+  "glmnet",
   "foreach"
 )
-
-# set paths
+# set input paths
 geno_dir_path <- "../../data/genotype_data/"
 pheno_dir_path <- "../../data/phenotype_data/"
-output_pred_results_path <- "../../data/genomic_pred_result_data/"
-output_pred_graphics_path <- "../../data/graphics/genomic_pred_result_graphics/"
+
+# output result path for genotype graphics
+output_pred_results_path <- "../../results/genomic_prediction/"
+output_pred_graphics_path <- "../../results/graphics/genomic_prediction_graphics/"
 
 # define trait_
 trait_ <- "Harvest_date" # "Flowering_full" # "Harvest_date"
 
 # define shift seed value by
-shift_seed_by_ <- 10
+mult_seed_by_ <- 10
 
 # define number of shuffles
-n_shuff_ <- 5
+n_shuff_ <- 100
 
 # color palette for families (28 counts)
 color_palette_family <- c(
@@ -152,23 +155,6 @@ idx_tune_hyperpara <- sample(1:n, size = floor(1 / 3 * n), replace = F)
 
 # original variables
 
-# tune mtry parameter for ranger random forest
-mtry_grid_ <- floor(seq(floor(ncol(geno_df_) / 10), floor(ncol(geno_df_) / 3),
-  length.out = 4
-))
-list_opt_mtry_ <- tune_mtry_ranger_rf(
-  X = geno_df_[idx_tune_hyperpara, ],
-  Y = pheno_df[idx_tune_hyperpara, trait_],
-  mtry_grid_,
-  num_trees_ = 1000,
-  pkgs_to_export_
-)
-plot(as.numeric(names(list_opt_mtry_$vect_acc_)),
-  as.numeric(list_opt_mtry_$vect_acc_),
-  type = "l"
-)
-opt_mtry <- list_opt_mtry_$opt_mtry
-
 # tune gaussian svr on original variables
 
 # A correct value for c_par according to Cherkassy and Ma (2004).
@@ -206,7 +192,6 @@ plot(tune_gaussian_krmm_model$rate_decay_grid,
 )
 opt_h <- tune_gaussian_krmm_model$optimal_h
 
-with_progress({
 # detect number of cores and make cluster
 cl <- makeCluster(detectCores())
 registerDoParallel(cl)
@@ -216,13 +201,13 @@ df_result_ <- foreach(
   shuff_ = 1:n_shuff_, .packages = pkgs_to_export_,
   .combine = rbind
 ) %dopar% {
-  set.seed(shuff_ + shift_seed_by_)
+  set.seed(shuff_ * mult_seed_by_)
   print(paste0("shuff_ : ", shuff_))
   idx_train <- sample(1:n, size = floor(2 / 3 * n), replace = FALSE)
 
   # initialize vector of results for all tested models
   result <- c(
-    "RF" = NA, "SVR" = NA, "RKHS" = NA, "GBLUP" = NA,
+    "RF" = NA, "SVR" = NA, "RKHS" = NA, "GBLUP" = NA, "LASSO" = NA,
     "SVR_support_vectors" = NA
   )
 
@@ -232,7 +217,7 @@ df_result_ <- foreach(
   rf_model <- ranger(
     y = pheno_df[idx_train, trait_],
     x = geno_df_[idx_train, ],
-    mtry = opt_mtry,
+    mtry = ncol(geno_df_) / 3,
     num.trees = 1000
   )
   # make prediction for test data and save results
@@ -310,16 +295,32 @@ df_result_ <- foreach(
     pheno_df[-idx_train, trait_]
   )
 
+  # train lasso on original variables
+  cv_fit_lasso_model <- cv.glmnet(
+    intercept = TRUE, y = pheno_df[idx_train, trait_],
+    x = as.matrix(geno_df_[idx_train, ]),
+    type.measure = "mse", alpha = 1.0, nfold = 10,
+    parallel = TRUE
+  )
+  # make prediction for test data and save results
+  f_hat_lasso_test <- predict(cv_fit_lasso_model,
+    newx = as.matrix(geno_df_[-idx_train, ]),
+    s = "lambda.min"
+  )
+  result[["LASSO"]] <- cor(
+    f_hat_lasso_test,
+    pheno_df[-idx_train, trait_]
+  )
+  
   return(result)
 }
 
 # stop cluster
 stopCluster(cl)
-})
 
 # create directory for trait_ graphics if it does not exist
-if( !dir.exists(paste0(output_pred_graphics_path, trait_, '/')) ){
-  dir.create(paste0(output_pred_graphics_path, trait_, '/'))
+if (!dir.exists(paste0(output_pred_graphics_path, trait_, "/"))) {
+  dir.create(paste0(output_pred_graphics_path, trait_, "/"))
 }
 
 # convert to data frame format
@@ -465,7 +466,7 @@ barplot_sv_percent_orig <- plot_ly(df_percent_origin,
   )
 # save barplot_sv_percent_orig graphics
 saveWidget(barplot_sv_percent_orig, file = paste0(
-  output_pred_graphics_path, trait_, 
+  output_pred_graphics_path, trait_,
   "/percentage_breakdown_for_origins_of_support_vectors_",
   trait_, "_", snp_sample_size_, "_SNP", ".html"
 ))
@@ -518,7 +519,7 @@ barplot_sv_percent_fam <- plot_ly(df_percent_family,
   )
 # save barplot_sv_percent_fam graphics
 saveWidget(barplot_sv_percent_fam, file = paste0(
-  output_pred_graphics_path, trait_, 
+  output_pred_graphics_path, trait_,
   "/percentage_breakdown_for_families_of_support_vectors_",
   trait_, "_", snp_sample_size_, "_SNP", ".html"
 ))

@@ -25,22 +25,29 @@ spat_hetero_env_correct_trait <- function(trait_, envir_, df_,
         df_envir_ <- merge(df_envir_, spats_geno_pred, by = "Genotype", all = TRUE)
         df_envir_$spats_adj_pheno <- df_envir_$spats_geno_pred_values +
           df_envir_$spats_residuals
-        return(df_envir_)
+        return(list(
+          "df_envir_" = df_envir_,
+          "message_" = "no error"
+        ))
       } else {
-        return(data.frame())
+        return(list(
+          "df_envir_" = data.frame(),
+          "message_" = "no data available for this environment"
+        ))
       }
     },
     error = function(e) {
-      return(data.frame())
-      cat(
-        "Error with spat_hetero_env_correct_trait,
-      here is the possible issue with data and/or computation : ",
-        conditionMessage(e), "\n"
-      )
+      return(list(
+        "df_envir_" = data.frame(),
+        "message_" = paste0(
+          "Error with spat_hetero_env_correct_trait, ",
+          "here is the possible issue with data or computation : ",
+          conditionMessage(e)
+        )
+      ))
     }
   )
 }
-
 
 # function which re-orders column names according to a specified order
 reordered_cols <- function(col_names, prefix_order_patterns) {
@@ -132,7 +139,7 @@ impute_mean <- function(x) {
   return(x)
 }
 
-# function which computes the number of necessary components to reach at 
+# function which computes the number of necessary components to reach at
 # least percent_explained_variance_
 n_comp_required_for_percent_explained_var <- function(facto_mine_pca_model_,
                                                       percent_explained_var) {
@@ -348,18 +355,19 @@ split_column <- function(col) {
 }
 
 # function which tunes mtry for ranger random forest
-tune_mtry_ranger_rf <- function(X, Y, 
+tune_mtry_ranger_rf <- function(X, Y,
                                 mtry_grid_,
                                 num_trees_ = 500,
-                                pkgs_to_export_
-                                ) {
+                                pkgs_to_export_) {
   # initialize the cluster
   cl <- makeCluster(detectCores())
   registerDoParallel(cl)
   tryCatch(
     {
-      vect_acc_ <- foreach(mtry_ = mtry_grid_, .combine = c,
-                           .packages = pkgs_to_export_) %dopar% {
+      vect_mse_ <- foreach(
+        mtry_ = mtry_grid_, .combine = c,
+        .packages = pkgs_to_export_
+      ) %dopar% {
         # build model on train data
         rf_model <- ranger(
           y = Y,
@@ -367,11 +375,11 @@ tune_mtry_ranger_rf <- function(X, Y,
           mtry = mtry_,
           num.trees = num_trees_
         )
-        # correlate out-of-bag (OOB) predictions (almost asymptotically 
+        # correlate out-of-bag (OOB) predictions (almost asymptotically
         # equivalent to LOOCV on large samples) with observed values
-        acc_ <- cor(rf_model$predictions, Y)
-        names(acc_) <- as.character(mtry_)
-        acc_
+        mse_ <- mean((rf_model$predictions - Y)^2)
+        names(mse_) <- as.character(mtry_)
+        mse_
       }
     },
     error = function(e) {
@@ -383,8 +391,8 @@ tune_mtry_ranger_rf <- function(X, Y,
   # stop the cluster
   stopCluster(cl)
   return(list(
-    "vect_acc_" = vect_acc_,
-    "opt_mtry" = as.numeric(names(which.max(vect_acc_)))
+    "vect_mse_" = vect_mse_,
+    "opt_mtry" = as.numeric(names(which.min(vect_mse_)))
   ))
 }
 
@@ -504,10 +512,11 @@ remove_low_variance_columns <- function(geno_df, threshold) {
 
 # function to calculate the weighted sum of genotype columns without weights
 sum_weighted_genotypes <- function(train_genotypes, test_genotype) {
-  # calculate the Hamming distance between the test genotype and 
+  # calculate the Hamming distance between the test genotype and
   # every genotype in the training data
-  hamming_distances <- apply(train_genotypes, 1, function(row) 
-    hamming.distance(test_genotype, row))
+  hamming_distances <- apply(train_genotypes, 1, function(row) {
+    hamming.distance(test_genotype, row)
+  })
 
   # use Hamming distance as inverse weighting
   weights <- 1 / (hamming_distances + 1)
@@ -542,4 +551,34 @@ reduce_genotype_matrix <- function(genotype_matrix, n) {
 
   # return the reduced genotype matrix
   return(reduced_matrix)
+}
+
+# function which regroups and unlists results
+regroup_unlist_results <- function(miss_data_singular_model_h2_out_list_) {
+  # initialize a list to save results
+  result_list <- list()
+
+  tryCatch(
+    {
+      # iterate over trait names
+      for (trait_name in names(miss_data_singular_model_h2_out_list_)) {
+        # get error messages for each trait
+        error_messages <- miss_data_singular_model_h2_out_list_[[trait_name]]
+
+        # add name to each error message
+        trait_error_messages <- paste(trait_name, ": ", error_messages)
+
+        # combine results for each trait
+        result_list <- c(result_list, trait_error_messages)
+      }
+    },
+    error = function(e) {
+      cat(
+        "Error with : ", conditionMessage(e), "\n"
+      )
+    }
+  )
+
+  # return unlist result_list
+  return(unlist(result_list))
 }

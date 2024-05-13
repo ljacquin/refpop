@@ -20,15 +20,23 @@ library(ggplot2)
 library(plotly)
 options(warn = -1)
 setwd(dirname(getActiveDocumentContext()$path))
-source("../../functions.R")
+source("../functions.R")
+# set options to increase memory and suppress warnings
+options(expressions = 5e5)
+options(warn = -1)
 
 # set paths
+# input and output data paths
 pheno_dir_path <- "../../data/phenotype_data/"
 raw_pheno_file_path <- paste0(pheno_dir_path, "phenotype_raw_data.csv")
-pheno_out_dir_path <- paste0(pheno_dir_path, "outliers_per_env_phenotypes/")
-pheno_out_file_path <- paste0(pheno_dir_path, "phenotype_raw_data_outliers.csv")
-pheno_no_out_file_path <- paste0(pheno_dir_path, "phenotype_raw_data_no_outliers.csv")
-output_pheno_graphics_path <- "../../data/graphics/phenotype_graphics/"
+pheno_no_outliers_file_path <- paste0(pheno_dir_path, "phenotype_raw_data_no_outliers.csv")
+# outlier results data paths
+pheno_outliers_results_path <- "../../results/phenotype_outlier_detection/"
+pheno_outliers_dir_path <- paste0(pheno_outliers_results_path, "outliers_per_env_phenotypes/")
+pheno_outliers_file_path <- paste0(pheno_outliers_results_path, "phenotype_raw_data_outliers.csv")
+# output result path for phenotype graphics
+output_pheno_graphics_path <- "../../results/graphics/phenotype_graphics/"
+
 
 # define selected_traits_ and vars_to_keep_ for output
 selected_traits_ <- c(
@@ -56,7 +64,7 @@ size_value_ <- 20
 alpha_ <- 0.01
 
 # plot confidence ellipse for outliers
-plot_conf_ellipse_out_ <- TRUE
+plot_conf_ellipse_outliers_ <- TRUE
 
 # umap parameters, most sensitive ones
 use_umap_ <- F
@@ -81,8 +89,8 @@ if (use_miss_forest_imput_for_outlier_detection_ &&
 
   df_proxy_[, selected_traits_] <- missForest(df_proxy_[, selected_traits_],
     parallelize = "forests",
-    maxiter = 5,
-    ntree = 50,
+    maxiter = 10,
+    ntree = 100,
     verbose = T
   )$ximp
 
@@ -110,8 +118,8 @@ env_list_ <- reordered_cols(unique(df_proxy_$Envir),
 )
 
 # define list of rownames which will be used to delete outliers from df_raw_
-list_rownames_out_env_ <- vector("list", length(env_list_))
-names(list_rownames_out_env_) <- env_list_
+list_rownames_outliers_env_ <- vector("list", length(env_list_))
+names(list_rownames_outliers_env_) <- env_list_
 
 for (env_ in env_list_) {
   print(env_)
@@ -120,19 +128,19 @@ for (env_ in env_list_) {
   df_proxy_env_ <- df_proxy_[df_proxy_$Envir == env_, ]
 
   # 1st outlier detection test based on data knowledge
-  idx_rule_one_out_ <- NULL
+  idx_rule_one_outliers_ <- NULL
   if (test_sample_size_sup_to_fruit_number_) {
-    idx_rule_one_out_ <- which(df_raw_env_$Sample_size > df_raw_env_$Fruit_number)
+    idx_rule_one_outliers_ <- which(df_raw_env_$Sample_size > df_raw_env_$Fruit_number)
   }
 
   # 2nd outlier detection test based on data knowledge
-  idx_rule_two_out_ <- NULL
+  idx_rule_two_outliers_ <- NULL
   if (test_sample_size_sup_to_value_) {
-    idx_rule_two_out_ <- which(df_raw_env_$Sample_size > size_value_)
+    idx_rule_two_outliers_ <- which(df_raw_env_$Sample_size > size_value_)
   }
 
   # 3rd outlier detection test based on PCA and Mahalanobis distance
-  idx_three_out_ <- NULL
+  idx_three_outliers_ <- NULL
   tryCatch(
     {
       if (use_pca_dim_reduc) {
@@ -167,7 +175,7 @@ for (env_ in env_list_) {
       scale_ <- signif(sqrt(diag(mcd_obj$cov)), 2)
 
       maha_dist_threshold_ <- quantile(maha_dist_, probs = 1 - alpha_)
-      idx_three_out_ <- as.numeric(which(maha_dist_ > maha_dist_threshold_))
+      idx_three_outliers_ <- as.numeric(which(maha_dist_ > maha_dist_threshold_))
     },
 
     # if covariance matrix is singular:
@@ -182,55 +190,55 @@ for (env_ in env_list_) {
       )
 
       maha_dist_threshold_ <- quantile(maha_dist_, probs = 1 - alpha_)
-      idx_three_out_ <<- as.numeric(which(maha_dist_ > maha_dist_threshold_))
+      idx_three_outliers_ <<- as.numeric(which(maha_dist_ > maha_dist_threshold_))
     }
   )
 
   # get all outliers indices and df_raw_env_ outliers
-  idx_out_ <- sort(union(
-    union(idx_rule_one_out_, idx_rule_two_out_),
-    idx_three_out_
+  idx_outliers_ <- sort(union(
+    union(idx_rule_one_outliers_, idx_rule_two_outliers_),
+    idx_three_outliers_
   ))
-  df_raw_env_out_ <- df_raw_env_[idx_out_, ]
-  list_rownames_out_env_[[env_]] <- rownames(df_raw_env_out_)
+  df_raw_env_outliers_ <- df_raw_env_[idx_outliers_, ]
+  list_rownames_outliers_env_[[env_]] <- rownames(df_raw_env_outliers_)
 
   # get location and scale parameters used for outlier detection
   df_loc_scale_ <- data.frame(
     "trait" = names(location_),
-    "mean_used_for_out_detection" = location_,
-    "standard_deviation_used_for_out_detection" = scale_
+    "mean_used_for_outliers_detection" = location_,
+    "standard_deviation_used_for_outliers_detection" = scale_
   )
 
   # write results
-  fwrite(df_raw_env_out_, file = paste0(
-    pheno_out_dir_path, env_,
+  fwrite(df_raw_env_outliers_, file = paste0(
+    pheno_outliers_dir_path, env_,
     "_phenotype_outliers.csv"
   ))
   fwrite(df_loc_scale_,
     file = paste0(
-      pheno_out_dir_path, env_,
+      pheno_outliers_dir_path, env_,
       "_location_scale_parameters.csv"
     )
   )
 }
 
 # get all indices for outliers
-idx_out_df_raw_ <- as.numeric(unlist(list_rownames_out_env_))
+idx_outliers_df_raw_ <- as.numeric(unlist(list_rownames_outliers_env_))
 
 # write df_raw_ slice with outliers
-fwrite(df_raw_[idx_out_df_raw_, ],
-  file = pheno_out_file_path
+fwrite(df_raw_[idx_outliers_df_raw_, ],
+  file = pheno_outliers_file_path
 )
 
 # write df_raw_ slice without outliers
-fwrite(df_raw_[-idx_out_df_raw_, ],
-  file = pheno_no_out_file_path
+fwrite(df_raw_[-idx_outliers_df_raw_, ],
+  file = pheno_no_outliers_file_path
 )
 
 # plots
 
 # create a confidence ellipse for first env outlier detection
-if (plot_conf_ellipse_out_) {
+if (plot_conf_ellipse_outliers_) {
   # perform pca again but with graph = TRUE
 
   # get data for env_
@@ -242,19 +250,19 @@ if (plot_conf_ellipse_out_) {
       df_proxy_env_ <- df_proxy_[df_proxy_$Envir == env_, ]
 
       # 1st outlier detection test based on data knowledge
-      idx_rule_one_out_ <- NULL
+      idx_rule_one_outliers_ <- NULL
       if (test_sample_size_sup_to_fruit_number_) {
-        idx_rule_one_out_ <- which(df_raw_env_$Sample_size > df_raw_env_$Fruit_number)
+        idx_rule_one_outliers_ <- which(df_raw_env_$Sample_size > df_raw_env_$Fruit_number)
       }
 
       # 2nd outlier detection test based on data knowledge
-      idx_rule_two_out_ <- NULL
+      idx_rule_two_outliers_ <- NULL
       if (test_sample_size_sup_to_value_) {
-        idx_rule_two_out_ <- which(df_raw_env_$Sample_size > size_value_)
+        idx_rule_two_outliers_ <- which(df_raw_env_$Sample_size > size_value_)
       }
 
       # 3rd outlier detection test based on PCA and Mahalanobis distance
-      idx_three_out_ <- NULL
+      idx_three_outliers_ <- NULL
       tryCatch(
         {
           # compute pca to reduce the number of dimensions for Mahalanobis distance
@@ -281,7 +289,7 @@ if (plot_conf_ellipse_out_) {
           scale_ <- signif(sqrt(diag(mcd_obj$cov)), 2)
 
           maha_dist_threshold_ <- quantile(maha_dist_, probs = 1 - alpha_)
-          idx_three_out_ <- as.numeric(which(maha_dist_ > maha_dist_threshold_))
+          idx_three_outliers_ <- as.numeric(which(maha_dist_ > maha_dist_threshold_))
         },
 
         # if covariance matrix is singular:
@@ -295,14 +303,14 @@ if (plot_conf_ellipse_out_) {
             cov = cov_mat
           )
           maha_dist_threshold_ <- quantile(maha_dist_, probs = 1 - alpha_)
-          idx_three_out_ <<- as.numeric(which(maha_dist_ > maha_dist_threshold_))
+          idx_three_outliers_ <<- as.numeric(which(maha_dist_ > maha_dist_threshold_))
         }
       )
 
       # get all outliers indices and df_raw_env_ outliers
-      idx_out_ <- sort(union(
-        union(idx_rule_one_out_, idx_rule_two_out_),
-        idx_three_out_
+      idx_outliers_ <- sort(union(
+        union(idx_rule_one_outliers_, idx_rule_two_outliers_),
+        idx_three_outliers_
       ))
 
       # plot Mahalanobis dist against chi square with p = n_comp_required degrees of freedom to
@@ -381,8 +389,8 @@ if (plot_conf_ellipse_out_) {
       }
       colnames(pca_comp_mat) <- colnames_pca_
 
-      data_outliers <- pca_comp_mat[idx_out_, 1:n_comp]
-      data_non_outliers <- pca_comp_mat[-idx_out_, 1:n_comp]
+      data_outliers <- pca_comp_mat[idx_outliers_, 1:n_comp]
+      data_non_outliers <- pca_comp_mat[-idx_outliers_, 1:n_comp]
 
       ggplot() +
         geom_point(
@@ -419,8 +427,9 @@ if (plot_conf_ellipse_out_) {
         ylab(colnames_pca_[2]) +
         theme_minimal() +
         ggtitle(paste0(
-          "99%-confidence ellipse for phenotype outlier detection \n (based on PCA and Mahalanobis distance) for ",
-          env_
+          "Two dimensional 99%-confidence ellipse associated with ", env_,
+          ", for outlier \n detection in phenotypes using PCA and Mahalanobis distance across ",
+          ncol(pca_comp_mat), " dimensions."
         )) +
         theme(
           # title
@@ -449,9 +458,14 @@ if (plot_conf_ellipse_out_) {
 
       # add a column to indicate outliers
       pca_df_$Outlier_status <- NA
-      pca_df_$Outlier_status[idx_out_] <- "Outlier"
-      pca_df_$Outlier_status[-idx_out_] <- "Non outlier"
+      pca_df_$Outlier_status[idx_outliers_] <- "Outlier"
+      pca_df_$Outlier_status[-idx_outliers_] <- "Non outlier"
 
+      rgl.open()
+      view3d(
+        theta = 60, phi = 30, fov = 60, zoom = 1.5,
+        type = "userviewpoint"
+      )
       # create a new 3D plot
       plot3d(
         pca_df_[, -match(
@@ -460,13 +474,13 @@ if (plot_conf_ellipse_out_) {
         )],
         col = ifelse(pca_df_$Outlier_status == "Outlier", "red", "blue"),
         type = "s",
-        size = 3,
+        size = 4,
         main = paste0(
-          "Phenotype outlier detection (based on PCA and Mahalanobis distance) for ",
-          env_
-        )
+          "Three-dimensional 99%-confidence ellipse associated with ",
+          env_, " (", ncol(pca_comp_mat), " dimensions used for OD)"
+        ),
+        cex = 0.6
       )
-
       # draw the confidence ellipse
       ellipse <- ellipse3d(
         cov(pca_df_[, -match(
@@ -480,19 +494,21 @@ if (plot_conf_ellipse_out_) {
         level = 0.99
       )
       shade3d(ellipse, col = "pink", alpha = 0.5)
-
       # add legend
-      legend(
+      legend3d(
         "topright",
         legend = c("Outlier", "Non outlier"),
         col = c("red", "blue"),
-        pch = 16
+        pch = 16,
+        magnify = 2,
+        cex = 1.2
       )
       rgl.snapshot(paste0(
         output_pheno_graphics_path,
         "_outlier_detection/3d_plot_outlier_detection_",
         env_, ".png"
       ))
+      rgl.clear()
     })
   }
 }

@@ -15,13 +15,14 @@ library(stringr)
 
 # detect and set script path automatically, and source functions
 setwd(dirname(getActiveDocumentContext()$path))
-source("../../functions.R")
+source("../functions.R")
 
 # set paths
 pedig_dir_path <- "../../data/pedigree_data/"
 pheno_dir_path <- "../../data/phenotype_data/"
 geno_dir_path <- "../../data/genotype_data/"
-output_pedig_graphics_path <- "../../data/graphics/pedigree_graphics/"
+# output result path for pedigree graphics
+output_pedig_graphics_path <- "../../results/graphics/pedigree_graphics/"
 
 # umap parameters, most sensitive ones
 random_state_umap_ <- 15 
@@ -199,12 +200,12 @@ pheno_df <- as.data.frame(fread(paste0(
 # center and scale data for umap and replace few na (13 in dataframe)
 pheno_df[,selected_traits_] <- apply(scale(pheno_df[,selected_traits_], center = T,
                                      scale = T),2, impute_mean)
-pedig_pheno_df <- merge(pheno_df, pedig_incid_mat, by = 'Genotype', all = T)
+pedig_pheno_df <- merge(pheno_df, pedig_incid_mat, by = 'Genotype', all = F)
 
 # umap pedigree phenotype plots
 pedig_pheno_umap_2d <- data.frame(umap(
   pedig_pheno_df[
-    , -match(c("Genotype", "Family", "Origin"), colnames(pedig_pheno_df))
+    , -match("Genotype", colnames(pedig_pheno_df))
   ],
   n_components = 2,
   random_state = random_state_umap_,
