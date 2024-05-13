@@ -12,7 +12,6 @@ library(tidyr)
 library(htmlwidgets)
 library(rstudioapi)
 library(stringr)
-
 # detect and set script path automatically, and source functions
 setwd(dirname(getActiveDocumentContext()$path))
 source("../functions.R")
@@ -24,12 +23,6 @@ geno_dir_path <- "../../data/genotype_data/"
 # output result path for pedigree graphics
 output_pedig_graphics_path <- "../../results/graphics/pedigree_graphics/"
 
-# umap parameters, most sensitive ones
-random_state_umap_ <- 15 
-min_dist_ <- 0.1
-n_neighbors_umap_ <- 50 # Note : as for K-NN, the number of neighbors 
-                        # must be increased for sparse data
-
 # define selected_traits_ 
 selected_traits_ <- c(
   "Harvest_date", "Fruit_weight", "Fruit_number",
@@ -38,6 +31,12 @@ selected_traits_ <- c(
   "Flowering_begin", "Flowering_full", "Flowering_end",
   "Scab", "Powdery_mildew", "Weight_sample", "Sample_size"
 )
+
+# umap parameters, most sensitive ones
+random_state_umap_ <- 15 
+min_dist_ <- 0.1
+n_neighbors_umap_ <- 50 # Note : as for K-NN, the number of neighbors 
+# must be increased for sparse data
 
 # set color palette for families
 color_palette_family <- c(

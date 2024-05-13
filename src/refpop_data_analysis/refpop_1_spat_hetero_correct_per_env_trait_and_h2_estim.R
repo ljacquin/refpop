@@ -18,7 +18,7 @@ library(anytime)
 library(foreach)
 library(parallel)
 library(doParallel)
-options(warn = -1)
+# detect and set script path automatically, and source functions
 setwd(dirname(getActiveDocumentContext()$path))
 source("../functions.R")
 # set options to increase memory and suppress warnings
