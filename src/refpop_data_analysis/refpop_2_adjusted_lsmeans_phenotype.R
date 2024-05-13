@@ -24,19 +24,13 @@ library(stringr)
 library(lme4)
 library(tidyr)
 library(lsmeans)
+# detect and set script path automatically, and source functions
+setwd(dirname(getActiveDocumentContext()$path))
+source("../functions.R")
 # set options to increase memory and suppress warnings
 options(expressions = 5e5)
 options(warn = -1)
 emm_options(rg.limit = 20000)
-
-# umap parameters, most sensitive ones
-random_state_umap_ <- 15 # 15, 30 and 50
-n_neighbors_umap_ <- 15 # 15, 30, 50
-min_dist_ <- 0.1
-
-# detect and set script path automatically, and source functions
-setwd(dirname(getActiveDocumentContext()$path))
-source("../functions.R")
 
 # set paths
 # input and output data paths
@@ -48,6 +42,11 @@ output_pheno_graphics_path <- "../../results/graphics/phenotype_graphics/"
 # define selected variables
 vars_to_keep_ <- c("Envir", "Management", "Genotype")
 excluded_pseudo_trait_for_save_ <- "Sample_size"
+
+# umap parameters, most sensitive ones
+random_state_umap_ <- 15 # 15, 30 and 50
+n_neighbors_umap_ <- 15 # 15, 30, 50
+min_dist_ <- 0.1
 
 # threshold for removing columns with too much na
 col_na_thresh_ <- 0.3

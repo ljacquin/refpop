@@ -26,17 +26,14 @@ library(rstudioapi)
 library(stringr)
 library(foreach)
 library(doParallel)
-
-# set options to increase memory and suppress warnings
-options(expressions = 5e5)
-options(warn = -1)
-
-# detect the number of cores to use
-num_cores <- detectCores()
-
 # detect and set script path automatically, and source functions
 setwd(dirname(getActiveDocumentContext()$path))
 source("../functions.R")
+# set options to increase memory and suppress warnings
+options(expressions = 5e5)
+options(warn = -1)
+# detect the number of cores to use
+num_cores <- detectCores()
 
 # set paths and booleans
 geno_dir_path <- "../../data/genotype_data/"
@@ -53,12 +50,12 @@ read_with_bigsnpr <- TRUE
 read_with_snpStats <- FALSE # possible issue with the package or wrong usage
 perform_umap_ <- FALSE
 
+# define umap training and plot paraemeters
+
 # umap parameters, most sensitive ones
 random_state_umap_ <- 15
 n_neighbors_umap_ <- 15
 min_dist_ <- 0.1
-
-# define umap training and plot paraemeters
 
 # define refpop train data for umap : complete, accessions, progeny
 umap_refpop_train_data <- "complete"

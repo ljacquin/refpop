@@ -18,7 +18,7 @@ library(rgl)
 library(umap)
 library(ggplot2)
 library(plotly)
-options(warn = -1)
+# detect and set script path automatically, and source functions
 setwd(dirname(getActiveDocumentContext()$path))
 source("../functions.R")
 # set options to increase memory and suppress warnings
