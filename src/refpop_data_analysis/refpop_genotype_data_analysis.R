@@ -48,7 +48,7 @@ fam_file <- paste0(geno_dir_path, "refpop_genotype.fam")
 
 read_with_bigsnpr <- TRUE
 read_with_snpStats <- FALSE # possible issue with the package or wrong usage
-perform_umap_ <- FALSE
+perform_umap_ <- TRUE
 
 # define umap training and plot paraemeters
 
@@ -346,7 +346,7 @@ if (perform_umap_) {
     output_path_2d_umap <- paste0(
       output_geno_graphics_path,
       umap_refpop_train_data, "/",
-      umap_refpop_train_data, "_refpop_progeny_projected_umap_2d_",
+      umap_refpop_train_data, "_genotype_refpop_progeny_projected_umap_2d_",
       use_origin_family_or_genotype_as_label_,
       "_as_label.html"
     )
@@ -355,7 +355,7 @@ if (perform_umap_) {
     output_path_2d_umap <- paste0(
       output_geno_graphics_path,
       umap_refpop_train_data, "/",
-      umap_refpop_train_data, "_refpop_umap_2d_",
+      umap_refpop_train_data, "_genotype_refpop_umap_2d_",
       use_origin_family_or_genotype_as_label_,
       "_as_label.html"
     )
@@ -413,7 +413,7 @@ if (perform_umap_) {
     output_path_3d_umap <- paste0(
       output_geno_graphics_path,
       umap_refpop_train_data, "/",
-      umap_refpop_train_data, "_refpop_progeny_projected_umap_3d_",
+      umap_refpop_train_data, "_genotype_refpop_progeny_projected_umap_3d_",
       use_origin_family_or_genotype_as_label_,
       "_as_label.html"
     )
@@ -422,7 +422,7 @@ if (perform_umap_) {
     output_path_3d_umap <- paste0(
       output_geno_graphics_path,
       umap_refpop_train_data, "/",
-      umap_refpop_train_data, "_refpop_umap_3d_",
+      umap_refpop_train_data, "_genotype_refpop_umap_3d_",
       use_origin_family_or_genotype_as_label_,
       "_as_label.html"
     )

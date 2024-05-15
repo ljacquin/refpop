@@ -146,6 +146,7 @@ miss_data_singular_model_h2_out_vect_ <-
 
       # drop na for trait_ to fit regression
       df_trait_env_ <- df_trait_env_ %>% drop_na(all_of(trait_))
+      df_trait_env_ <- droplevels(df_trait_env_)
 
       if (!is.null(df_trait_env_) && nrow(df_trait_env_) > 1) {
         if (length(unique(df_trait_env_$Genotype)) > min_obs_lmer_) {
@@ -184,6 +185,8 @@ miss_data_singular_model_h2_out_vect_ <-
                 df_trait_manage_env_ <- df_trait_env_[
                   df_trait_env_$Management == manage_type_,
                 ]
+                df_trait_manage_env_ <- droplevels(df_trait_manage_env_)
+                
                 if (nrow(df_trait_manage_env_) > 1 &&
                   length(unique(df_trait_manage_env_$Genotype)) > min_obs_lmer_) {
                   nr_bar_manage_ <- mean(table(df_trait_manage_env_$Genotype))
@@ -261,6 +264,7 @@ miss_data_singular_model_h2_out_vect_ <-
         )]
         # drop na for trait_ to fit regression
         df_trait_spats_env_ <- df_trait_spats_env_ %>% drop_na(all_of("spats_adj_pheno"))
+        df_trait_spats_env_ <- droplevels(df_trait_spats_env_)
 
         if (length(unique(df_trait_spats_env_$Genotype)) > min_obs_lmer_) {
           tryCatch(
@@ -299,6 +303,8 @@ miss_data_singular_model_h2_out_vect_ <-
                 df_trait_spats_manage_env_ <- df_trait_spats_env_[
                   df_trait_spats_env_$Management == manage_type_,
                 ]
+                df_trait_spats_manage_env_ <- droplevels(df_trait_spats_manage_env_)
+                
                 if (nrow(df_trait_spats_manage_env_) > 1 &&
                   length(unique(df_trait_spats_manage_env_$Genotype)) > min_obs_lmer_) {
                   nr_bar_spats_manage_ <- mean(table(df_trait_spats_manage_env_$Genotype))
