@@ -112,10 +112,12 @@ compute_indiv_location_clonal_mean_h2_var_comp <- function(lmer_mod_, nr_bar_) {
       sigma2G <- as.numeric(attr(var_cov$Genotype, "stddev")^2)
       sigma2E <- as.numeric(sigma(lmer_mod_)^2)
       h2 <- sigma2G / (sigma2G + sigma2E / nr_bar_)
-      return(list('h2'= h2,
-                  'sigma2G' = sigma2G,
-                  'sigma2E' = sigma2E,
-                  'nr_bar_' = nr_bar_))
+      return(list(
+        "h2" = h2,
+        "sigma2G" = sigma2G,
+        "sigma2E" = sigma2E,
+        "nr_bar_" = nr_bar_
+      ))
     },
     error = function(e) {
       cat(
@@ -491,39 +493,70 @@ tune_eps_ksvm_reg_parallel <- function(X, Y, kpar_, type_, kernel_, c_par_,
 
 # function which removes monomorphic markers
 remove_monomorphic_markers <- function(geno_df) {
+  if ("Genotype" %in% colnames(geno_df)) {
+    # remove genotype column
+    geno_df_ <- geno_df[, -match("Genotype", colnames(geno_df))]
+  } else {
+    geno_df_ <- geno_df
+  }
   # identify monomorphic markers
   monomorphic_markers <- apply(
-    geno_df[, -match("Genotype", colnames(geno_df))],
+    geno_df_,
     2, function(col) length(unique(col)) == 1
   )
-
-  # filter the monomorphic markers
-  geno_df_filtered <- geno_df[, !monomorphic_markers]
-
   # get the names of the monomorphic markers
-  monomorphic_marker_names <- colnames(geno_df)[monomorphic_markers]
-
-  # return the filtered data frame and the list of monomorphic markers
-  return(list(
-    "filtered_df" = geno_df_filtered,
-    "monomorphic_markers" = monomorphic_marker_names
-  ))
+  monomorphic_marker_names <- colnames(geno_df_)[
+    monomorphic_markers
+  ]
+  
+  if (length(monomorphic_markers) > 0) {
+    # filter the monomorphic markers
+    geno_df_filtered <- geno_df_[, !monomorphic_markers]
+    
+    if ("Genotype" %in% colnames(geno_df)) {
+      # add genotype column
+      geno_df_filtered <- cbind(geno_df$Genotype, geno_df_filtered)
+      colnames(geno_df_filtered)[1] <- "Genotype"
+    }
+    
+    # return the filtered data frame and the list of monomorphic markers
+    return(list(
+      "filtered_df" = geno_df_filtered,
+      "monomorphic_markers" = monomorphic_marker_names
+    ))
+  } else {
+    # return the filtered data frame and the list of monomorphic markers
+    return(list(
+      "filtered_df" = geno_df,
+      "monomorphic_markers" = NULL
+    ))
+  }
 }
 
 # function which removes columns with variance below a threshold
 remove_low_variance_columns <- function(geno_df, threshold) {
+  if ("Genotype" %in% colnames(geno_df)) {
+    # remove genotype column
+    geno_df_ <- geno_df[, -match("Genotype", colnames(geno_df))]
+  }
+  
   # calculate variance for each column
-  variances <- apply(geno_df[, -match("Genotype", colnames(geno_df))], 2, var)
-
+  variances <- apply(geno_df_, 2, var)
+  
   # identify columns with variance below the threshold
   low_variance_columns <- variances < threshold
-
-  # filter out low variance columns
-  geno_df_filtered <- geno_df[, !low_variance_columns]
-
+  
   # get the names of the low variance columns
-  low_variance_column_names <- colnames(geno_df)[low_variance_columns]
-
+  low_variance_column_names <- colnames(geno_df_)[low_variance_columns]
+  
+  # filter out low variance columns
+  geno_df_filtered <- geno_df_[, !low_variance_columns]
+  if ("Genotype" %in% colnames(geno_df)) {
+    
+    # add genotype column
+    geno_df_filtered <- cbind(geno_df$Genotype, geno_df_filtered)
+    colnames(geno_df_filtered)[1] <- "Genotype"
+  }
   # return the filtered data frame and the list of low variance column names
   return(list(
     "filtered_df" = geno_df_filtered,
@@ -602,4 +635,11 @@ regroup_unlist_results <- function(miss_data_singular_model_h2_out_list_) {
 
   # return unlist result_list
   return(unlist(result_list))
+}
+
+# function which remove columns with na
+remove_na_columns <- function(df) {
+  columns_without_na <- colSums(is.na(df)) == 0
+  df_filtered <- df[, columns_without_na]
+  return(df_filtered)
 }

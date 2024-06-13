@@ -10,12 +10,14 @@ if (install_other_requirements) {
   install.packages("BiocManager")
   library(BiocManager)
   BiocManager::install("snpStats")
+  BiocManager::install("mixOmicsTeam/mixOmics")
   install.packages("remotes")
   remotes::install_github("hemstrow/snpR")
   py_install("umap-learn", pip = T, pip_ignore_installed = T)
 }
 library(snpR)
 library(snpStats)
+library(mixOmics)
 library(data.table)
 library(plotly)
 library(ggplot2)
@@ -48,7 +50,7 @@ fam_file <- paste0(geno_dir_path, "refpop_genotype.fam")
 
 read_with_bigsnpr <- TRUE
 read_with_snpStats <- FALSE # possible issue with the package or wrong usage
-perform_umap_ <- TRUE
+perform_umap_ <- FALSE
 
 # define umap training and plot paraemeters
 
@@ -59,9 +61,10 @@ min_dist_ <- 0.1
 
 # define refpop train data for umap : complete, accessions, progeny
 umap_refpop_train_data <- "complete"
+pca_refpop_train_data <- "complete"
 
 # define label data for umap :  origin, family or genotype (genotype not recommended)
-use_origin_family_or_genotype_as_label_ <- "origin"
+use_origin_family_or_genotype_as_label_ <- "family"
 
 # if umap_refpop_train_data = "accessions", should progenies be projected using umap ?
 predict_umap_progeny_ <- FALSE
@@ -123,7 +126,7 @@ if (read_with_bigsnpr) {
   rm(df_)
   colnames(geno_df) <- map_df$marker.ID
   geno_df$Genotype <- fam_df$sample.ID
-  geno_df <- geno_df %>% select(Genotype, everything())
+  geno_df <- geno_df %>% dplyr::select(Genotype, everything())
   if (!file.exists(paste0(geno_dir_path, "genotype_data.csv"))) {
     fwrite(geno_df, paste0(geno_dir_path, "genotype_data.csv"))
   }
@@ -167,11 +170,14 @@ for (i in 1:length(geno_fam_$Pattern)) {
 }
 geno_origin_$Family[is.na(geno_origin_$Family)] <- "Accession"
 
+# define geno_fam_orig_vect_
+geno_fam_orig_vect_ <- c("Genotype", "Family", "Origin")
+
 # merge geno_df with geno_origin
-geno_df <- merge(geno_df, geno_origin_[, c("Genotype", "Family", "Origin")],
+geno_df <- merge(geno_df, geno_origin_[, geno_fam_orig_vect_],
   by = "Genotype", all = TRUE
 )
-geno_df <- geno_df %>% select(c(Genotype, Family, Origin), everything())
+geno_df <- geno_df %>% dplyr::select(c(Genotype, Family, Origin), everything())
 idx_origin_geno_names <- which(colnames(geno_df) %in% c(
   "Genotype",
   "Family",
@@ -180,12 +186,12 @@ idx_origin_geno_names <- which(colnames(geno_df) %in% c(
 
 # useful : save genotype, family and origin information to genotype and phenotype
 # data folders
-fwrite(geno_df[, c("Genotype", "Family", "Origin")],
+fwrite(geno_df[, geno_fam_orig_vect_],
   file = paste0(geno_dir_path, "genotype_family_origin_information.csv"),
   sep = ","
 )
 
-fwrite(geno_df[, c("Genotype", "Family", "Origin")],
+fwrite(geno_df[, geno_fam_orig_vect_],
   file = paste0(pheno_dir_path, "genotype_family_origin_information.csv"),
   sep = ","
 )
@@ -456,6 +462,109 @@ if (perform_umap_) {
   )
   # save graphics
   saveWidget(fig_x_y_z, file = output_path_3d_umap)
+}
+
+# perform pca for geno_df
+geno_fam_orig_df_ <- geno_df[, c("Family", "Origin")]
+geno_df <- geno_df[, -match(c("Family", "Origin"), colnames(geno_df))]
+geno_df <- remove_monomorphic_markers(geno_df)$filtered_df
+geno_pca_obj_ <- pca(geno_df[, -match("Genotype", colnames(geno_df))],
+  ncomp = 500, center = TRUE, scale = TRUE
+)
+geno_pca_mat_ <- as.data.frame(geno_pca_obj_$variates$X)
+geno_pca_exp_var_ <- geno_pca_obj_$prop_expl_var$X
+geno_pca_cum_exp_var_ <- geno_pca_obj_$cum.var
+plot(geno_pca_cum_exp_var_)
+
+# plot coordinates of individuals on two first pcs :
+if (identical(use_origin_family_or_genotype_as_label_, "family")) {
+  # define colors for labels
+  labels_ <- unique(geno_fam_orig_df_$Family)
+  n_family <- length(labels_)
+  color_labels_ <- color_palette_family[1:n_family]
+  names(color_labels_) <- labels_
+  geno_pca_mat_$label <- geno_fam_orig_df_$Family
+
+  # create plot
+  fig_x_y <- plot_ly(
+    type = "scatter", mode = "markers"
+  ) %>%
+    layout(
+      plot_bgcolor = "#e5ecf6",
+      title = "PCA 2D plot for REFPOP genotype data",
+      xaxis = list(title = paste0(
+        names(geno_pca_exp_var_)[1], ": ",
+        signif(100 * as.numeric(geno_pca_exp_var_)[1], 2), "%"
+      )),
+      yaxis = list(title = paste0(
+        names(geno_pca_exp_var_)[2], ": ",
+        signif(100 * as.numeric(geno_pca_exp_var_)[2], 2), "%"
+      ))
+    )
+  # regroup by label
+  for (label_ in unique(geno_pca_mat_$label)) {
+    data_subset <- geno_pca_mat_[geno_pca_mat_$label == label_, ]
+    fig_x_y <- fig_x_y %>%
+      add_trace(
+        data = data_subset,
+        x = ~PC1, y = ~PC2,
+        type = "scatter", mode = "markers",
+        marker = list(color = color_labels_[label_]),
+        name = label_
+      )
+  }
+  fig_x_y <- fig_x_y %>% layout(
+    legend = list(title = list(text = "<b> Family (except accession) </b>"))
+  )
+  # save graphics
+  saveWidget(fig_x_y, file = paste0(
+    output_geno_graphics_path, pca_refpop_train_data, '/',
+    pca_refpop_train_data, "_genotype_pca_family_as_label.html"
+  ))
+}else if (identical(use_origin_family_or_genotype_as_label_, "origin")) {
+  # define colors for labels
+  labels_ <- unique(geno_fam_orig_df_$Origin)
+  n_origin <- length(labels_)
+  color_labels_ <- color_palette_origin[1:n_origin]
+  names(color_labels_) <- labels_
+  geno_pca_mat_$label <- geno_fam_orig_df_$Origin
+  
+  # create plot
+  fig_x_y <- plot_ly(
+    type = "scatter", mode = "markers"
+  ) %>%
+    layout(
+      plot_bgcolor = "#e5ecf6",
+      title = "PCA 2D plot for REFPOP genotype data",
+      xaxis = list(title = paste0(
+        names(geno_pca_exp_var_)[1], ": ",
+        signif(100 * as.numeric(geno_pca_exp_var_)[1], 2), "%"
+      )),
+      yaxis = list(title = paste0(
+        names(geno_pca_exp_var_)[2], ": ",
+        signif(100 * as.numeric(geno_pca_exp_var_)[2], 2), "%"
+      ))
+    )
+  # regroup by label
+  for (label_ in unique(geno_pca_mat_$label)) {
+    data_subset <- geno_pca_mat_[geno_pca_mat_$label == label_, ]
+    fig_x_y <- fig_x_y %>%
+      add_trace(
+        data = data_subset,
+        x = ~PC1, y = ~PC2,
+        type = "scatter", mode = "markers",
+        marker = list(color = color_labels_[label_]),
+        name = label_
+      )
+  }
+  fig_x_y <- fig_x_y %>% layout(
+    legend = list(title = list(text = "<b> Origin </b>"))
+  )
+  # save graphics
+  saveWidget(fig_x_y, file = paste0(
+    output_geno_graphics_path, pca_refpop_train_data, '/',
+    pca_refpop_train_data, "_genotype_pca_origin_as_label.html"
+  ))
 }
 
 # get phased genotype data and split their columns according to each phase

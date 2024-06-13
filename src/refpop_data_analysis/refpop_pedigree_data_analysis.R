@@ -12,6 +12,7 @@ library(tidyr)
 library(htmlwidgets)
 library(rstudioapi)
 library(stringr)
+library(mixOmics)
 # detect and set script path automatically, and source functions
 setwd(dirname(getActiveDocumentContext()$path))
 source("../functions.R")
@@ -23,7 +24,7 @@ geno_dir_path <- "../../data/genotype_data/"
 # output result path for pedigree graphics
 output_pedig_graphics_path <- "../../results/graphics/pedigree_graphics/"
 
-# define selected_traits_ 
+# define selected_traits_
 selected_traits_ <- c(
   "Harvest_date", "Fruit_weight", "Fruit_number",
   "Fruit_weight_single", "Color_over", "Russet_freq_all",
@@ -33,9 +34,9 @@ selected_traits_ <- c(
 )
 
 # umap parameters, most sensitive ones
-random_state_umap_ <- 15 
+random_state_umap_ <- 15
 min_dist_ <- 0.1
-n_neighbors_umap_ <- 50 # Note : as for K-NN, the number of neighbors 
+n_neighbors_umap_ <- 50 # Note : as for K-NN, the number of neighbors
 # must be increased for sparse data
 
 # set color palette for families
@@ -197,9 +198,11 @@ pheno_df <- as.data.frame(fread(paste0(
   "adjusted_ls_means_phenotypes.csv"
 )))
 # center and scale data for umap and replace few na (13 in dataframe)
-pheno_df[,selected_traits_] <- apply(scale(pheno_df[,selected_traits_], center = T,
-                                     scale = T),2, impute_mean)
-pedig_pheno_df <- merge(pheno_df, pedig_incid_mat, by = 'Genotype', all = F)
+pheno_df[, selected_traits_] <- apply(scale(pheno_df[, selected_traits_],
+  center = T,
+  scale = T
+), 2, impute_mean)
+pedig_pheno_df <- merge(pheno_df, pedig_incid_mat, by = "Genotype", all = F)
 
 # umap pedigree phenotype plots
 pedig_pheno_umap_2d <- data.frame(umap(
@@ -249,10 +252,10 @@ fig_x_y <- fig_x_y %>% layout(
   legend = list(title = list(text = label_title_))
 )
 saveWidget(fig_x_y,
-           file = paste0(
-             output_pedig_graphics_path,
-             "complete_pedigree_phenotype_refpop_umap_2d_family_as_label.html"
-           )
+  file = paste0(
+    output_pedig_graphics_path,
+    "complete_pedigree_phenotype_refpop_umap_2d_family_as_label.html"
+  )
 )
 
 # plot umap pedigree phenotype with origin as label
@@ -292,9 +295,321 @@ fig_x_y <- fig_x_y %>% layout(
   legend = list(title = list(text = label_title_))
 )
 saveWidget(fig_x_y,
-           file = paste0(
-             output_pedig_graphics_path,
-             "complete_pedigree_phenotype_refpop_umap_2d_origin_as_label.html"
-           )
+  file = paste0(
+    output_pedig_graphics_path,
+    "complete_pedigree_phenotype_refpop_umap_2d_origin_as_label.html"
+  )
 )
+
+# perform pca for pedig_incid_mat, pheno_df and pedig_pheno_df
+
+# pedig_incid_mat
+pedig_pca_obj_ <- pca(
+  pedig_incid_mat[, -match(
+    "Genotype",
+    colnames(pedig_incid_mat)
+  )],
+  ncomp = 2, center = TRUE, scale = TRUE
+)
+pedig_pca_mat_ <- as.data.frame(pedig_pca_obj_$variates$X)
+pedig_pca_exp_var_ <- pedig_pca_obj_$prop_expl_var$X
+
+# plot coordinates of individuals on two first pcs :
+
+# plot for family
+
+# define colors for labels
+labels_ <- unique(pedig_df$Family)
+n_family <- length(labels_)
+color_labels_ <- color_palette_family[1:n_family]
+names(color_labels_) <- labels_
+pedig_pca_mat_$label <- pedig_df$Family
+
+# create plot
+fig_x_y <- plot_ly(
+  type = "scatter", mode = "markers"
+) %>%
+  layout(
+    plot_bgcolor = "#e5ecf6",
+    title = "PCA 2D plot for REFPOP pedigree data",
+    xaxis = list(title = paste0(
+      names(pedig_pca_exp_var_)[1], ": ",
+      signif(100 * as.numeric(pedig_pca_exp_var_)[1], 2), "%"
+    )),
+    yaxis = list(title = paste0(
+      names(pedig_pca_exp_var_)[2], ": ",
+      signif(100 * as.numeric(pedig_pca_exp_var_)[2], 2), "%"
+    ))
+  )
+# regroup by label
+for (label_ in unique(pedig_pca_mat_$label)) {
+  data_subset <- pedig_pca_mat_[pedig_pca_mat_$label == label_, ]
+  fig_x_y <- fig_x_y %>%
+    add_trace(
+      data = data_subset,
+      x = ~PC1, y = ~PC2,
+      type = "scatter", mode = "markers",
+      marker = list(color = color_labels_[label_]),
+      name = label_
+    )
+}
+fig_x_y <- fig_x_y %>% layout(
+  legend = list(title = list(text = "<b> Family (except accession) </b>"))
+)
+# save graphics
+saveWidget(fig_x_y, file = paste0(
+  output_pedig_graphics_path, 
+  "complete_pca_pedigree_family_as_label.html"
+))
+
+# plot for origin
+
+# define colors for labels
+labels_ <- unique(pedig_df$Origin)
+n_origin <- length(labels_)
+color_labels_ <- color_palette_origin[1:n_origin]
+names(color_labels_) <- labels_
+pedig_pca_mat_$label <- pedig_df$Origin
+
+# create plot
+fig_x_y <- plot_ly(
+  type = "scatter", mode = "markers"
+) %>%
+  layout(
+    plot_bgcolor = "#e5ecf6",
+    title = "PCA 2D plot for REFPOP pedigree data",
+    xaxis = list(title = paste0(
+      names(pedig_pca_exp_var_)[1], ": ",
+      signif(100 * as.numeric(pedig_pca_exp_var_)[1], 2), "%"
+    )),
+    yaxis = list(title = paste0(
+      names(pedig_pca_exp_var_)[2], ": ",
+      signif(100 * as.numeric(pedig_pca_exp_var_)[2], 2), "%"
+    ))
+  )
+# regroup by label
+for (label_ in unique(pedig_pca_mat_$label)) {
+  data_subset <- pedig_pca_mat_[pedig_pca_mat_$label == label_, ]
+  fig_x_y <- fig_x_y %>%
+    add_trace(
+      data = data_subset,
+      x = ~PC1, y = ~PC2,
+      type = "scatter", mode = "markers",
+      marker = list(color = color_labels_[label_]),
+      name = label_
+    )
+}
+fig_x_y <- fig_x_y %>% layout(
+  legend = list(title = list(text = "<b> Origin </b>"))
+)
+# save graphics
+saveWidget(fig_x_y, file = paste0(
+  output_pedig_graphics_path, 
+  "complete_pca_pedigree_origin_as_label.html"
+))
+
+# pheno_df
+pheno_df <- pedig_pheno_df[, selected_traits_]
+pheno_pca_obj_ <- pca(pheno_df,
+  ncomp = 2, center = TRUE, scale = TRUE
+)
+pheno_pca_mat_ <- as.data.frame(pheno_pca_obj_$variates$X)
+pheno_pca_exp_var_ <- pheno_pca_obj_$prop_expl_var$X
+
+# plot coordinates of individuals on two first pcs :
+
+# plot for family
+
+# define colors for labels
+labels_ <- unique(pedig_df$Family)
+n_family <- length(labels_)
+color_labels_ <- color_palette_family[1:n_family]
+names(color_labels_) <- labels_
+pheno_pca_mat_$label <- pedig_df$Family
+
+# create plot
+fig_x_y <- plot_ly(
+  type = "scatter", mode = "markers"
+) %>%
+  layout(
+    plot_bgcolor = "#e5ecf6",
+    title = "PCA 2D plot for REFPOP phenotype data",
+    xaxis = list(title = paste0(
+      names(pheno_pca_exp_var_)[1], ": ",
+      signif(100 * as.numeric(pheno_pca_exp_var_)[1], 4), "%"
+    )),
+    yaxis = list(title = paste0(
+      names(pheno_pca_exp_var_)[2], ": ",
+      signif(100 * as.numeric(pheno_pca_exp_var_)[2], 4), "%"
+    ))
+  )
+# regroup by label
+for (label_ in unique(pheno_pca_mat_$label)) {
+  data_subset <- pheno_pca_mat_[pheno_pca_mat_$label == label_, ]
+  fig_x_y <- fig_x_y %>%
+    add_trace(
+      data = data_subset,
+      x = ~PC1, y = ~PC2,
+      type = "scatter", mode = "markers",
+      marker = list(color = color_labels_[label_]),
+      name = label_
+    )
+}
+fig_x_y <- fig_x_y %>% layout(
+  legend = list(title = list(text = "<b> Family (except accession) </b>"))
+)
+# save graphics
+saveWidget(fig_x_y, file = paste0(
+  output_pedig_graphics_path, 
+  "complete_pca_phenotype_family_as_label.html"
+))
+
+# plot for origin
+
+# define colors for labels
+labels_ <- unique(pedig_df$Origin)
+n_origin <- length(labels_)
+color_labels_ <- color_palette_origin[1:n_origin]
+names(color_labels_) <- labels_
+pheno_pca_mat_$label <- pedig_df$Origin
+
+# create plot
+fig_x_y <- plot_ly(
+  type = "scatter", mode = "markers"
+) %>%
+  layout(
+    plot_bgcolor = "#e5ecf6",
+    title = "PCA 2D plot for REFPOP phenotype data",
+    xaxis = list(title = paste0(
+      names(pheno_pca_exp_var_)[1], ": ",
+      signif(100 * as.numeric(pheno_pca_exp_var_)[1], 4), "%"
+    )),
+    yaxis = list(title = paste0(
+      names(pheno_pca_exp_var_)[2], ": ",
+      signif(100 * as.numeric(pheno_pca_exp_var_)[2], 4), "%"
+    ))
+  )
+# regroup by label
+for (label_ in unique(pheno_pca_mat_$label)) {
+  data_subset <- pheno_pca_mat_[pheno_pca_mat_$label == label_, ]
+  fig_x_y <- fig_x_y %>%
+    add_trace(
+      data = data_subset,
+      x = ~PC1, y = ~PC2,
+      type = "scatter", mode = "markers",
+      marker = list(color = color_labels_[label_]),
+      name = label_
+    )
+}
+fig_x_y <- fig_x_y %>% layout(
+  legend = list(title = list(text = "<b> Origin </b>"))
+)
+# save graphics
+saveWidget(fig_x_y, file = paste0(
+  output_pedig_graphics_path, 
+  "complete_pca_phenotype_origin_as_label.html"
+))
+
+# pedig_pheno_df
+pedig_pheno_pca_obj_ <- pca(
+  pedig_pheno_df[, -match('Genotype', colnames(pedig_pheno_df))],
+  ncomp = 2, center = TRUE, scale = TRUE
+)
+pedig_pheno_pca_mat_ <- as.data.frame(pedig_pheno_pca_obj_$variates$X)
+pedig_pheno_pca_exp_var_ <- pedig_pheno_pca_obj_$prop_expl_var$X
+
+# plot coordinates of individuals on two first pcs :
+
+# plot for family
+
+# define colors for labels
+labels_ <- unique(pedig_df$Family)
+n_family <- length(labels_)
+color_labels_ <- color_palette_family[1:n_family]
+names(color_labels_) <- labels_
+pedig_pheno_pca_mat_$label <- pedig_df$Family
+
+# create plot
+fig_x_y <- plot_ly(
+  type = "scatter", mode = "markers"
+) %>%
+  layout(
+    plot_bgcolor = "#e5ecf6",
+    title = "PCA 2D plot for REFPOP pedigree and phenotype data",
+    xaxis = list(title = paste0(
+      names(pedig_pheno_pca_exp_var_)[1], ": ",
+      signif(100 * as.numeric(pedig_pheno_pca_exp_var_)[1], 4), "%"
+    )),
+    yaxis = list(title = paste0(
+      names(pedig_pheno_pca_exp_var_)[2], ": ",
+      signif(100 * as.numeric(pedig_pheno_pca_exp_var_)[2], 4), "%"
+    ))
+  )
+# regroup by label
+for (label_ in unique(pedig_pheno_pca_mat_$label)) {
+  data_subset <- pedig_pheno_pca_mat_[pedig_pheno_pca_mat_$label == label_, ]
+  fig_x_y <- fig_x_y %>%
+    add_trace(
+      data = data_subset,
+      x = ~PC1, y = ~PC2,
+      type = "scatter", mode = "markers",
+      marker = list(color = color_labels_[label_]),
+      name = label_
+    )
+}
+fig_x_y <- fig_x_y %>% layout(
+  legend = list(title = list(text = "<b> Family (except accession) </b>"))
+)
+# save graphics
+saveWidget(fig_x_y, file = paste0(
+  output_pedig_graphics_path, 
+  "complete_pca_pedigree_phenotype_family_as_label.html"
+))
+
+# plot for origin
+
+# define colors for labels
+labels_ <- unique(pedig_df$Origin)
+n_origin <- length(labels_)
+color_labels_ <- color_palette_origin[1:n_origin]
+names(color_labels_) <- labels_
+pedig_pheno_pca_mat_$label <- pedig_df$Origin
+
+# create plot
+fig_x_y <- plot_ly(
+  type = "scatter", mode = "markers"
+) %>%
+  layout(
+    plot_bgcolor = "#e5ecf6",
+    title = "PCA 2D plot for REFPOP pedigree and phenotype data",
+    xaxis = list(title = paste0(
+      names(pedig_pheno_pca_exp_var_)[1], ": ",
+      signif(100 * as.numeric(pedig_pheno_pca_exp_var_)[1], 2), "%"
+    )),
+    yaxis = list(title = paste0(
+      names(pedig_pheno_pca_exp_var_)[2], ": ",
+      signif(100 * as.numeric(pedig_pheno_pca_exp_var_)[2], 2), "%"
+    ))
+  )
+# regroup by label
+for (label_ in unique(pedig_pheno_pca_mat_$label)) {
+  data_subset <- pedig_pheno_pca_mat_[pedig_pheno_pca_mat_$label == label_, ]
+  fig_x_y <- fig_x_y %>%
+    add_trace(
+      data = data_subset,
+      x = ~PC1, y = ~PC2,
+      type = "scatter", mode = "markers",
+      marker = list(color = color_labels_[label_]),
+      name = label_
+    )
+}
+fig_x_y <- fig_x_y %>% layout(
+  legend = list(title = list(text = "<b> Origin </b>"))
+)
+# save graphics
+saveWidget(fig_x_y, file = paste0(
+  output_pedig_graphics_path, 
+  "complete_pca_pedigree_phenotype_origin_as_label.html"
+))
+
 
