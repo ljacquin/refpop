@@ -50,12 +50,16 @@ py_module_available("keras") # must return TRUE
 py_module_available("tensorflow") # must return TRUE
 py_discover_config("keras") # more info on the python env, tf and keras
 # if local computation, set automated wd detection for script
-local_computation_ <- FALSE
+local_computation_ <- F
 if (local_computation_) {
   library(rstudioapi)
   setwd(dirname(getActiveDocumentContext()$path))
 }
 source("../functions.R")
+
+# set options to increase memory and suppress warnings
+options(expressions = 5e5)
+options(warn = -1)
 
 # define function(s) and package(s) to export for parallelization
 pkgs_to_export_ <- c(
@@ -63,7 +67,8 @@ pkgs_to_export_ <- c(
   "kernlab",
   "KRMM",
   "glmnet",
-  "foreach"
+  "foreach",
+  "cvTools"
 )
 # set input paths
 geno_dir_path <- "../../data/genotype_data/"
@@ -73,14 +78,26 @@ pheno_dir_path <- "../../data/phenotype_data/"
 output_pred_results_path <- "../../results/genomic_prediction/"
 output_pred_graphics_path <- "../../results/graphics/genomic_prediction_graphics/"
 
+# define selected_traits_
+selected_traits_ <- c(
+  "Harvest_date", "Fruit_weight", "Fruit_number",
+  "Fruit_weight_single", "Color_over", "Russet_freq_all",
+  "Trunk_diameter", "Trunk_increment", "Flowering_intensity",
+  "Flowering_begin", "Flowering_full", "Flowering_end",
+  "Scab", "Powdery_mildew", "Weight_sample", "Sample_size"
+)
+
 # define trait_
-trait_ <- "Harvest_date"
+trait_ <- "Russet_freq_all"
 
 # define shift seed value by
-mult_seed_by_ <- 10
+mult_seed_by_ <- 100
+
+# set k for K-folds cv
+k_folds_ <- 5
 
 # define number of shuffles
-n_shuff_ <- 100
+n_shuff_ <- 20
 
 # color palette for families (28 counts)
 color_palette_family <- c(
@@ -134,193 +151,167 @@ monomorphic_markers_list_ <- geno_df$monomorphic_markers
 geno_df <- geno_df$filtered_df
 
 # set genotypes in the same order between pheno and geno data
+# and sample markers according to a uniform distribution
 set.seed(123)
 snp_sample_size_ <- 50e3
-pheno_df <- pheno_df[match(geno_df$Genotype, pheno_df$Genotype), ]
 idx_snp_sample_size_ <- sample(2:ncol(geno_df),
   size = snp_sample_size_, replace = F
 )
-geno_df_ <- geno_df[, idx_snp_sample_size_]
+geno_df <- geno_df[, c(
+  match("Genotype", colnames(geno_df)),
+  idx_snp_sample_size_
+)]
+
+# merge pheno_df and geno_df for integrity of analyses and slice the merged df
+merged_df <- merge(pheno_df, geno_df, by = "Genotype")
+pheno_df <- merged_df[, selected_traits_]
+geno_df <- merged_df[, -match(
+  c("Genotype", selected_traits_),
+  colnames(merged_df)
+)]
 
 # remove na for analyzed trait_ and corresponding rows for marker data
 idx_na_trait_ <- which(is.na(pheno_df[, trait_]))
 if (length(idx_na_trait_) > 0) {
   pheno_df <- pheno_df[-idx_na_trait_, ]
-  geno_df_ <- geno_df_[-idx_na_trait_, ]
+  geno_df <- geno_df[-idx_na_trait_, ]
 }
 
-# create indices for train set
+# get number of phenotypes
 n <- nrow(pheno_df)
 
-# tune hyperparameters for gaussian svr and krmm, based on a small random sample,
-# for original variables
-set.seed(1234)
-idx_tune_hyperpara <- sample(1:n, size = floor(1 / 3 * n), replace = F)
-
-# original variables
-
-# tune gaussian svr on original variables
-
-# A correct value for c_par according to Cherkassy and Ma (2004).
-# Neural networks 17, 113-126
-c_par <- max(
-  abs(mean(pheno_df[idx_tune_hyperpara, trait_]) +
-    3 * sd(pheno_df[idx_tune_hyperpara, trait_])),
-  abs(mean(pheno_df[idx_tune_hyperpara, trait_])
-  - 3 * sd(pheno_df[idx_tune_hyperpara, trait_]))
-)
-tune_gaussian_svr_model <- tune_eps_ksvm_reg_parallel(
-  X = apply(geno_df_[idx_tune_hyperpara, ], 2, as.numeric),
-  Y = pheno_df[idx_tune_hyperpara, trait_],
-  kpar_ = "automatic", type_ = "eps-svr",
-  kernel_ = "rbfdot", c_par_ = c_par,
-  epsilon_grid_ = seq(1e-1, 1, length.out = 5),
-  n_folds_ = 5, pkgs_to_export_
-)
-plot(tune_gaussian_svr_model$epsilon_grid_,
-  tune_gaussian_svr_model$expected_loss_grid_,
-  type = "l"
-)
-opt_eps <- tune_gaussian_svr_model$optimal_eps_
-
-# tune gaussian krmm on original variables
-tune_gaussian_krmm_model <- tune_krmm(
-  Y = pheno_df[idx_tune_hyperpara, trait_],
-  Matrix_covariates = geno_df_[idx_tune_hyperpara, ],
-  rate_decay_grid = seq(1e-1, 1, length.out = 5),
-  nb_folds = 5, method = "RKHS", kernel = "Gaussian"
-)
-plot(tune_gaussian_krmm_model$rate_decay_grid,
-  tune_gaussian_krmm_model$mean_loss_grid,
-  type = "l"
-)
-opt_h <- tune_gaussian_krmm_model$optimal_h
-
-# detect number of cores and make cluster
+# register parallel backend
 cl <- makeCluster(detectCores())
 registerDoParallel(cl)
 
-# compute parallelized genomic predictions and results for n_shuff_
+# create folds for k-fold cross-validation
+Folds <- cvFolds(n, K = k_folds_, type = "consecutive")
+
 df_result_ <- foreach(
-  shuff_ = 1:n_shuff_, .packages = pkgs_to_export_,
+  shuff_ = 1:n_shuff_,
+  .packages = pkgs_to_export_,
   .combine = rbind
 ) %dopar% {
+  # set seed, define a new set of indices,
   set.seed(shuff_ * mult_seed_by_)
-  print(paste0("shuff_ : ", shuff_))
-  idx_train <- sample(1:n, size = floor(2 / 3 * n), replace = FALSE)
+  idx_ <- sample(1:n, size = n, replace = FALSE)
 
-  # initialize vector of results for all tested models
-  result <- c(
-    "RF" = NA, "SVR" = NA, "RKHS" = NA, "GBLUP" = NA, "LASSO" = NA,
-    "SVR_support_vectors" = NA
-  )
+  fold_results <- foreach(
+    fold_ = 1:k_folds_,
+    .packages = pkgs_to_export_,
+    .combine = rbind
+  ) %dopar% {
+    # define indices for validation and training based on k-folds cv
+    idx_val_fold <- which(Folds$which == fold_)
+    idx_val <- idx_[idx_val_fold]
+    idx_train <- idx_[-idx_val_fold]
 
-  # genomic prediction based on original variables
+    # initialize vector of results for the current fold
+    fold_result <- c(
+      "RF" = NA, "SVR" = NA, "RKHS" = NA, "GBLUP" = NA, "LASSO" = NA,
+      "SVR_support_vectors" = NA
+    )
 
-  # train random forest on original variables
-  rf_model <- ranger(
-    y = pheno_df[idx_train, trait_],
-    x = geno_df_[idx_train, ],
-    mtry = ncol(geno_df_) / 3,
-    num.trees = 1000
-  )
-  # make prediction for test data and save results
-  f_hat_test_rf <- predict(
-    rf_model,
-    geno_df_[-idx_train, ]
-  )
-  result[["RF"]] <- cor(
-    f_hat_test_rf$predictions,
-    pheno_df[-idx_train, trait_]
-  )
+    # train and predict with Random Forest
+    rf_model <- ranger(
+      y = pheno_df[idx_train, trait_],
+      x = geno_df[idx_train, ],
+      mtry = ncol(geno_df) / 3,
+      num.trees = 1000
+    )
+    f_hat_val_rf <- predict(
+      rf_model,
+      geno_df[idx_val, ]
+    )
+    fold_result["RF"] <- cor(
+      f_hat_val_rf$predictions,
+      pheno_df[idx_val, trait_]
+    )
 
-  # train SVR with non linear gaussian kernel on original variables
+    # train and predict with SVR
+    # a correct value for c_par according to Cherkassy and Ma (2004).
+    # Neural networks 17, 113-126 is defined as follows
+    c_par <- max(
+      abs(mean(pheno_df[idx_train, trait_])
+      + 3 * sd(pheno_df[idx_train, trait_])),
+      abs(mean(pheno_df[idx_train, trait_])
+      - 3 * sd(pheno_df[idx_train, trait_]))
+    )
+    gaussian_svr_model <- ksvm(
+      x = as.matrix(geno_df[idx_train, ]),
+      y = pheno_df[idx_train, trait_],
+      scaled = FALSE, type = "eps-svr",
+      kernel = "rbfdot",
+      kpar = "automatic", C = c_par, epsilon = 0.1
+    )
+    idx_sv_ <- SVindex(gaussian_svr_model)
+    sv_ <- pheno_df[idx_train, "Genotype"][idx_sv_]
+    f_hat_val_gaussian_svr <- predict(
+      gaussian_svr_model,
+      as.matrix(geno_df[idx_val, ])
+    )
+    fold_result["SVR"] <- cor(
+      f_hat_val_gaussian_svr,
+      pheno_df[idx_val, trait_]
+    )
+    fold_result["SVR_support_vectors"] <- paste0(sv_, collapse = ", ")
 
-  # A correct value for c_par according to Cherkassy and Ma (2004).
-  # Neural networks 17, 113-126
-  c_par <- max(
-    abs(mean(pheno_df[idx_train, trait_]) + 3 * sd(pheno_df[idx_train, trait_])),
-    abs(mean(pheno_df[idx_train, trait_]) - 3 * sd(pheno_df[idx_train, trait_]))
-  )
-  gaussian_svr_model <- ksvm(
-    x = apply(geno_df_[idx_train, ], 2, as.numeric),
-    y = pheno_df[idx_train, trait_],
-    scaled = F, type = "eps-svr",
-    kernel = "rbfdot",
-    kpar = "automatic", C = c_par, epsilon = opt_eps
-  )
-  # get support vectors sv_ for gaussian svr model
-  idx_sv_ <- attributes(gaussian_svr_model)$SVindex
-  sv_ <- pheno_df[idx_train, "Genotype"][idx_sv_]
+    # train and predict with GBLUP (linear kernel krmm)
+    linear_krmm_model <- krmm(
+      Y = pheno_df[idx_train, trait_],
+      Matrix_covariates = geno_df[idx_train, ],
+      method = "GBLUP"
+    )
+    f_hat_val_linear_krmm <- predict_krmm(linear_krmm_model,
+      Matrix_covariates = geno_df[idx_val, ],
+      add_flxed_effects = T
+    )
+    fold_result["GBLUP"] <- cor(
+      f_hat_val_linear_krmm,
+      pheno_df[idx_val, trait_]
+    )
 
-  # make prediction for test data and save results
-  f_hat_test_gaussian_svr <- predict(
-    gaussian_svr_model,
-    apply(geno_df_[-idx_train, ], 2, as.numeric)
-  )
-  result[["SVR"]] <- cor(
-    f_hat_test_gaussian_svr,
-    pheno_df[-idx_train, trait_]
-  )
-  result[["SVR_support_vectors"]] <- paste0(sv_, collapse = ", ")
+    # train and predict with RKHS (non-linear Gaussian kernel krmm)
+    gaussian_krmm_model <- krmm(
+      Y = pheno_df[idx_train, trait_],
+      Matrix_covariates = geno_df[idx_train, ],
+      method = "RKHS", kernel = "Gaussian",
+      rate_decay_kernel = 0.1
+    )
+    f_hat_val_gaussian_krmm <- predict_krmm(gaussian_krmm_model,
+      Matrix_covariates = geno_df[idx_val, ],
+      add_flxed_effects = T
+    )
+    fold_result["RKHS"] <- cor(
+      f_hat_val_gaussian_krmm,
+      pheno_df[idx_val, trait_]
+    )
 
-  # train krmm with linear kernel (i.e. dot product, GBLUP or RR-BLUP method)
-  # on original variables
-  linear_krmm_model <- krmm(
-    Y = pheno_df[idx_train, trait_],
-    Matrix_covariates = geno_df_[idx_train, ],
-    method = "GBLUP"
-  )
-  # make prediction for test data and save results
-  f_hat_test_linear_krmm <- predict_krmm(linear_krmm_model,
-    Matrix_covariates = geno_df_[-idx_train, ],
-    add_flxed_effects = T
-  )
-  result[["GBLUP"]] <- cor(
-    f_hat_test_linear_krmm,
-    pheno_df[-idx_train, trait_]
-  )
+    # train and predict with LASSO
+    cv_fit_lasso_model <- cv.glmnet(
+      intercept = TRUE, y = pheno_df[idx_train, trait_],
+      x = as.matrix(geno_df[idx_train, ]),
+      type.measure = "mse", alpha = 1.0, nfold = 10,
+      parallel = TRUE
+    )
+    f_hat_val_lasso <- predict(cv_fit_lasso_model,
+      newx = as.matrix(geno_df[idx_val, ]),
+      s = "lambda.min"
+    )
+    fold_result["LASSO"] <- cor(
+      f_hat_val_lasso,
+      pheno_df[idx_val, trait_]
+    )
 
-  # train krmm with non linear gaussian kernel (i.e. RKHS method)
-  # on original variables
-  gaussian_krmm_model <- krmm(
-    Y = pheno_df[idx_train, trait_],
-    Matrix_covariates = geno_df_[idx_train, ],
-    method = "RKHS", kernel = "Gaussian",
-    rate_decay_kernel = opt_h
-  )
-  # make prediction for test data and save results
-  f_hat_test_gaussian_krmm_model <- predict_krmm(gaussian_krmm_model,
-    Matrix_covariates = geno_df_[-idx_train, ],
-    add_flxed_effects = T
-  )
-  result[["RKHS"]] <- cor(
-    f_hat_test_gaussian_krmm_model,
-    pheno_df[-idx_train, trait_]
-  )
+    fold_result
+  }
 
-  # train lasso on original variables
-  cv_fit_lasso_model <- cv.glmnet(
-    intercept = TRUE, y = pheno_df[idx_train, trait_],
-    x = as.matrix(geno_df_[idx_train, ]),
-    type.measure = "mse", alpha = 1.0, nfold = 10,
-    parallel = TRUE
-  )
-  # make prediction for test data and save results
-  f_hat_lasso_test <- predict(cv_fit_lasso_model,
-    newx = as.matrix(geno_df_[-idx_train, ]),
-    s = "lambda.min"
-  )
-  result[["LASSO"]] <- cor(
-    f_hat_lasso_test,
-    pheno_df[-idx_train, trait_]
-  )
-
-  return(result)
+  fold_results
 }
 
-# stop cluster
+# stop the parallel backend
 stopCluster(cl)
+registerDoSEQ()
 
 # create directory for trait_ graphics if it does not exist
 if (!dir.exists(paste0(output_pred_graphics_path, trait_, "/"))) {
@@ -356,11 +347,11 @@ for (method_ in method_names) {
 boxplots_rpa_ <- boxplots_rpa_ %>%
   layout(
     title = paste0(
-      "Genomic prediction RPA distributions of methods for ",
+      "Genomic prediction PA distributions of methods for ",
       trait_, ", based on ", snp_sample_size_, " SNPs across ",
       n_shuff_, " shuffling scenarios"
     ),
-    yaxis = list(title = "Relative Prediction Accuracy (RPA)", range = c(0, 1)),
+    yaxis = list(title = "Relative Prediction Accuracy (PA)", range = c(0, 1)),
     legend = list(title = list(text = "Prediction method"))
   )
 

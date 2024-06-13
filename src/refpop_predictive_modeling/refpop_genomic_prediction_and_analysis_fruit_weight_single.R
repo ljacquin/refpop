@@ -88,7 +88,7 @@ selected_traits_ <- c(
 )
 
 # define trait_
-trait_ <- "Harvest_date"
+trait_ <- "Fruit_weight_single"
 
 # define shift seed value by
 mult_seed_by_ <- 100

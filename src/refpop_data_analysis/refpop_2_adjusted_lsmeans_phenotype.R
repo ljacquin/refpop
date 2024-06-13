@@ -114,7 +114,7 @@ for (file_ in files_names_spats_adj_pheno) {
     lmer_model_ <- lmer(
       as.formula(paste0(
         Y,
-        " ~ 1 + (1 | Genotype) + Envir + (1 | Genotype:Envir)"
+        " ~ 1 + Envir + (1 | Genotype) + (1 | Genotype:Envir)"
       )),
       data = df_
     )
