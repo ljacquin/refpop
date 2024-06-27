@@ -15,7 +15,6 @@ library(parallel)
 library(missForest)
 library(Matrix)
 library(rgl)
-library(umap)
 library(ggplot2)
 library(plotly)
 # detect and set script path automatically, and source functions
@@ -65,12 +64,6 @@ alpha_ <- 0.01
 
 # plot confidence ellipse for outliers
 plot_conf_ellipse_outliers_ <- TRUE
-
-# umap parameters, most sensitive ones
-use_umap_ <- F
-random_state_umap_ <- 15 # 15, 30 and 50
-n_neighbors_umap_ <- 15 # 15, 30, 50
-min_dist_ <- 0.1
 
 # read raw pheno data and define proxy for outlier detection
 df_raw_ <- as.data.frame(fread(raw_pheno_file_path))
