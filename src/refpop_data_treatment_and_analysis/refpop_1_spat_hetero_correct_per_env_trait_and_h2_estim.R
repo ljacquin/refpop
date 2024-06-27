@@ -124,7 +124,7 @@ miss_data_singular_model_h2_out_vect_ <-
     )
     names(env_h2_raw_pheno_manage_list_) <- management_types
 
-    # list of h2 by management per env for raw phenotypes
+    # list of h2 by management per env for adj phenotypes
     env_h2_adj_pheno_manage_list_ <- lapply(
       1:n_management,
       function(x) env_h2_adj_pheno_vect_

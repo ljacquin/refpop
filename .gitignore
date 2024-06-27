@@ -17,4 +17,5 @@ results/phenotype_outlier_detection/outliers_per_env_phenotypes/*
 references/'~BROMIUM'/
 src/refpop_data_analysis/.Rhistory
 src/refpop_predictive_modeling/.Rhistory
+src/refpop_data_treatment_and_analysis/refpop_manage_type_raw_adj_pheno_simple_analysis.R
 to_do_list_.txt
