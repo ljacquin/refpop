@@ -1,0 +1,5 @@
+badge_codecov("rcannood/princurve")
+badge_code_size("GuangchuangYu/badger")
+badge_repostatus("Active")
+badge_last_commit("GuangchuangYu/badger")
+badge_github_actions("rossellhayes/ipa")
