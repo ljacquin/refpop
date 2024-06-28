@@ -11,14 +11,14 @@
 ![GitHub top language](https://img.shields.io/github/languages/top/ljacquin/refpop)
 ![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/ljacquin/refpop)  
 ![GitHub all releases](https://img.shields.io/github/downloads/ljacquin/refpop/total)
-![GitHub stars](https://img.shields.io/github/stars/ljacquin/refpop)
+![GitHub stars](https://img.shields.io/github/stars/ljacquin/refpop)  
 
 ##### Languages and technologies
 [![R Badge](https://img.shields.io/badge/R-276DC3?style=for-the-badge&logo=r&logoColor=white)](https://www.r-project.org/)
 [![Shell Script Badge](https://img.shields.io/badge/Shell_Script-121011?style=for-the-badge&logo=gnu-bash&logoColor=white)](https://en.wikipedia.org/wiki/Bash_(Unix_shell))
 [![Python Badge](https://img.shields.io/badge/Python-FFD43B?style=for-the-badge&logo=python&logoColor=blue)](https://www.python.org/)
 [![Plotly Badge](https://img.shields.io/badge/Plotly-239120?style=for-the-badge&logo=plotly&logoColor=white)](https://plotly.com/)
-[![RStudio Badge](https://img.shields.io/badge/RStudio-75AADB?style=for-the-badge&logo=RStudio&logoColor=white)](https://www.rstudio.com/)
+[![RStudio Badge](https://img.shields.io/badge/RSTUDIOAPI-blue?style=for-the-badge&logoColor=white)](https://www.rstudio.com/)
 
 ## Objective, tasks & analyses, and instructions :
 
