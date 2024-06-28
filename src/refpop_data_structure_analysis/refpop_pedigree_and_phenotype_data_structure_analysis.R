@@ -23,6 +23,8 @@ pheno_dir_path <- "../../data/phenotype_data/"
 geno_dir_path <- "../../data/genotype_data/"
 # output result path for pedigree graphics
 output_pedig_graphics_path <- "../../results/graphics/pedigree_graphics/"
+# output result path for phenotype graphics
+output_pheno_graphics_path <- "../../results/graphics/phenotype_graphics/"
 
 # define selected_traits_
 selected_traits_ <- c(
@@ -197,18 +199,126 @@ pheno_df <- as.data.frame(fread(paste0(
   pheno_dir_path,
   "adjusted_ls_means_phenotypes.csv"
 )))
+
 # center and scale data for umap and replace few na (13 in dataframe)
 pheno_df[, selected_traits_] <- apply(scale(pheno_df[, selected_traits_],
   center = T,
   scale = T
 ), 2, impute_mean)
-pedig_pheno_df <- merge(pheno_df, pedig_incid_mat, by = "Genotype", all = F)
 
+
+# merge pheno_df and geno_fam_orig_df according to genotype
+pheno_df <- merge(pheno_df, geno_fam_orig_df, by = "Genotype", all = TRUE)
+pheno_df <- drop_na(pheno_df, any_of("Family"))
+
+# remove non numeric variables and apply umap
+pheno_umap <- pheno_df[, -match(
+  c("Genotype", "Family", "Origin"),
+  colnames(pheno_df)
+)]
+
+pheno_umap_2d <- data.frame(umap(pheno_umap,
+  n_components = 2,
+  random_state = random_state_umap_,
+  n_neighbors = n_neighbors_umap_,
+  min_dist = min_dist_
+)[["layout"]])
+
+# plot umap with family as label
+pheno_umap_2d$label <- pheno_df$Family
+labels_ <- unique(pheno_df$Family)
+n_family <- length(labels_)
+
+# define colors for labels
+color_labels_ <- color_palette_family[1:n_family]
+names(color_labels_) <- labels_
+
+fig_title_ <- "UMAP 2D plot for REFPOP phenotype data"
+label_title_ <- "Family (except accession)"
+
+fig_x_y <- plot_ly(
+  type = "scatter", mode = "markers"
+) %>%
+  layout(
+    plot_bgcolor = "#e5ecf6",
+    title = fig_title_,
+    xaxis = list(title = "first component"),
+    yaxis = list(title = "second component")
+  )
+# regroup by label
+for (label_ in unique(pheno_umap_2d$label)) {
+  data_subset <- pheno_umap_2d[pheno_umap_2d$label == label_, ]
+  fig_x_y <- fig_x_y %>%
+    add_trace(
+      data = data_subset,
+      x = ~X1, y = ~X2,
+      type = "scatter", mode = "markers",
+      marker = list(color = color_labels_[label_]),
+      name = label_
+    )
+}
+fig_x_y <- fig_x_y %>% layout(
+  legend = list(title = list(text = label_title_))
+)
+saveWidget(fig_x_y,
+  file = paste0(
+    output_pheno_graphics_path,
+    "complete_phenotype_refpop_umap_2d_family_as_label.html"
+  )
+)
+
+# plot umap with origin as label
+pheno_umap_2d$label <- pheno_df$Origin
+labels_ <- unique(pheno_df$Origin)
+n_origin <- length(labels_)
+
+# define colors for labels
+color_labels_ <- color_palette_origin[1:n_origin]
+names(color_labels_) <- labels_
+
+fig_title_ <- "UMAP 2D plot for REFPOP phenotype data"
+label_title_ <- "Origin"
+
+fig_x_y <- plot_ly(
+  type = "scatter", mode = "markers"
+) %>%
+  layout(
+    plot_bgcolor = "#e5ecf6",
+    title = fig_title_,
+    xaxis = list(title = "first component"),
+    yaxis = list(title = "second component")
+  )
+# regroup by label
+for (label_ in unique(pheno_umap_2d$label)) {
+  data_subset <- pheno_umap_2d[pheno_umap_2d$label == label_, ]
+  fig_x_y <- fig_x_y %>%
+    add_trace(
+      data = data_subset,
+      x = ~X1, y = ~X2,
+      type = "scatter", mode = "markers",
+      marker = list(color = color_labels_[label_]),
+      name = label_
+    )
+}
+fig_x_y <- fig_x_y %>% layout(
+  legend = list(title = list(text = label_title_))
+)
+saveWidget(fig_x_y,
+  file = paste0(
+    output_pheno_graphics_path,
+    "complete_phenotype_refpop_umap_2d_origin_as_label.html"
+  )
+)
+
+# merge pheno and pedig data
+pedig_pheno_df <- merge(pheno_df, pedig_incid_mat, by = "Genotype", all = F)
+pedig_pheno_df <- pedig_pheno_df[, -match(
+    c("Genotype", "Family", "Origin"),
+    colnames(pedig_pheno_df)
+  )
+]
 # umap pedigree phenotype plots
-pedig_pheno_umap_2d <- data.frame(umap(
-  pedig_pheno_df[
-    , -match("Genotype", colnames(pedig_pheno_df))
-  ],
+pedig_pheno_umap_2d <- data.frame(umap(pedig_pheno_df,
   n_components = 2,
   random_state = random_state_umap_,
   n_neighbors = n_neighbors_umap_,
@@ -304,11 +414,7 @@ saveWidget(fig_x_y,
 # perform pca for pedig_incid_mat, pheno_df and pedig_pheno_df
 
 # pedig_incid_mat
-pedig_pca_obj_ <- pca(
-  pedig_incid_mat[, -match(
-    "Genotype",
-    colnames(pedig_incid_mat)
-  )],
+pedig_pca_obj_ <- pca(pedig_incid_mat,
   ncomp = 2, center = TRUE, scale = TRUE
 )
 pedig_pca_mat_ <- as.data.frame(pedig_pca_obj_$variates$X)
@@ -358,7 +464,7 @@ fig_x_y <- fig_x_y %>% layout(
 )
 # save graphics
 saveWidget(fig_x_y, file = paste0(
-  output_pedig_graphics_path, 
+  output_pedig_graphics_path,
   "complete_pca_pedigree_family_as_label.html"
 ))
 
@@ -404,7 +510,7 @@ fig_x_y <- fig_x_y %>% layout(
 )
 # save graphics
 saveWidget(fig_x_y, file = paste0(
-  output_pedig_graphics_path, 
+  output_pedig_graphics_path,
   "complete_pca_pedigree_origin_as_label.html"
 ))
 
@@ -460,7 +566,7 @@ fig_x_y <- fig_x_y %>% layout(
 )
 # save graphics
 saveWidget(fig_x_y, file = paste0(
-  output_pedig_graphics_path, 
+  output_pheno_graphics_path,
   "complete_pca_phenotype_family_as_label.html"
 ))
 
@@ -506,13 +612,13 @@ fig_x_y <- fig_x_y %>% layout(
 )
 # save graphics
 saveWidget(fig_x_y, file = paste0(
-  output_pedig_graphics_path, 
+  output_pheno_graphics_path,
   "complete_pca_phenotype_origin_as_label.html"
 ))
 
 # pedig_pheno_df
 pedig_pheno_pca_obj_ <- pca(
-  pedig_pheno_df[, -match('Genotype', colnames(pedig_pheno_df))],
+  pedig_pheno_df,
   ncomp = 2, center = TRUE, scale = TRUE
 )
 pedig_pheno_pca_mat_ <- as.data.frame(pedig_pheno_pca_obj_$variates$X)
@@ -562,7 +668,7 @@ fig_x_y <- fig_x_y %>% layout(
 )
 # save graphics
 saveWidget(fig_x_y, file = paste0(
-  output_pedig_graphics_path, 
+  output_pedig_graphics_path,
   "complete_pca_pedigree_phenotype_family_as_label.html"
 ))
 
@@ -608,8 +714,6 @@ fig_x_y <- fig_x_y %>% layout(
 )
 # save graphics
 saveWidget(fig_x_y, file = paste0(
-  output_pedig_graphics_path, 
+  output_pedig_graphics_path,
   "complete_pca_pedigree_phenotype_origin_as_label.html"
 ))
-
-
