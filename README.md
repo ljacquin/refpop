@@ -91,14 +91,14 @@ The analyses performed by the different ```R``` scripts in the subfolders of ```
   * ```refpop_pedigree_and_phenotype_data_structure_analysis.R```: This script performs structure analyses for the refpop pedigree data, phenotype data, and their combination, using both uniform manifold approximation and projection (UMAP) and principal component analysis (PCA).
       <p> </p>
   
+* ```refpop_predictive_modeling_and_analysis/```
+  * ```refpop_genomic_prediction_and_analysis_trait.R```: This script evaluates, for a defined trait, the distributions of genomic prediction accuracies associated to several prediction methods, for the adjusted phenotypic ls-means. These distributions are evaluated using K-folds cross-validation, for n shuffling scenarios of the refpop population, and using the pearson correlation as a measure of accuracy between the predicted and observed adjusted phenotypic ls-means. The implemented prediction methods are random forest (RF), support vector regression (SVR), reproducing kernel hilbert space regression (RKHS), genomic blup (GBLUP) and least absolute shrinkage and selection operator (LASSO).
+      <p> </p>
+
 * ```refpop_gem_interaction_analysis/```
   * ```script_1.R```:
   * ```script_2.R```:
       <p> </p>
-
-* ```refpop_predictive_modeling_and_analysis/```
-  * ```refpop_genomic_prediction_and_analysis_trait.R```: This script evaluates, for a defined trait, the distributions of genomic prediction accuracies associated to several prediction methods, for the adjusted phenotypic ls-means. These distributions are evaluated using K-folds cross-validation, for n shuffling scenarios of the refpop population, and using the pearson correlation as a measure of accuracy between the predicted and observed adjusted phenotypic ls-means. The implemented prediction methods are random forest (RF), support vector regression (SVR), reproducing kernel hilbert space regression (RKHS), genomic blup (GBLUP) and least absolute shrinkage and selection operator (LASSO).
-  
 
 ### 💻 Instructions
 
