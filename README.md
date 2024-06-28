@@ -20,7 +20,7 @@
 [![Plotly Badge](https://img.shields.io/badge/Plotly-239120?style=for-the-badge&logo=plotly&logoColor=white)](https://plotly.com/)
 [![RStudio Badge](https://img.shields.io/badge/RSTUDIOAPI-blue?style=for-the-badge&logoColor=white)](https://www.rstudio.com/)
 
-## Objective, tasks & analyses, and instructions :
+## Objective, automated tasks & analyses, and instructions :
 
 ### 🎯 Objective
 
@@ -34,7 +34,7 @@ This repository hosts ```R``` scripts designed to ensure reproducible data analy
 
 * **R**eusable
 
-### 📊 Tasks & analyses 
+### 🔄 Automated tasks & analyses 
 
 #### 📂 Repository overview
 
