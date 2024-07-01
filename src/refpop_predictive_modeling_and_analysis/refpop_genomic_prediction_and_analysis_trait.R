@@ -51,11 +51,11 @@ py_module_available("tensorflow") # must return TRUE
 py_discover_config("keras") # more info on the python env, tf and keras
 
 # define computation mode, i.e. local or cluster
-computation_mode <- 'cluster'
+computation_mode <- "cluster"
 
 # if comutations are local in rstudio, detect and set script path
 # automatically using rstudioapi
-if ( identical(computation_mode, 'local') ){
+if (identical(computation_mode, "local")) {
   library(rstudioapi)
   setwd(dirname(getActiveDocumentContext()$path))
 }
@@ -93,7 +93,7 @@ selected_traits_ <- c(
   "Scab", "Powdery_mildew", "Weight_sample", "Sample_size"
 )
 
-# define trait_ 
+# define trait_
 trait_ <- "" # e.g. "Harvest_date"
 
 # define shift seed value by
