@@ -1,3 +1,4 @@
+options(repos = c(CRAN = "https://cran.r-project.org"))
 install.packages("bigsnpr")
 install.packages("BiocManager")
 library(BiocManager)
