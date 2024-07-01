@@ -10,11 +10,20 @@ library(umap)
 library(dplyr)
 library(tidyr)
 library(htmlwidgets)
-library(rstudioapi)
 library(stringr)
 library(mixOmics)
-# detect and set script path automatically, and source functions
-setwd(dirname(getActiveDocumentContext()$path))
+
+# define computation mode, i.e. "local" or "cluster"
+computation_mode <- 'cluster'
+
+# if comutations are local in rstudio, detect and set script path
+# automatically using rstudioapi
+if ( identical(computation_mode, 'local') ){
+  library(rstudioapi)
+  setwd(dirname(getActiveDocumentContext()$path))
+}
+
+# source functions
 source("../functions.R")
 
 # set paths

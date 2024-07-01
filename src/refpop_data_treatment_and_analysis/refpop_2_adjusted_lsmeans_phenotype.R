@@ -19,14 +19,24 @@ library(ggplot2)
 library(umap)
 library(dplyr)
 library(htmlwidgets)
-library(rstudioapi)
 library(stringr)
 library(lme4)
 library(tidyr)
 library(lsmeans)
-# detect and set script path automatically, and source functions
-setwd(dirname(getActiveDocumentContext()$path))
+
+# define computation mode, i.e. "local" or "cluster"
+computation_mode <- 'cluster'
+
+# if comutations are local in rstudio, detect and set script path
+# automatically using rstudioapi
+if ( identical(computation_mode, 'local') ){
+  library(rstudioapi)
+  setwd(dirname(getActiveDocumentContext()$path))
+}
+
+# source functions
 source("../functions.R")
+
 # set options to increase memory and suppress warnings
 options(expressions = 5e5)
 options(warn = -1)

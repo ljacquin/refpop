@@ -102,7 +102,7 @@ The analyses performed by the different ```R``` scripts in the subfolders of ```
 
 ### 💻 Instructions
 
-* Download the ```refpop``` repository in the current user's directory on a computing cluster or personal computer using one of the following commands :
+Download the ```refpop``` repository in the current user's directory on a computing cluster or personal computer using one of the following commands :
 
   *  ```git clone git@github.com:ljacquin/refpop.git``` <p> </p>
     or
@@ -124,9 +124,14 @@ The analyses performed by the different ```R``` scripts in the subfolders of ```
 
 * Replace the ```data/``` folder with the directory found at https://data :  
 
-* Finally, execute the following command for executing the refpop tasks and analyses :
+* Finally, execute one of the following commands for executing the refpop tasks and analyses :
 
-  *  ```./execute_refpop_tasks_and_analyses.sh```
+  *  ```sbatch execute_refpop_tasks_and_analyses.sh```<p> </p>
+    or
+  * ```./execute_refpop_tasks_and_analyses.sh``` (i.e., interactive execution)
+  <p> </p>
+
+The tasks and analyses in the ```refpop``` repository can be run in either ```Unix/Linux``` or ```Windows``` environments, as long as ```R``` and the necessary libraries are installed. For local computations in ```RStudio```, ensure that the ```computation_mode``` variable is set to "local"" in the ```R``` scripts located in ```src/```. 
 
 ## References
 

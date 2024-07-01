@@ -16,7 +16,6 @@ if (install_other_requirements) {
   py_install("umap-learn", pip = T, pip_ignore_installed = T)
 }
 library(snpR)
-library(snpStats)
 library(mixOmics)
 library(data.table)
 library(plotly)
@@ -24,13 +23,23 @@ library(ggplot2)
 library(umap)
 library(dplyr)
 library(htmlwidgets)
-library(rstudioapi)
 library(stringr)
 library(foreach)
 library(doParallel)
-# detect and set script path automatically, and source functions
-setwd(dirname(getActiveDocumentContext()$path))
+
+# define computation mode, i.e. "local" or "cluster"
+computation_mode <- "local"
+
+# if comutations are local in rstudio, detect and set script path
+# automatically using rstudioapi
+if (identical(computation_mode, "local")) {
+  library(rstudioapi)
+  setwd(dirname(getActiveDocumentContext()$path))
+}
+
+# source functions
 source("../functions.R")
+
 # set options to increase memory and suppress warnings
 options(expressions = 5e5)
 options(warn = -1)
@@ -49,7 +58,6 @@ bim_file <- paste0(geno_dir_path, "refpop_genotype.bim")
 fam_file <- paste0(geno_dir_path, "refpop_genotype.fam")
 
 read_with_bigsnpr <- TRUE
-read_with_snpStats <- FALSE # possible issue with the package or wrong usage
 perform_umap_ <- FALSE
 
 # define umap training and plot paraemeters
@@ -59,12 +67,12 @@ random_state_umap_ <- 15
 n_neighbors_umap_ <- 15
 min_dist_ <- 0.1
 
-# define refpop train data for umap : complete, accessions, progeny
+# define refpop train data for umap : "complete", "accessions", "progeny"
 umap_refpop_train_data <- "complete"
 pca_refpop_train_data <- "complete"
 
 # define label data for umap :  origin, family or genotype (genotype not recommended)
-use_origin_family_or_genotype_as_label_ <- "family"
+vect_origin_family_or_genotype_as_label_ <- c("origin", "family")
 
 # if umap_refpop_train_data = "accessions", should progenies be projected using umap ?
 predict_umap_progeny_ <- FALSE
@@ -132,16 +140,6 @@ if (read_with_bigsnpr) {
   }
 }
 
-# possible other way to read plink genotype data but
-# the usage might be wrong or may be read.plink() has an issue
-if (read_with_snpStats) {
-  # read plik files
-  df_ <- read.plink(bed_file, bim_file, fam_file)
-  geno_df <- df_[["genotypes"]]
-  fam_df <- df_[["fam"]]
-  map_df <- df_[["map"]]
-}
-
 # get geographical origins of genotypes
 geno_origin_ <- as.data.frame(fread(paste0(
   geno_dir_path,
@@ -196,411 +194,414 @@ fwrite(geno_df[, geno_fam_orig_vect_],
   sep = ","
 )
 
-# umap plots
+for (use_origin_family_or_genotype_as_label_ in
+  vect_origin_family_or_genotype_as_label_) {
+  # umap plots
 
-if (perform_umap_) {
-  # set palette of colors according to label used
-  set.seed(123)
+  if (perform_umap_) {
+    # set palette of colors according to label used
+    set.seed(123)
 
-  # set arbitrary colors for unique genotypes
-  if (identical(use_origin_family_or_genotype_as_label_, "genotype")) {
-    color_palette <- col_func_genotype(length(unique(geno_df$Genotype)))
+    # set arbitrary colors for unique genotypes
+    if (identical(use_origin_family_or_genotype_as_label_, "genotype")) {
+      color_palette <- col_func_genotype(length(unique(geno_df$Genotype)))
 
-    # set color labels for families (28 counts)
-  } else if (identical(use_origin_family_or_genotype_as_label_, "family")) {
-    color_palette <- color_palette_family
+      # set color labels for families (28 counts)
+    } else if (identical(use_origin_family_or_genotype_as_label_, "family")) {
+      color_palette <- color_palette_family
 
-    # if population is not complete select the corresponding color for subset
-    if (identical(umap_refpop_train_data, "accessions")) {
-      color_palette <- color_palette[1]
+      # if population is not complete select the corresponding color for subset
+      if (identical(umap_refpop_train_data, "accessions")) {
+        color_palette <- color_palette[1]
+      } else if (identical(umap_refpop_train_data, "progeny")) {
+        color_palette <- color_palette[-1]
+      }
+
+      # set color labels for origins (11 counts)
+    } else {
+      color_palette <- color_palette_origin
+    }
+
+    if (identical(umap_refpop_train_data, "complete")) {
+      # compute umap in 2D
+      geno_umap_2d <- data.frame(umap(geno_df[, -idx_origin_geno_names],
+        n_components = 2, random_state = random_state_umap_,
+        n_neighbors = n_neighbors_umap_, min_dist = min_dist_
+      )[["layout"]])
+
+      # compute umap in 3D
+      geno_umap_3d <- data.frame(umap(geno_df[, -idx_origin_geno_names],
+        n_components = 3, random_state = random_state_umap_,
+        n_neighbors = n_neighbors_umap_, min_dist = min_dist_
+      )[["layout"]])
+
+      # save umap models for this case if predict_umap_progeny_ is true
+    } else if (identical(umap_refpop_train_data, "accessions")) {
+      sub_geno_df <- geno_df[-which(geno_df$Origin %in% "P"), ]
+
+      # compute umap in 2D
+      geno_umap_2d_model <- umap(sub_geno_df[, -idx_origin_geno_names],
+        n_components = 2, random_state = random_state_umap_,
+        n_neighbors = n_neighbors_umap_, min_dist = min_dist_
+      )
+      geno_umap_2d <- data.frame(geno_umap_2d_model[["layout"]])
+
+      # compute umap in 3D
+      geno_umap_3d_model <- umap(sub_geno_df[, -idx_origin_geno_names],
+        n_components = 3, random_state = random_state_umap_,
+        n_neighbors = n_neighbors_umap_, min_dist = min_dist_
+      )
+      geno_umap_3d <- data.frame(geno_umap_3d_model[["layout"]])
     } else if (identical(umap_refpop_train_data, "progeny")) {
-      color_palette <- color_palette[-1]
+      sub_geno_df <- geno_df[which(geno_df$Origin %in% "P"), ]
+
+      # compute umap in 2D
+      geno_umap_2d <- data.frame(umap(sub_geno_df[, -idx_origin_geno_names],
+        n_components = 2, random_state = random_state_umap_,
+        n_neighbors = n_neighbors_umap_, min_dist = min_dist_
+      )[["layout"]])
+      # compute umap in 3D
+      geno_umap_3d <- data.frame(umap(sub_geno_df[, -idx_origin_geno_names],
+        n_components = 3, random_state = random_state_umap_,
+        n_neighbors = n_neighbors_umap_, min_dist = min_dist_
+      )[["layout"]])
     }
 
-    # set color labels for origins (11 counts)
-  } else {
-    color_palette <- color_palette_origin
-  }
+    if (identical(use_origin_family_or_genotype_as_label_, "origin")) {
+      # define colors for labels
+      labels_ <- unique(geno_df$Origin)
+      n_origins <- length(labels_)
+      color_labels_ <- color_palette[1:n_origins]
+      names(color_labels_) <- labels_
 
-  if (identical(umap_refpop_train_data, "complete")) {
-    # compute umap in 2D
-    geno_umap_2d <- data.frame(umap(geno_df[, -idx_origin_geno_names],
-      n_components = 2, random_state = random_state_umap_,
-      n_neighbors = n_neighbors_umap_, min_dist = min_dist_
-    )[["layout"]])
+      if (identical(umap_refpop_train_data, "complete")) {
+        # define label according to origin
+        geno_umap_2d$label <- geno_df$Origin
+        geno_umap_3d$label <- geno_df$Origin
+      } else {
+        geno_umap_2d$label <- sub_geno_df$Origin
+        geno_umap_3d$label <- sub_geno_df$Origin
+      }
+    } else if (identical(use_origin_family_or_genotype_as_label_, "family")) {
+      # define colors for labels
+      labels_ <- unique(geno_df$Family)
+      n_family <- length(labels_)
+      color_labels_ <- color_palette[1:n_family]
+      names(color_labels_) <- labels_
 
-    # compute umap in 3D
-    geno_umap_3d <- data.frame(umap(geno_df[, -idx_origin_geno_names],
-      n_components = 3, random_state = random_state_umap_,
-      n_neighbors = n_neighbors_umap_, min_dist = min_dist_
-    )[["layout"]])
+      if (identical(umap_refpop_train_data, "complete")) {
+        # define label according to origin
+        geno_umap_2d$label <- geno_df$Family
+        geno_umap_3d$label <- geno_df$Family
+      } else {
+        geno_umap_2d$label <- sub_geno_df$Family
+        geno_umap_3d$label <- sub_geno_df$Family
+      }
+    } else if (identical(use_origin_family_or_genotype_as_label_, "genotype")) {
+      # define colors for labels
+      labels_ <- unique(geno_df$Genotype)
+      n_geno <- length(labels_)
+      color_labels_ <- color_palette[1:n_geno]
+      names(color_labels_) <- labels_
 
-    # save umap models for this case if predict_umap_progeny_ is true
-  } else if (identical(umap_refpop_train_data, "accessions")) {
-    sub_geno_df <- geno_df[-which(geno_df$Origin %in% "P"), ]
+      if (identical(umap_refpop_train_data, "complete")) {
+        # define label according to origin
+        geno_umap_2d$label <- geno_df$Genotype
+        geno_umap_3d$label <- geno_df$Genotype
+      } else {
+        geno_umap_2d$label <- sub_geno_df$Genotype
+        geno_umap_3d$label <- sub_geno_df$Genotype
+      }
+    }
 
-    # compute umap in 2D
-    geno_umap_2d_model <- umap(sub_geno_df[, -idx_origin_geno_names],
-      n_components = 2, random_state = random_state_umap_,
-      n_neighbors = n_neighbors_umap_, min_dist = min_dist_
-    )
-    geno_umap_2d <- data.frame(geno_umap_2d_model[["layout"]])
+    # make umap prediction for progenies based on unsupervised learning
+    # from accessions as a special case
+    if (identical(umap_refpop_train_data, "accessions") && predict_umap_progeny_) {
+      sub_geno_df <- geno_df[which(geno_df$Origin %in% "P"), ]
 
-    # compute umap in 3D
-    geno_umap_3d_model <- umap(sub_geno_df[, -idx_origin_geno_names],
-      n_components = 3, random_state = random_state_umap_,
-      n_neighbors = n_neighbors_umap_, min_dist = min_dist_
-    )
-    geno_umap_3d <- data.frame(geno_umap_3d_model[["layout"]])
-  } else if (identical(umap_refpop_train_data, "progeny")) {
-    sub_geno_df <- geno_df[which(geno_df$Origin %in% "P"), ]
+      # 2d umap prediction for progenies
+      geno_umap_2d_progeny <- as.data.frame(predict(
+        geno_umap_2d_model, sub_geno_df[, -idx_origin_geno_names]
+      ))
+      if (identical(use_origin_family_or_genotype_as_label_, "family")) {
+        geno_umap_2d_progeny$label <- sub_geno_df$Family
+      } else if (identical(use_origin_family_or_genotype_as_label_, "origin")) {
+        geno_umap_2d_progeny$label <- sub_geno_df$Origin
+      }
+      colnames(geno_umap_2d_progeny) <- colnames(geno_umap_2d)
+      geno_umap_2d <- rbind(geno_umap_2d, geno_umap_2d_progeny)
 
-    # compute umap in 2D
-    geno_umap_2d <- data.frame(umap(sub_geno_df[, -idx_origin_geno_names],
-      n_components = 2, random_state = random_state_umap_,
-      n_neighbors = n_neighbors_umap_, min_dist = min_dist_
-    )[["layout"]])
-    # compute umap in 3D
-    geno_umap_3d <- data.frame(umap(sub_geno_df[, -idx_origin_geno_names],
-      n_components = 3, random_state = random_state_umap_,
-      n_neighbors = n_neighbors_umap_, min_dist = min_dist_
-    )[["layout"]])
-  }
+      # 3d umap prediction for progenies
+      geno_umap_3d_progeny <- as.data.frame(predict(
+        geno_umap_3d_model, sub_geno_df[, -idx_origin_geno_names]
+      ))
+      if (identical(use_origin_family_or_genotype_as_label_, "family")) {
+        geno_umap_3d_progeny$label <- sub_geno_df$Family
+      } else if (identical(use_origin_family_or_genotype_as_label_, "origin")) {
+        geno_umap_3d_progeny$label <- sub_geno_df$Origin
+      }
+      colnames(geno_umap_3d_progeny) <- colnames(geno_umap_3d)
+      geno_umap_3d <- rbind(geno_umap_3d, geno_umap_3d_progeny)
+    }
 
-  if (identical(use_origin_family_or_genotype_as_label_, "origin")) {
-    # define colors for labels
-    labels_ <- unique(geno_df$Origin)
-    n_origins <- length(labels_)
-    color_labels_ <- color_palette[1:n_origins]
-    names(color_labels_) <- labels_
-
-    if (identical(umap_refpop_train_data, "complete")) {
-      # define label according to origin
-      geno_umap_2d$label <- geno_df$Origin
-      geno_umap_3d$label <- geno_df$Origin
+    # 2D plot
+    # create base graphic
+    if (identical(umap_refpop_train_data, "accessions") && predict_umap_progeny_) {
+      umap_2d_title_ <- "UMAP 2D plot for REFPOP genotype data with umap trained
+    on accessions, and progenies projected using trained model"
+      output_path_2d_umap <- paste0(
+        output_geno_graphics_path,
+        umap_refpop_train_data, "/",
+        umap_refpop_train_data, "_genotype_refpop_progeny_projected_umap_2d_",
+        use_origin_family_or_genotype_as_label_,
+        "_as_label.html"
+      )
     } else {
-      geno_umap_2d$label <- sub_geno_df$Origin
-      geno_umap_3d$label <- sub_geno_df$Origin
+      umap_2d_title_ <- "UMAP 2D plot for REFPOP genotype data"
+      output_path_2d_umap <- paste0(
+        output_geno_graphics_path,
+        umap_refpop_train_data, "/",
+        umap_refpop_train_data, "_genotype_refpop_umap_2d_",
+        use_origin_family_or_genotype_as_label_,
+        "_as_label.html"
+      )
     }
-  } else if (identical(use_origin_family_or_genotype_as_label_, "family")) {
+
+    # modify label_title_ for family special case
+    if (identical(use_origin_family_or_genotype_as_label_, "family") &&
+      !identical(umap_refpop_train_data, "progeny")) {
+      label_title_ <- paste0(
+        "<b> ",
+        str_to_title(use_origin_family_or_genotype_as_label_),
+        " (except accession)",
+        "</b>"
+      )
+    } else {
+      label_title_ <- paste0(
+        "<b> ",
+        str_to_title(use_origin_family_or_genotype_as_label_),
+        "</b>"
+      )
+    }
+
+    fig_x_y <- plot_ly(
+      type = "scatter", mode = "markers"
+    ) %>%
+      layout(
+        plot_bgcolor = "#e5ecf6",
+        title = umap_2d_title_,
+        xaxis = list(title = "first component"),
+        yaxis = list(title = "second component")
+      )
+    # regroup by label
+    for (label_ in unique(geno_umap_2d$label)) {
+      data_subset <- geno_umap_2d[geno_umap_2d$label == label_, ]
+      fig_x_y <- fig_x_y %>%
+        add_trace(
+          data = data_subset,
+          x = ~X1, y = ~X2,
+          type = "scatter", mode = "markers",
+          marker = list(color = color_labels_[label_]),
+          name = label_
+        )
+    }
+    fig_x_y <- fig_x_y %>% layout(
+      legend = list(title = list(text = label_title_))
+    )
+    # save graphics
+    saveWidget(fig_x_y, file = output_path_2d_umap)
+
+    # 3D plot
+    # create base graphic
+    if (identical(umap_refpop_train_data, "accessions") && predict_umap_progeny_) {
+      umap_3d_title_ <- "UMAP 3D plot for REFPOP genotype data with umap trained
+    on accessions, and progenies projected using trained model"
+      output_path_3d_umap <- paste0(
+        output_geno_graphics_path,
+        umap_refpop_train_data, "/",
+        umap_refpop_train_data, "_genotype_refpop_progeny_projected_umap_3d_",
+        use_origin_family_or_genotype_as_label_,
+        "_as_label.html"
+      )
+    } else {
+      umap_3d_title_ <- "UMAP 3D plot for REFPOP genotype data"
+      output_path_3d_umap <- paste0(
+        output_geno_graphics_path,
+        umap_refpop_train_data, "/",
+        umap_refpop_train_data, "_genotype_refpop_umap_3d_",
+        use_origin_family_or_genotype_as_label_,
+        "_as_label.html"
+      )
+    }
+    fig_x_y_z <- plot_ly(
+      type = "scatter3d",
+      mode = "markers"
+    ) %>%
+      layout(
+        plot_bgcolor = "#e5ecf6",
+        title = umap_3d_title_,
+        xaxis = list(title = "first component"),
+        yaxis = list(title = "second component"),
+        zaxis = list(title = "third component")
+      )
+    # regroup by label
+    for (label_ in unique(geno_umap_3d$label)) {
+      data_subset <- geno_umap_3d[geno_umap_3d$label == label_, ]
+      fig_x_y_z <- fig_x_y_z %>%
+        add_trace(
+          data = data_subset,
+          x = ~X1, y = ~X2, z = ~X3,
+          type = "scatter3d",
+          mode = "markers",
+          marker = list(color = color_labels_[label_]),
+          name = label_
+        )
+    }
+    fig_x_y_z <- fig_x_y_z %>% layout(
+      legend = list(title = list(text = label_title_))
+    )
+    # save graphics
+    saveWidget(fig_x_y_z, file = output_path_3d_umap)
+  }
+
+  # perform pca for geno_df
+  geno_fam_orig_df_ <- geno_df[, c("Family", "Origin")]
+  geno_df_ <- geno_df[, -match(c("Family", "Origin"), colnames(geno_df))]
+  geno_df_ <- remove_monomorphic_markers(geno_df_)$filtered_df
+  geno_pca_obj_ <- pca(geno_df_[, -match("Genotype", colnames(geno_df_))],
+    ncomp = 500, center = TRUE, scale = TRUE
+  )
+  geno_pca_mat_ <- as.data.frame(geno_pca_obj_$variates$X)
+  geno_pca_exp_var_ <- geno_pca_obj_$prop_expl_var$X
+  geno_pca_cum_exp_var_ <- geno_pca_obj_$cum.var
+  plot(geno_pca_cum_exp_var_)
+
+  # plot coordinates of individuals on two first pcs :
+  if (identical(use_origin_family_or_genotype_as_label_, "family")) {
     # define colors for labels
-    labels_ <- unique(geno_df$Family)
+    labels_ <- unique(geno_fam_orig_df_$Family)
     n_family <- length(labels_)
-    color_labels_ <- color_palette[1:n_family]
+    color_labels_ <- color_palette_family[1:n_family]
     names(color_labels_) <- labels_
+    geno_pca_mat_$label <- geno_fam_orig_df_$Family
 
-    if (identical(umap_refpop_train_data, "complete")) {
-      # define label according to origin
-      geno_umap_2d$label <- geno_df$Family
-      geno_umap_3d$label <- geno_df$Family
-    } else {
-      geno_umap_2d$label <- sub_geno_df$Family
-      geno_umap_3d$label <- sub_geno_df$Family
+    # create plot
+    fig_x_y <- plot_ly(
+      type = "scatter", mode = "markers"
+    ) %>%
+      layout(
+        plot_bgcolor = "#e5ecf6",
+        title = "PCA 2D plot for REFPOP genotype data",
+        xaxis = list(title = paste0(
+          names(geno_pca_exp_var_)[1], ": ",
+          signif(100 * as.numeric(geno_pca_exp_var_)[1], 2), "%"
+        )),
+        yaxis = list(title = paste0(
+          names(geno_pca_exp_var_)[2], ": ",
+          signif(100 * as.numeric(geno_pca_exp_var_)[2], 2), "%"
+        ))
+      )
+    # regroup by label
+    for (label_ in unique(geno_pca_mat_$label)) {
+      data_subset <- geno_pca_mat_[geno_pca_mat_$label == label_, ]
+      fig_x_y <- fig_x_y %>%
+        add_trace(
+          data = data_subset,
+          x = ~PC1, y = ~PC2,
+          type = "scatter", mode = "markers",
+          marker = list(color = color_labels_[label_]),
+          name = label_
+        )
     }
-  } else if (identical(use_origin_family_or_genotype_as_label_, "genotype")) {
+    fig_x_y <- fig_x_y %>% layout(
+      legend = list(title = list(text = "<b> Family (except accession) </b>"))
+    )
+    # save graphics
+    saveWidget(fig_x_y, file = paste0(
+      output_geno_graphics_path, pca_refpop_train_data, "/",
+      pca_refpop_train_data, "_genotype_pca_family_as_label.html"
+    ))
+  } else if (identical(use_origin_family_or_genotype_as_label_, "origin")) {
     # define colors for labels
-    labels_ <- unique(geno_df$Genotype)
-    n_geno <- length(labels_)
-    color_labels_ <- color_palette[1:n_geno]
+    labels_ <- unique(geno_fam_orig_df_$Origin)
+    n_origin <- length(labels_)
+    color_labels_ <- color_palette_origin[1:n_origin]
     names(color_labels_) <- labels_
+    geno_pca_mat_$label <- geno_fam_orig_df_$Origin
 
-    if (identical(umap_refpop_train_data, "complete")) {
-      # define label according to origin
-      geno_umap_2d$label <- geno_df$Genotype
-      geno_umap_3d$label <- geno_df$Genotype
-    } else {
-      geno_umap_2d$label <- sub_geno_df$Genotype
-      geno_umap_3d$label <- sub_geno_df$Genotype
+    # create plot
+    fig_x_y <- plot_ly(
+      type = "scatter", mode = "markers"
+    ) %>%
+      layout(
+        plot_bgcolor = "#e5ecf6",
+        title = "PCA 2D plot for REFPOP genotype data",
+        xaxis = list(title = paste0(
+          names(geno_pca_exp_var_)[1], ": ",
+          signif(100 * as.numeric(geno_pca_exp_var_)[1], 2), "%"
+        )),
+        yaxis = list(title = paste0(
+          names(geno_pca_exp_var_)[2], ": ",
+          signif(100 * as.numeric(geno_pca_exp_var_)[2], 2), "%"
+        ))
+      )
+    # regroup by label
+    for (label_ in unique(geno_pca_mat_$label)) {
+      data_subset <- geno_pca_mat_[geno_pca_mat_$label == label_, ]
+      fig_x_y <- fig_x_y %>%
+        add_trace(
+          data = data_subset,
+          x = ~PC1, y = ~PC2,
+          type = "scatter", mode = "markers",
+          marker = list(color = color_labels_[label_]),
+          name = label_
+        )
     }
-  }
-
-  # make umap prediction for progenies based on unsupervised learning
-  # from accessions as a special case
-  if (identical(umap_refpop_train_data, "accessions") && predict_umap_progeny_) {
-    sub_geno_df <- geno_df[which(geno_df$Origin %in% "P"), ]
-
-    # 2d umap prediction for progenies
-    geno_umap_2d_progeny <- as.data.frame(predict(
-      geno_umap_2d_model, sub_geno_df[, -idx_origin_geno_names]
+    fig_x_y <- fig_x_y %>% layout(
+      legend = list(title = list(text = "<b> Origin </b>"))
+    )
+    # save graphics
+    saveWidget(fig_x_y, file = paste0(
+      output_geno_graphics_path, pca_refpop_train_data, "/",
+      pca_refpop_train_data, "_genotype_pca_origin_as_label.html"
     ))
-    if (identical(use_origin_family_or_genotype_as_label_, "family")) {
-      geno_umap_2d_progeny$label <- sub_geno_df$Family
-    } else if (identical(use_origin_family_or_genotype_as_label_, "origin")) {
-      geno_umap_2d_progeny$label <- sub_geno_df$Origin
-    }
-    colnames(geno_umap_2d_progeny) <- colnames(geno_umap_2d)
-    geno_umap_2d <- rbind(geno_umap_2d, geno_umap_2d_progeny)
-
-    # 3d umap prediction for progenies
-    geno_umap_3d_progeny <- as.data.frame(predict(
-      geno_umap_3d_model, sub_geno_df[, -idx_origin_geno_names]
-    ))
-    if (identical(use_origin_family_or_genotype_as_label_, "family")) {
-      geno_umap_3d_progeny$label <- sub_geno_df$Family
-    } else if (identical(use_origin_family_or_genotype_as_label_, "origin")) {
-      geno_umap_3d_progeny$label <- sub_geno_df$Origin
-    }
-    colnames(geno_umap_3d_progeny) <- colnames(geno_umap_3d)
-    geno_umap_3d <- rbind(geno_umap_3d, geno_umap_3d_progeny)
   }
-
-  # 2D plot
-  # create base graphic
-  if (identical(umap_refpop_train_data, "accessions") && predict_umap_progeny_) {
-    umap_2d_title_ <- "UMAP 2D plot for REFPOP genotype data with umap trained
-    on accessions, and progenies projected using trained model"
-    output_path_2d_umap <- paste0(
-      output_geno_graphics_path,
-      umap_refpop_train_data, "/",
-      umap_refpop_train_data, "_genotype_refpop_progeny_projected_umap_2d_",
-      use_origin_family_or_genotype_as_label_,
-      "_as_label.html"
-    )
-  } else {
-    umap_2d_title_ <- "UMAP 2D plot for REFPOP genotype data"
-    output_path_2d_umap <- paste0(
-      output_geno_graphics_path,
-      umap_refpop_train_data, "/",
-      umap_refpop_train_data, "_genotype_refpop_umap_2d_",
-      use_origin_family_or_genotype_as_label_,
-      "_as_label.html"
-    )
-  }
-
-  # modify label_title_ for family special case
-  if (identical(use_origin_family_or_genotype_as_label_, "family") &&
-    !identical(umap_refpop_train_data, "progeny")) {
-    label_title_ <- paste0(
-      "<b> ",
-      str_to_title(use_origin_family_or_genotype_as_label_),
-      " (except accession)",
-      "</b>"
-    )
-  } else {
-    label_title_ <- paste0(
-      "<b> ",
-      str_to_title(use_origin_family_or_genotype_as_label_),
-      "</b>"
-    )
-  }
-
-  fig_x_y <- plot_ly(
-    type = "scatter", mode = "markers"
-  ) %>%
-    layout(
-      plot_bgcolor = "#e5ecf6",
-      title = umap_2d_title_,
-      xaxis = list(title = "first component"),
-      yaxis = list(title = "second component")
-    )
-  # regroup by label
-  for (label_ in unique(geno_umap_2d$label)) {
-    data_subset <- geno_umap_2d[geno_umap_2d$label == label_, ]
-    fig_x_y <- fig_x_y %>%
-      add_trace(
-        data = data_subset,
-        x = ~X1, y = ~X2,
-        type = "scatter", mode = "markers",
-        marker = list(color = color_labels_[label_]),
-        name = label_
-      )
-  }
-  fig_x_y <- fig_x_y %>% layout(
-    legend = list(title = list(text = label_title_))
-  )
-  # save graphics
-  saveWidget(fig_x_y, file = output_path_2d_umap)
-
-  # 3D plot
-  # create base graphic
-  if (identical(umap_refpop_train_data, "accessions") && predict_umap_progeny_) {
-    umap_3d_title_ <- "UMAP 3D plot for REFPOP genotype data with umap trained
-    on accessions, and progenies projected using trained model"
-    output_path_3d_umap <- paste0(
-      output_geno_graphics_path,
-      umap_refpop_train_data, "/",
-      umap_refpop_train_data, "_genotype_refpop_progeny_projected_umap_3d_",
-      use_origin_family_or_genotype_as_label_,
-      "_as_label.html"
-    )
-  } else {
-    umap_3d_title_ <- "UMAP 3D plot for REFPOP genotype data"
-    output_path_3d_umap <- paste0(
-      output_geno_graphics_path,
-      umap_refpop_train_data, "/",
-      umap_refpop_train_data, "_genotype_refpop_umap_3d_",
-      use_origin_family_or_genotype_as_label_,
-      "_as_label.html"
-    )
-  }
-  fig_x_y_z <- plot_ly(
-    type = "scatter3d",
-    mode = "markers"
-  ) %>%
-    layout(
-      plot_bgcolor = "#e5ecf6",
-      title = umap_3d_title_,
-      xaxis = list(title = "first component"),
-      yaxis = list(title = "second component"),
-      zaxis = list(title = "third component")
-    )
-  # regroup by label
-  for (label_ in unique(geno_umap_3d$label)) {
-    data_subset <- geno_umap_3d[geno_umap_3d$label == label_, ]
-    fig_x_y_z <- fig_x_y_z %>%
-      add_trace(
-        data = data_subset,
-        x = ~X1, y = ~X2, z = ~X3,
-        type = "scatter3d",
-        mode = "markers",
-        marker = list(color = color_labels_[label_]),
-        name = label_
-      )
-  }
-  fig_x_y_z <- fig_x_y_z %>% layout(
-    legend = list(title = list(text = label_title_))
-  )
-  # save graphics
-  saveWidget(fig_x_y_z, file = output_path_3d_umap)
 }
 
-# perform pca for geno_df
-geno_fam_orig_df_ <- geno_df[, c("Family", "Origin")]
-geno_df <- geno_df[, -match(c("Family", "Origin"), colnames(geno_df))]
-geno_df <- remove_monomorphic_markers(geno_df)$filtered_df
-geno_pca_obj_ <- pca(geno_df[, -match("Genotype", colnames(geno_df))],
-  ncomp = 500, center = TRUE, scale = TRUE
-)
-geno_pca_mat_ <- as.data.frame(geno_pca_obj_$variates$X)
-geno_pca_exp_var_ <- geno_pca_obj_$prop_expl_var$X
-geno_pca_cum_exp_var_ <- geno_pca_obj_$cum.var
-plot(geno_pca_cum_exp_var_)
-
-# plot coordinates of individuals on two first pcs :
-if (identical(use_origin_family_or_genotype_as_label_, "family")) {
-  # define colors for labels
-  labels_ <- unique(geno_fam_orig_df_$Family)
-  n_family <- length(labels_)
-  color_labels_ <- color_palette_family[1:n_family]
-  names(color_labels_) <- labels_
-  geno_pca_mat_$label <- geno_fam_orig_df_$Family
-
-  # create plot
-  fig_x_y <- plot_ly(
-    type = "scatter", mode = "markers"
-  ) %>%
-    layout(
-      plot_bgcolor = "#e5ecf6",
-      title = "PCA 2D plot for REFPOP genotype data",
-      xaxis = list(title = paste0(
-        names(geno_pca_exp_var_)[1], ": ",
-        signif(100 * as.numeric(geno_pca_exp_var_)[1], 2), "%"
-      )),
-      yaxis = list(title = paste0(
-        names(geno_pca_exp_var_)[2], ": ",
-        signif(100 * as.numeric(geno_pca_exp_var_)[2], 2), "%"
-      ))
-    )
-  # regroup by label
-  for (label_ in unique(geno_pca_mat_$label)) {
-    data_subset <- geno_pca_mat_[geno_pca_mat_$label == label_, ]
-    fig_x_y <- fig_x_y %>%
-      add_trace(
-        data = data_subset,
-        x = ~PC1, y = ~PC2,
-        type = "scatter", mode = "markers",
-        marker = list(color = color_labels_[label_]),
-        name = label_
-      )
-  }
-  fig_x_y <- fig_x_y %>% layout(
-    legend = list(title = list(text = "<b> Family (except accession) </b>"))
-  )
-  # save graphics
-  saveWidget(fig_x_y, file = paste0(
-    output_geno_graphics_path, pca_refpop_train_data, '/',
-    pca_refpop_train_data, "_genotype_pca_family_as_label.html"
-  ))
-}else if (identical(use_origin_family_or_genotype_as_label_, "origin")) {
-  # define colors for labels
-  labels_ <- unique(geno_fam_orig_df_$Origin)
-  n_origin <- length(labels_)
-  color_labels_ <- color_palette_origin[1:n_origin]
-  names(color_labels_) <- labels_
-  geno_pca_mat_$label <- geno_fam_orig_df_$Origin
-  
-  # create plot
-  fig_x_y <- plot_ly(
-    type = "scatter", mode = "markers"
-  ) %>%
-    layout(
-      plot_bgcolor = "#e5ecf6",
-      title = "PCA 2D plot for REFPOP genotype data",
-      xaxis = list(title = paste0(
-        names(geno_pca_exp_var_)[1], ": ",
-        signif(100 * as.numeric(geno_pca_exp_var_)[1], 2), "%"
-      )),
-      yaxis = list(title = paste0(
-        names(geno_pca_exp_var_)[2], ": ",
-        signif(100 * as.numeric(geno_pca_exp_var_)[2], 2), "%"
-      ))
-    )
-  # regroup by label
-  for (label_ in unique(geno_pca_mat_$label)) {
-    data_subset <- geno_pca_mat_[geno_pca_mat_$label == label_, ]
-    fig_x_y <- fig_x_y %>%
-      add_trace(
-        data = data_subset,
-        x = ~PC1, y = ~PC2,
-        type = "scatter", mode = "markers",
-        marker = list(color = color_labels_[label_]),
-        name = label_
-      )
-  }
-  fig_x_y <- fig_x_y %>% layout(
-    legend = list(title = list(text = "<b> Origin </b>"))
-  )
-  # save graphics
-  saveWidget(fig_x_y, file = paste0(
-    output_geno_graphics_path, pca_refpop_train_data, '/',
-    pca_refpop_train_data, "_genotype_pca_origin_as_label.html"
-  ))
-}
-
-# get phased genotype data and split their columns according to each phase
-phased_geno_df <- readRDS(paste0(geno_dir_path, "phased_data/phased_genotypes.RDS"))
-genotype_names <- colnames(phased_geno_df)[-match(
-  "chromosome",
-  colnames(phased_geno_df)
-)]
-chromosome_num_col_ <- phased_geno_df$chromosome
-
-fam_df$sample.ID[fam_df$sample.ID %in% genotype_names]
-
-# initialize the cluster
-cl <- makeCluster(num_cores)
-
-# register the cluster
-registerDoParallel(cl)
-
-# apply the function to each column of phased_geno_df in parallel
-phased_geno_split_list <- foreach(
-  col = phased_geno_df[, genotype_names],
-  .combine = cbind
-) %dopar% {
-  split_column(col)
-}
-
-# stop the cluster
-stopCluster(cl)
+# # get phased genotype data and split their columns according to each phase
+# phased_geno_df <- readRDS(paste0(geno_dir_path, "phased_data/phased_genotypes.RDS"))
+# genotype_names <- colnames(phased_geno_df)[-match(
+#   "chromosome",
+#   colnames(phased_geno_df)
+# )]
+# chromosome_num_col_ <- phased_geno_df$chromosome
+#
+# fam_df$sample.ID[fam_df$sample.ID %in% genotype_names]
+#
+# # initialize the cluster
+# cl <- makeCluster(num_cores)
+#
+# # register the cluster
+# registerDoParallel(cl)
+#
+# # apply the function to each column of phased_geno_df in parallel
+# phased_geno_split_list <- foreach(
+#   col = phased_geno_df[, genotype_names],
+#   .combine = cbind
+# ) %dopar% {
+#   split_column(col)
+# }
+#
+# # stop the cluster
+# stopCluster(cl)
 
 # convert the list to a dataframe
-phased_geno_split_df <- do.call(cbind, phased_geno_split_list)
-phased_geno_split_df <- as.data.frame(phased_geno_split_df)
+# phased_geno_split_df <- do.call(cbind, phased_geno_split_list)
+# phased_geno_split_df <- as.data.frame(phased_geno_split_df)
 
 # rename the columns of the result
-colnames(phased_geno_split_df) <- rep(genotype_names, each = 2)
+# colnames(phased_geno_split_df) <- rep(genotype_names, each = 2)
 
 # add chromosome number column
-phased_geno_split_df <- cbind(chromosome_num_col_, phased_geno_split_df)
-colnames(phased_geno_split_df)[1] <- "chromosome"
+# phased_geno_split_df <- cbind(chromosome_num_col_, phased_geno_split_df)
+# colnames(phased_geno_split_df)[1] <- "chromosome"
