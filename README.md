@@ -82,7 +82,7 @@ The analyses performed by the different ```R``` scripts in the subfolders of ```
 
   * ```refpop_1_spat_hetero_correct_per_env_trait_and_h2_estim.R```: For each trait, this script applies spatial heterogeneity correction to the cleaned phenotype dataset and computes the distributions of heritability values, which are derived from estimates in each environment, both before and after the correction. It also calculates the distributions of heritabilities by management type before and after the correction. The spatial heterogeneity correction is carried out using the spatial analysis of field trials with splines (SpATS). Additionally, this script identifies environments with low heritability using the median absolute deviation (MAD) as a unilateral test and excludes them for further analysis and computations, such as adjusted least squares means (ls-means) of phenotypes or the computed heritability using pooled data from all environments.
   
-  * ```refpop_2_adjusted_lsmeans_phenotype.R```:
+  * ```refpop_2_adjusted_lsmeans_phenotype.R```: This script computes the adjusted phenotypic ls-means for each genotype across environments, using the adjusted phenotypes obtained from spatial heterogeneity correction in each environment. The least-squares means (ls-means) are computed after fitting a multiple linear regression model that includes genotype and environment effects as covariates, along with the overall mean.
 
   Note that the ```R``` script in this subfolder are prefixed with ```refpop_0```, ```refpop_1```, and ```refpop_2```, indicating their sequential execution order.
 
@@ -102,5 +102,47 @@ The analyses performed by the different ```R``` scripts in the subfolders of ```
 
 ### 💻 Instructions
 
+* Download the ```refpop``` repository in the current user's directory on a computing cluster or personal computer using one of the following commands :
+
+  *  ```git clone git@github.com:ljacquin/refpop.git``` <p> </p>
+    or
+  * ```git clone https://github.com/ljacquin/refpop.git``` 
+  <p> </p>
+  
+  ⚠️ Make sure``` git``` is installed beforehand; if not, install it with ```sudo apt install git```.
+  <p> </p>
+
+* Given that ```R ≥ 4.1.2``` is already installed, use the following command to install ```refpop``` required ```R``` libraries : 
+
+  * ```R -q --vanilla < requirements.R```
+  <p> </p>
+
+* Within the ```refpop``` folder, execute the following commands to make scripts and programs executable :
+
+  *  ```chmod u+rwx execute_refpop_tasks_and_analyses.sh```
+  <p> </p>
+
+* Replace the ```data/``` folder with the directory found at https://data :  
+
+* Finally, execute the following command for executing the refpop tasks and analyses :
+
+  *  ```./execute_refpop_tasks_and_analyses.sh```
+
 ## References
+
+* Jung, Michaela, et al. "The apple REFPOP—a reference population for genomics-assisted breeding in apple." Horticulture research 7 (2020).
+
+* Leys, Christophe, et al. "Detecting outliers: Do not use standard deviation around the mean, use absolute deviation around the median." Journal of experimental social psychology 49.4 (2013): 764-766.
+
+* Hubert, Mia, and Michiel Debruyne. "Minimum covariance determinant." Wiley interdisciplinary reviews: Computational statistics 2.1 (2010): 36-43.
+
+* Higham, Nicholas J. "Computing the nearest correlation matrix—a problem from finance." IMA journal of Numerical Analysis 22.3 (2002): 329-343.
+
+* Breiman, Leo. "Random forests." Machine learning 45 (2001): 5-32.
+
+* Smola, Alex J., and Bernhard Schölkopf. "A tutorial on support vector regression." Statistics and computing 14 (2004): 199-222.
+
+* Jacquin L, Cao T-V and Ahmadi N (2016) A Unified and Comprehensible View of Parametric and Kernel Methods for Genomic Prediction with Application to Rice. Front. Genet. 7:145. doi: 10.3389/fgene.2016.00145
+
+* Tibshirani, Robert. "Regression shrinkage and selection via the lasso." Journal of the Royal Statistical Society Series B: Statistical Methodology 58.1 (1996): 267-288.
 
