@@ -130,7 +130,7 @@ Download the ```refpop``` repository in the current user's directory on a comput
   * ```./execute_refpop_tasks_and_analyses.sh``` (i.e., interactive execution)
   <p> </p>
 
-⚠️ The tasks and analyses performed by the ```R``` scripts in the ```refpop``` repository can be run in either ```Unix/Linux``` or ```Windows``` environments, as long as ```R``` and the necessary libraries are installed. For local computations in ```RStudio```, ensure that the ```computation_mode``` variable is set to "local" in the ```R``` scripts located in ```src/```. 
+⚠️ The tasks and analyses performed by the ```R``` scripts in the ```refpop``` repository can be run in either ```Unix/Linux``` or ```Windows``` environments, as long as ```R``` and the necessary libraries are installed. For local computations in ```RStudio```, ensure that the ```computation_mode``` variable is set to "local" in the ```R``` scripts located in ```src/```. Indeed, while maintaining the required sequential execution order, each ```R``` script can still be run independently for analyses in ```RStudio``` by setting the ```computation_mode``` variable to "local".
 
 ## References
 
