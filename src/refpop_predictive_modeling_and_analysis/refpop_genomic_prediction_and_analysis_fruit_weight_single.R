@@ -49,12 +49,18 @@ tensorflow::tf$random$set_seed(0)
 py_module_available("keras") # must return TRUE
 py_module_available("tensorflow") # must return TRUE
 py_discover_config("keras") # more info on the python env, tf and keras
-# if local computation, set automated wd detection for script
-local_computation_ <- F
-if (local_computation_) {
+
+# define computation mode, i.e. local or cluster
+computation_mode <- 'cluster'
+
+# if comutations are local in rstudio, detect and set script path
+# automatically using rstudioapi
+if ( identical(computation_mode, 'local') ){
   library(rstudioapi)
   setwd(dirname(getActiveDocumentContext()$path))
 }
+
+# source functions
 source("../functions.R")
 
 # set options to increase memory and suppress warnings

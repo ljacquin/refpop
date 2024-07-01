@@ -6,7 +6,6 @@ rm(list = ls())
 library(data.table)
 library(stringr)
 library(FactoMineR)
-library(rstudioapi)
 library(doParallel)
 library(doRNG)
 library(robustbase)
@@ -17,9 +16,20 @@ library(Matrix)
 library(rgl)
 library(ggplot2)
 library(plotly)
-# detect and set script path automatically, and source functions
-setwd(dirname(getActiveDocumentContext()$path))
+
+# define computation mode, i.e. "local" or "cluster"
+computation_mode <- 'cluster'
+
+# if comutations are local in rstudio, detect and set script path
+# automatically using rstudioapi
+if ( identical(computation_mode, 'local') ){
+  library(rstudioapi)
+  setwd(dirname(getActiveDocumentContext()$path))
+}
+
+# source functions
 source("../functions.R")
+
 # set options to increase memory and suppress warnings
 options(expressions = 5e5)
 options(warn = -1)
