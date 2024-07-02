@@ -3,13 +3,16 @@
 
 # clear memory and source libraries
 rm(list = ls())
-library(bigsnpr)
 library(reticulate)
-install_other_requirements <- FALSE
+library(devtools)
+if ("refpop_env" %in% conda_list()$name) {
+  use_condaenv("refpop_env")
+}
+library(bigsnpr)
+install_other_requirements <- F
 if (install_other_requirements) {
   install.packages("BiocManager")
   library(BiocManager)
-  BiocManager::install("snpStats")
   BiocManager::install("mixOmicsTeam/mixOmics")
   install.packages("remotes")
   remotes::install_github("hemstrow/snpR")

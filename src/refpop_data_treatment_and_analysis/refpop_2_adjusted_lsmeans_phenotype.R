@@ -4,6 +4,10 @@
 # clear memory and source libraries
 rm(list = ls())
 library(reticulate)
+library(devtools)
+if ("refpop_env" %in% conda_list()$name) {
+  use_condaenv("refpop_env")
+}
 install_other_requirements <- FALSE
 if (install_other_requirements) {
   install.packages("BiocManager")

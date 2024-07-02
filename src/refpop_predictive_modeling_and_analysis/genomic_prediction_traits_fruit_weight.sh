@@ -10,7 +10,7 @@
 #SBATCH --cpus-per-task=20
 
 ### Email
-#SBATCH --mail-user=laval.jacquin@inrae.fr
-#SBATCH --mail-type=ALL
+### --mail-user=laval.jacquin@inrae.fr
+### --mail-type=ALL
 
 R -q --vanilla < refpop_genomic_prediction_and_analysis_fruit_weight.R

@@ -22,19 +22,19 @@ library(htmlwidgets)
 library(dplyr)
 library(reticulate)
 library(devtools)
-if ("refpop_geno_pred_env" %in% conda_list()$name) {
-  use_condaenv("refpop_geno_pred_env")
+if ("refpop_env" %in% conda_list()$name) {
+  use_condaenv("refpop_env")
 }
 # install other requirements from github if necessary
 install_other_requirements <- F
 if (install_other_requirements) {
   # reticulate::install_miniconda()
-  conda_create("refpop_geno_pred_env")
-  use_condaenv("refpop_geno_pred_env")
+  conda_create("refpop_env")
+  use_condaenv("refpop_env")
   devtools::install_github("ljacquin/KRMM")
   devtools::install_github("rstudio/tensorflow")
   library(tensorflow)
-  install_tensorflow(envname = "refpop_geno_pred_env")
+  install_tensorflow(envname = "refpop_env")
   py_install("umap-learn", pip = T, pip_ignore_installed = T)
   install.packages("umap")
 }
@@ -51,11 +51,11 @@ py_module_available("tensorflow") # must return TRUE
 py_discover_config("keras") # more info on the python env, tf and keras
 
 # define computation mode, i.e. local or cluster
-computation_mode <- 'cluster'
+computation_mode <- "cluster"
 
 # if comutations are local in rstudio, detect and set script path
 # automatically using rstudioapi
-if ( identical(computation_mode, 'local') ){
+if (identical(computation_mode, "local")) {
   library(rstudioapi)
   setwd(dirname(getActiveDocumentContext()$path))
 }
@@ -379,148 +379,3 @@ fwrite(df_,
     trait_, ".csv"
   ), row.names = T
 )
-
-# get genotypes used as support vectors
-sv_geno <- unlist(str_split(df_result_$SVR_support_vectors,
-  pattern = ", "
-))
-
-# create a frequency table
-freq_table <- table(sv_geno)
-
-# convert the frequency table to a dataframe
-df_sv_ <- data.frame(
-  Genotype = names(freq_table),
-  Count = as.numeric(freq_table)
-)
-# merge genotype with family and origin info
-df_sv_ <- merge(df_sv_, geno_fam_orig_df, by = "Genotype", all = T)
-df_sv_$Family <- factor(df_sv_$Family, levels = unique(df_sv_$Family))
-df_sv_$Origin <- factor(df_sv_$Origin, levels = unique(df_sv_$Origin))
-
-# calculate the sum of counts for each origin
-origins_sum <- df_sv_ %>%
-  group_by(Origin) %>%
-  summarize(total_count_origin = sum(Count))
-
-# calculate the sum of counts for each family
-families_sum <- df_sv_ %>%
-  group_by(Family) %>%
-  summarize(total_count_family = sum(Count))
-
-# calculate the total Count for percentage by origin and by family
-total_count <- sum(df_sv_$Count)
-
-# join the original data with the sums calculated by origin and by family
-df_sv_ <- df_sv_ %>%
-  left_join(origins_sum, by = "Origin") %>%
-  left_join(families_sum, by = "Family") %>%
-  # calculate the percentage by origin
-  mutate(Percentage_Origin = (total_count_origin / total_count) * 100) %>%
-  # calculate the percentage by family
-  mutate(Percentage_Family = (total_count_family / total_count) * 100)
-
-# create barplot_sv_orig with colored bars based on origins
-barplot_sv_orig <- plot_ly(df_sv_,
-  x = ~Genotype, y = ~Count, type = "bar",
-  color = ~Origin,
-  colors = color_palette_origin
-) %>%
-  layout(
-    title = paste0(
-      "Counts of genotypes identified as support vectors across ",
-      n_shuff_, " Gaussian SVR models, \n used for genomic prediction of ",
-      trait_, " across ", n_shuff_, " shuffling scenarios"
-    ),
-    xaxis = list(
-      categoryorder = "total descending", title = "Genotype",
-      tickangle = 300
-    ),
-    yaxis = list(title = "Count"),
-    legend = list(title = list(text = "Origin"))
-  )
-# save barplot_sv_orig graphics
-saveWidget(barplot_sv_orig, file = paste0(
-  output_pred_graphics_path, trait_, "/support_vector_genotypes_for_",
-  trait_, "_", snp_sample_size_, "_SNP_origin_as_label", ".html"
-))
-
-# create barplot_sv_percent_orig based on percentages of origin
-df_percent_origin <- unique(df_sv_[, c("Origin", "Percentage_Origin")])
-barplot_sv_percent_orig <- plot_ly(df_percent_origin,
-  x = ~Origin, y = ~Percentage_Origin, type = "bar",
-  color = ~Origin,
-  colors = color_palette_origin
-) %>%
-  layout(
-    title = paste0(
-      "Percentage breakdown for origins of genotypes, identified as support vectors across ",
-      n_shuff_, " Gaussian SVR models, \n used for genomic prediction of ", trait_,
-      " across ", n_shuff_, " shuffling scenarios"
-    ),
-    xaxis = list(
-      categoryorder = "total descending", title = "Origin",
-      tickangle = 300
-    ),
-    yaxis = list(title = "Percentage"),
-    legend = list(title = list(text = "Origin"))
-  )
-# save barplot_sv_percent_orig graphics
-saveWidget(barplot_sv_percent_orig, file = paste0(
-  output_pred_graphics_path, trait_,
-  "/percentage_breakdown_for_origins_of_support_vectors_",
-  trait_, "_", snp_sample_size_, "_SNP", ".html"
-))
-
-# create barplot_sv_fam with colored bars based on families
-barplot_sv_fam <- plot_ly(df_sv_,
-  x = ~Genotype, y = ~Count, type = "bar",
-  color = ~Family,
-  colors = color_palette_family
-) %>%
-  layout(
-    title = paste0(
-      "Counts of genotypes identified as support vectors across ",
-      n_shuff_, " Gaussian SVR models, \n used for genomic prediction of ",
-      trait_, " across ", n_shuff_, " shuffling scenarios"
-    ),
-    xaxis = list(
-      categoryorder = "total descending", title = "Genotype",
-      tickangle = 300
-    ),
-    yaxis = list(title = "Count"),
-    legend = list(title = list(text = "Family (except accession)"))
-  )
-# save barplot_sv_fam graphics
-saveWidget(barplot_sv_fam, file = paste0(
-  output_pred_graphics_path, trait_, "/support_vector_genotypes_for_",
-  trait_, "_", snp_sample_size_, "_SNP_family_as_label", ".html"
-))
-
-# create barplot_sv_percent_fam based on percentages of families
-df_percent_family <- unique(df_sv_[, c("Family", "Percentage_Family")])
-barplot_sv_percent_fam <- plot_ly(df_percent_family,
-  x = ~Family, y = ~Percentage_Family,
-  type = "bar",
-  color = ~Family,
-  colors = color_palette_family
-) %>%
-  layout(
-    title = paste0(
-      "Percentage breakdown for families of genotypes, identified as support vectors across ",
-      n_shuff_, " Gaussian SVR models, \n used for genomic prediction of ", trait_,
-      " across ", n_shuff_, " shuffling scenarios"
-    ),
-    xaxis = list(
-      categoryorder = "total descending", title = "Family",
-      tickangle = 300
-    ),
-    yaxis = list(title = "Percentage"),
-    legend = list(title = list(text = "Family"))
-  )
-# save barplot_sv_percent_fam graphics
-saveWidget(barplot_sv_percent_fam, file = paste0(
-  output_pred_graphics_path, trait_,
-  "/percentage_breakdown_for_families_of_support_vectors_",
-  trait_, "_", snp_sample_size_, "_SNP", ".html"
-))
