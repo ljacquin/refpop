@@ -367,15 +367,22 @@ saveWidget(boxplots_rpa_, file = paste0(
   trait_, "_", snp_sample_size_, "_SNP", ".html"
 ))
 
-# save relative prediction accuracy results
-rownames(df_) <- paste0("rpa_shuff_", 1:nrow(df_))
-df_stat <- as.data.frame(rbind(apply(df_, 2, mean), apply(df_, 2, sd)))
-rownames(df_stat) <- c("rpa_mean", "rpa_sd")
-df_ <- rbind(df_, df_stat)
-fwrite(df_,
-  file = paste0(
-    output_pred_results_path,
-    "genomic_pred_results_", snp_sample_size_, "_SNP_",
-    trait_, ".csv"
-  ), row.names = T
+# save predictive ability results
+df_result_[,1:5] <- signif(apply(df_result_[,1:5], 2, as.numeric), 2)
+rownames(df_result_) <- paste0("pa_shuff_", 1:nrow(df_result_))
+
+df_stat <- as.data.frame(rbind(apply(df_result_[,1:5], 2, mean), 
+                               apply(df_result_[,1:5], 2, sd)))
+df_stat <- signif(apply(df_stat, 2, as.numeric), 2)
+rownames(df_stat) <- c("pa_mean", "pa_sd")
+df_stat <- as.data.frame(df_stat)
+df_stat$SVR_support_vectors <- NA
+
+df_result_ <- rbind(df_result_, df_stat)
+fwrite(df_result_,
+       file = paste0(
+         output_pred_results_path,
+         "genomic_pred_results_", ncol(geno_df), "_SNP_",
+         trait_, ".csv"
+       ), row.names = T
 )
