@@ -355,7 +355,7 @@ boxplots_rpa_ <- boxplots_rpa_ %>%
     title = paste0(
       "Genomic prediction PA distributions of methods for ",
       trait_, ", based on ", snp_sample_size_, " SNPs across ",
-      n_shuff_, " shuffling scenarios"
+      n_shuff_, " shuffling scenarios for ", k_folds_, "-folds CV"
     ),
     yaxis = list(title = "Relative Prediction Accuracy (PA)", range = c(0, 1)),
     legend = list(title = list(text = "Prediction method"))
