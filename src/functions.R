@@ -157,6 +157,8 @@ convert_col_char_to_fact <- function(col) {
 
 # functions which performs imputation using column means
 impute_mean <- function(x) {
+  # treat NaN as NA
+  x[is.nan(x)] <- NA
   mean_value <- mean(x, na.rm = TRUE)
   x[is.na(x)] <- mean_value
   return(x)
@@ -643,3 +645,46 @@ remove_na_columns <- function(df) {
   df_filtered <- df[, columns_without_na]
   return(df_filtered)
 }
+
+# function which compute average of each cell in a data.frame
+compute_cell_mean <- function(cell_value) {
+  # unlist cell if necessary
+  values <- as.numeric(unlist(cell_value))
+  
+  # compute and return mean
+  mean_ <- mean(values, na.rm = TRUE)
+  
+  return(mean_)
+}
+
+# function which detects if x contains only numeric values or NA/NaN
+is_numeric_with_na <- function(x) {
+  all(is.na(x) | is.nan(x) | is.numeric(x))
+}
+
+# function to remove columns with a rate of NA/NaN above a threshold
+remove_col_with_na_thresh <- function(df_, threshold) {
+  
+  # calculate the proportion of NA/NaN for each column
+  na_ratios <- sapply(df_, function(col) {
+    if (is_numeric_with_na(col)) {
+      mean(is.na(col) | is.nan(col))
+    } else {
+      NA
+    }
+  })
+  
+  # identify columns to remove (NA/NaN proportion greater than the threshold)
+  cols_to_remove <- names(na_ratios)[na_ratios > threshold]
+  
+  # remove these columns from the dataframe
+  filtered_df <- df_[, !(colnames(df_) %in% cols_to_remove)]
+  
+  # return the filtered dataframe and the list of removed column names
+  return(list(
+    "filtered_df" = filtered_df,
+    "removed_columns" = cols_to_remove
+  ))
+}
+
+

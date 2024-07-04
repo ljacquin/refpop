@@ -31,7 +31,7 @@ library(foreach)
 library(doParallel)
 
 # define computation mode, i.e. "local" or "cluster"
-computation_mode <- "local"
+computation_mode <- "cluster"
 
 # if comutations are local in rstudio, detect and set script path
 # automatically using rstudioapi
@@ -63,7 +63,7 @@ fam_file <- paste0(geno_dir_path, "refpop_genotype.fam")
 read_with_bigsnpr <- TRUE
 perform_umap_ <- FALSE
 
-# define umap training and plot paraemeters
+# define umap training and plot parameters
 
 # umap parameters, most sensitive ones
 random_state_umap_ <- 15

@@ -273,5 +273,5 @@ scatter_plot <- plot_ly(
 
 saveWidget(scatter_plot, file = paste0(
   output_pheno_graphics_path,
-  "multi_location_clonal_h2_scatter_plot_multi_location_clonal_mean_h2.html"
+  "multi_location_clonal_h2.html"
 ))
