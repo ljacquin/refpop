@@ -5,7 +5,7 @@ data/phenotype_data/*
 data/phenotype_data/spats_per_env_adjusted_phenotypes/*
 data/progeny_data/*
 data/supplementary_data/*
-results/genomic_prediction/*
+#results/genomic_prediction/*
 results/graphics/*
 results/graphics/genomic_prediction_graphics/*
 results/graphics/genotype_graphics/*
