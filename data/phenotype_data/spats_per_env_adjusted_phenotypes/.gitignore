@@ -1,0 +1,11 @@
+# Ignore all files
+*
+
+# Don't ignore .gitignore files
+!.gitignore
+
+# Unignore directories (but still ignore their content)
+!*/
+
+# Optionally, keep some specific files in the directories
+# !**/.gitkeep
