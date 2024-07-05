@@ -357,22 +357,24 @@ boxplots_rpa_ <- boxplots_rpa_ %>%
       trait_, ", based on ", snp_sample_size_, " SNPs across ",
       n_shuff_, " shuffling scenarios for ", k_folds_, "-folds CV"
     ),
-    yaxis = list(title = "Relative Prediction Accuracy (PA)", range = c(0, 1)),
+    yaxis = list(title = "Predictive ability (PA)", range = c(0, 1)),
     legend = list(title = list(text = "Prediction method"))
   )
 
 # save boxplots_rpa_ graphics
 saveWidget(boxplots_rpa_, file = paste0(
-  output_pred_graphics_path, trait_, "/relative_prediction_accuracy_",
-  trait_, "_", snp_sample_size_, "_SNP", ".html"
+  output_pred_graphics_path, trait_, "/predictive_ability_",
+  trait_, "_", snp_sample_size_, "_SNP_", k_folds_, "_folds_CV.html"
 ))
 
 # save predictive ability results
-df_result_[,1:5] <- signif(apply(df_result_[,1:5], 2, as.numeric), 2)
+df_result_[, 1:5] <- signif(apply(df_result_[, 1:5], 2, as.numeric), 2)
 rownames(df_result_) <- paste0("pa_shuff_", 1:nrow(df_result_))
 
-df_stat <- as.data.frame(rbind(apply(df_result_[,1:5], 2, mean), 
-                               apply(df_result_[,1:5], 2, sd)))
+df_stat <- as.data.frame(rbind(
+  apply(df_result_[, 1:5], 2, mean),
+  apply(df_result_[, 1:5], 2, sd)
+))
 df_stat <- signif(apply(df_stat, 2, as.numeric), 2)
 rownames(df_stat) <- c("pa_mean", "pa_sd")
 df_stat <- as.data.frame(df_stat)
@@ -380,9 +382,9 @@ df_stat$SVR_support_vectors <- NA
 
 df_result_ <- rbind(df_result_, df_stat)
 fwrite(df_result_,
-       file = paste0(
-         output_pred_results_path,
-         "genomic_pred_results_", ncol(geno_df), "_SNP_",
-         trait_, ".csv"
-       ), row.names = T
+  file = paste0(
+    output_pred_results_path,
+    "genomic_pred_results_", ncol(geno_df), "_SNP_",
+    trait_, "_", k_folds_, "_folds_CV.csv"
+  ), row.names = T
 )
