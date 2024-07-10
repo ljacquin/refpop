@@ -105,8 +105,6 @@ trait_names_ <- str_replace_all(files_names_spats_adj_pheno,
   replacement = ""
 )
 
-file_ <- files_names_spats_adj_pheno[2]
-
 for (file_ in files_names_spats_adj_pheno) {
   print(file_)
   try(
