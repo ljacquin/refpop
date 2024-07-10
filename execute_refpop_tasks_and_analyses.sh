@@ -15,5 +15,5 @@ R -q --vanilla < refpop_genomic_data_structure_analysis.R
 R -q --vanilla < refpop_pedigree_and_phenotype_data_structure_analysis.R
 
 # refpop_predictive_modeling_and_analysis tasks and analyses
-cd ../refpop_predictive_modeling_and_analysis/
-sbatch genomic_prediction_all_traits.sh
+cd ../refpop_genomic_prediction_and_analysis/
+sbatch refpop_genomic_prediction_all_traits.sh
