@@ -6,6 +6,7 @@ rm(list = ls())
 library(MASS)
 library(data.table)
 library(stringr)
+library(lme4)
 library(FactoMineR)
 library(doParallel)
 library(doRNG)
@@ -14,7 +15,9 @@ library(foreach)
 library(parallel)
 library(missForest)
 library(Matrix)
+library(matrixcalc)
 library(rgl)
+library(Rfast)
 library(cvTools)
 library(ggplot2)
 library(plotly)
@@ -51,7 +54,7 @@ py_module_available("tensorflow") # must return TRUE
 py_discover_config("keras") # more info on the python env, tf and keras
 
 # define computation mode, i.e. local or cluster
-computation_mode <- "cluster"
+computation_mode <- "local"
 
 # if comutations are local in rstudio, detect and set script path
 # automatically using rstudioapi
@@ -94,7 +97,7 @@ selected_traits_ <- c(
 )
 
 # define trait_
-trait_ <- "Powdery_mildew"
+trait_ <- "Scab"
 
 # define shift seed value by
 mult_seed_by_ <- 100
@@ -103,7 +106,7 @@ mult_seed_by_ <- 100
 k_folds_ <- 5
 
 # define number of shuffles
-n_shuff_ <- 20
+n_shuff_ <- 1
 
 # color palette for families (28 counts)
 color_palette_family <- c(
@@ -135,7 +138,14 @@ color_palette_origin <- c(
   "yellow"
 )
 
-# get phenotype and genotype data, and family and origin info
+# get spats and adjusted ls-means phenotype and genotype data,
+# and family and origin info
+
+spats_pheno_df <- as.data.frame(fread(paste0(
+  pheno_dir_path, "spats_per_env_adjusted_phenotypes/",
+  trait_, "_spats_adjusted_phenotypes_long_format.csv"
+)))
+
 pheno_df <- as.data.frame(fread(paste0(
   pheno_dir_path,
   "adjusted_ls_means_phenotypes.csv"
@@ -151,6 +161,9 @@ geno_fam_orig_df <- as.data.frame(fread(paste0(
   "genotype_family_origin_information.csv"
 )))
 
+set.seed(1)
+pheno_df <- pheno_df[sample(1:100, replace = F), ]
+
 # remove monomorphic markers
 geno_df <- remove_monomorphic_markers(geno_df)
 monomorphic_markers_list_ <- geno_df$monomorphic_markers
@@ -160,9 +173,11 @@ geno_df <- geno_df$filtered_df
 # and sample markers according to a uniform distribution
 set.seed(123)
 snp_sample_size_ <- 50e3
+
 idx_snp_sample_size_ <- sample(2:ncol(geno_df),
   size = snp_sample_size_, replace = F
 )
+
 geno_df <- geno_df[, c(
   match("Genotype", colnames(geno_df)),
   idx_snp_sample_size_
@@ -170,7 +185,7 @@ geno_df <- geno_df[, c(
 
 # merge pheno_df and geno_df for integrity of analyses and slice the merged df
 merged_df <- merge(pheno_df, geno_df, by = "Genotype")
-pheno_df <- merged_df[, selected_traits_]
+pheno_df <- merged_df[, c("Genotype", selected_traits_)]
 geno_df <- merged_df[, -match(
   c("Genotype", selected_traits_),
   colnames(merged_df)
@@ -182,9 +197,47 @@ if (length(idx_na_trait_) > 0) {
   pheno_df <- pheno_df[-idx_na_trait_, ]
   geno_df <- geno_df[-idx_na_trait_, ]
 }
+rownames(geno_df) <- pheno_df$Genotype
 
-# get number of phenotypes
-n <- nrow(pheno_df)
+# get number of genotypes
+n <- nrow(geno_df)
+
+# compute the general mixed model (Rao & Keffe) Y = X*Beta + E = X*Beta + Zu + E
+# and whiten the residuals of E where Var(E) = Σ = sigma2_u*ZKZ' sigma2_e*In',
+# i.e. compute  Ytilde = Xtilde*Beta + Etilde where tilde terms are obtained
+# by multiplying by L^{-1} after Cholesky decomp. of Σ = LL'
+ebv_post_white_ <- compute_ebv_post_whitening(
+  trait_, spats_pheno_df, geno_df,
+  sigma2u = 1, sigma2e = 1
+)
+fitted_spats_pheno_df <- ebv_post_white_$fitted_spats_pheno_df
+x_mat <- ebv_post_white_$x_mat
+z_mat <- ebv_post_white_$z_mat
+k_mat <- ebv_post_white_$k_mat
+u_hat <- ebv_post_white_$u_hat
+beta_hat <- ebv_post_white_$beta_hat
+beta_hat
+plot(density(u_hat))
+
+sigma2_upper_bound <- var(fitted_spats_pheno_df[, trait_])
+var_comp_estim_abc_ <- abc_variance_component_estimation(
+  trait_, fitted_spats_pheno_df,
+  x_mat, z_mat, k_mat,
+  beta_hat,
+  prior_sig2_u = c(1e-2, sigma2_upper_bound),
+  prior_sig2_e = c(1e-2, sigma2_upper_bound),
+  n_sim_ = 100,
+  quantile_threshold = 0.05
+)
+var_comp_estim_abc_
+
+ebv_post_white_ <- compute_ebv_post_whitening(
+  trait_, spats_pheno_df, geno_df,
+  sigma2u = var_comp_estim_abc_$sigma2_u_hat_mean,
+  sigma2e = var_comp_estim_abc_$sigma2_e_hat_mean
+)
+u_hat <- ebv_post_white_$u_hat
+plot(density(u_hat))
 
 # register parallel backend
 cl <- makeCluster(detectCores())
@@ -201,7 +254,6 @@ df_result_ <- foreach(
   # set seed, define a new set of indices,
   set.seed(shuff_ * mult_seed_by_)
   idx_ <- sample(1:n, size = n, replace = FALSE)
-
   fold_results <- foreach(
     fold_ = 1:k_folds_,
     .packages = pkgs_to_export_,
@@ -214,54 +266,40 @@ df_result_ <- foreach(
 
     # initialize vector of results for the current fold
     fold_result <- c(
-      "RF" = NA, "SVR" = NA, "RKHS" = NA, "GBLUP" = NA, "LASSO" = NA,
-      "SVR_support_vectors" = NA
+      "GBLUP_ebv_post_whitening" = NA, "RKHS_ebv_post_whitening" = NA,
+      "GBLUP_ls_means" = NA, "RKHS_ls_means" = NA
     )
-
-    # train and predict with Random Forest
-    rf_model <- ranger(
-      y = pheno_df[idx_train, trait_],
-      x = geno_df[idx_train, ],
-      mtry = ncol(geno_df) / 3,
-      num.trees = 1000
+    # predict estimated breeding values (ebv), using ebv during training
+    # train and predict with GBLUP (linear kernel krmm)
+    linear_krmm_model <- krmm(
+      Y = u_hat[idx_train],
+      Matrix_covariates = geno_df[idx_train, ],
+      method = "GBLUP"
     )
-    f_hat_val_rf <- predict(
-      rf_model,
-      geno_df[idx_val, ]
+    f_hat_val_linear_krmm <- predict_krmm(linear_krmm_model,
+      Matrix_covariates = geno_df[idx_val, ],
+      add_fixed_effects = T
     )
-    fold_result["RF"] <- cor(
-      f_hat_val_rf$predictions,
-      pheno_df[idx_val, trait_]
+    fold_result["GBLUP_ebv_post_whitening"] <- cor(
+      f_hat_val_linear_krmm,
+      u_hat[idx_val]
     )
-
-    # train and predict with SVR
-    # a correct value for c_par according to Cherkassy and Ma (2004).
-    # Neural networks 17, 113-126 is defined as follows
-    c_par <- max(
-      abs(mean(pheno_df[idx_train, trait_])
-      + 3 * sd(pheno_df[idx_train, trait_])),
-      abs(mean(pheno_df[idx_train, trait_])
-      - 3 * sd(pheno_df[idx_train, trait_]))
+    # train and predict with RKHS (non-linear Gaussian kernel krmm)
+    gaussian_krmm_model <- krmm(
+      Y = u_hat[idx_train],
+      Matrix_covariates = geno_df[idx_train, ],
+      method = "RKHS", kernel = "Gaussian",
+      rate_decay_kernel = 0.1
     )
-    gaussian_svr_model <- ksvm(
-      x = as.matrix(geno_df[idx_train, ]),
-      y = pheno_df[idx_train, trait_],
-      scaled = FALSE, type = "eps-svr",
-      kernel = "rbfdot",
-      kpar = "automatic", C = c_par, epsilon = 0.1
+    f_hat_val_gaussian_krmm <- predict_krmm(gaussian_krmm_model,
+      Matrix_covariates = geno_df[idx_val, ],
+      add_fixed_effects = T
     )
-    idx_sv_ <- SVindex(gaussian_svr_model)
-    sv_ <- pheno_df[idx_train, "Genotype"][idx_sv_]
-    f_hat_val_gaussian_svr <- predict(
-      gaussian_svr_model,
-      as.matrix(geno_df[idx_val, ])
+    fold_result["RKHS_ebv_post_whitening"] <- cor(
+      f_hat_val_gaussian_krmm,
+      u_hat[idx_val]
     )
-    fold_result["SVR"] <- cor(
-      f_hat_val_gaussian_svr,
-      pheno_df[idx_val, trait_]
-    )
-    fold_result["SVR_support_vectors"] <- paste0(sv_, collapse = ", ")
-
+    # predict ls-means, using ls-means during training
     # train and predict with GBLUP (linear kernel krmm)
     linear_krmm_model <- krmm(
       Y = pheno_df[idx_train, trait_],
@@ -270,13 +308,12 @@ df_result_ <- foreach(
     )
     f_hat_val_linear_krmm <- predict_krmm(linear_krmm_model,
       Matrix_covariates = geno_df[idx_val, ],
-      add_flxed_effects = T
+      add_fixed_effects = T
     )
-    fold_result["GBLUP"] <- cor(
+    fold_result["GBLUP_ls_means"] <- cor(
       f_hat_val_linear_krmm,
       pheno_df[idx_val, trait_]
     )
-
     # train and predict with RKHS (non-linear Gaussian kernel krmm)
     gaussian_krmm_model <- krmm(
       Y = pheno_df[idx_train, trait_],
@@ -286,35 +323,16 @@ df_result_ <- foreach(
     )
     f_hat_val_gaussian_krmm <- predict_krmm(gaussian_krmm_model,
       Matrix_covariates = geno_df[idx_val, ],
-      add_flxed_effects = T
+      add_fixed_effects = T
     )
-    fold_result["RKHS"] <- cor(
+    fold_result["RKHS_ls_means"] <- cor(
       f_hat_val_gaussian_krmm,
       pheno_df[idx_val, trait_]
     )
-
-    # train and predict with LASSO
-    cv_fit_lasso_model <- cv.glmnet(
-      intercept = TRUE, y = pheno_df[idx_train, trait_],
-      x = as.matrix(geno_df[idx_train, ]),
-      type.measure = "mse", alpha = 1.0, nfold = 10,
-      parallel = TRUE
-    )
-    f_hat_val_lasso <- predict(cv_fit_lasso_model,
-      newx = as.matrix(geno_df[idx_val, ]),
-      s = "lambda.min"
-    )
-    fold_result["LASSO"] <- cor(
-      f_hat_val_lasso,
-      pheno_df[idx_val, trait_]
-    )
-
     fold_result
   }
-
   fold_results
 }
-
 # stop the parallel backend
 stopCluster(cl)
 registerDoSEQ()
@@ -324,33 +342,27 @@ if (!dir.exists(paste0(output_pred_graphics_path, trait_, "/"))) {
   dir.create(paste0(output_pred_graphics_path, trait_, "/"))
 }
 
-# convert to data frame format
-df_result_ <- as.data.frame(df_result_)
-df_ <- df_result_[, -match(
-  "SVR_support_vectors",
-  colnames(df_result_)
-)]
-
 # get methods names
-df_ <- as.data.frame(apply(df_, 2, as.numeric))
-method_names <- colnames(df_)
+df_result_ <- as.data.frame(apply(df_result_, 2, as.numeric))
+method_names <- colnames(df_result_)
 
 # initialize plot_ly boxplot graphic
-boxplots_rpa_ <- plot_ly()
+boxplots_pa_ <- plot_ly()
 
 # add boxplots
 for (method_ in method_names) {
-  boxplots_rpa_ <- add_boxplot(
-    boxplots_rpa_,
-    y = df_[[method_]],
+  boxplots_pa_ <- add_boxplot(
+    boxplots_pa_,
+    y = df_result_[[method_]],
     name = method_,
     boxpoints = "all",
     jitter = 0.3,
     pointpos = -1.8
   )
 }
+
 # add layout
-boxplots_rpa_ <- boxplots_rpa_ %>%
+boxplots_pa_ <- boxplots_pa_ %>%
   layout(
     title = paste0(
       "Genomic prediction PA distributions of methods for ",
@@ -361,30 +373,30 @@ boxplots_rpa_ <- boxplots_rpa_ %>%
     legend = list(title = list(text = "Prediction method"))
   )
 
-# save boxplots_rpa_ graphics
-saveWidget(boxplots_rpa_, file = paste0(
-  output_pred_graphics_path, trait_, "/predictive_ability_",
-  trait_, "_", snp_sample_size_, "_SNP_", k_folds_, "_folds_CV.html"
+# save boxplots_pa_ graphics
+saveWidget(boxplots_pa_, file = paste0(
+  output_pred_graphics_path, trait_, "/post_whitening_predictive_ability_",
+  trait_, "_", snp_sample_size_, "_SNP_", k_folds_, "_folds_CV_single_step.html"
 ))
 
-# save predictive ability results
-df_result_[, 1:5] <- signif(apply(df_result_[, 1:5], 2, as.numeric), 2)
-rownames(df_result_) <- paste0("pa_shuff_", 1:nrow(df_result_))
+# add stats and save predictive ability results
+df_result_[, 1:4] <- signif(apply(df_result_[, 1:4], 2, as.numeric), 2)
+rownames(df_result_) <- paste0("pa_scenario_", 1:nrow(df_result_))
 
 df_stat <- as.data.frame(rbind(
-  apply(df_result_[, 1:5], 2, mean),
-  apply(df_result_[, 1:5], 2, sd)
+  apply(df_result_[, 1:4], 2, mean),
+  apply(df_result_[, 1:4], 2, sd)
 ))
 df_stat <- signif(apply(df_stat, 2, as.numeric), 2)
 rownames(df_stat) <- c("pa_mean", "pa_sd")
 df_stat <- as.data.frame(df_stat)
-df_stat$SVR_support_vectors <- NA
 
 df_result_ <- rbind(df_result_, df_stat)
+
 fwrite(df_result_,
   file = paste0(
     output_pred_results_path,
-    "genomic_pred_results_", ncol(geno_df), "_SNP_",
-    trait_, "_", k_folds_, "_folds_CV.csv"
+    "post_whitening_genomic_pred_results_", ncol(geno_df), "_SNP_",
+    trait_, "_", k_folds_, "_folds_CV_single_step.csv"
   ), row.names = T
 )

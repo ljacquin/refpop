@@ -94,7 +94,7 @@ selected_traits_ <- c(
 )
 
 # define trait_
-trait_ <- "Russet_freq_all"
+trait_ <- "Fruit_number"
 
 # define shift seed value by
 mult_seed_by_ <- 100
@@ -270,7 +270,7 @@ df_result_ <- foreach(
     )
     f_hat_val_linear_krmm <- predict_krmm(linear_krmm_model,
       Matrix_covariates = geno_df[idx_val, ],
-      add_flxed_effects = T
+      add_fixed_effects = T
     )
     fold_result["GBLUP"] <- cor(
       f_hat_val_linear_krmm,
@@ -286,7 +286,7 @@ df_result_ <- foreach(
     )
     f_hat_val_gaussian_krmm <- predict_krmm(gaussian_krmm_model,
       Matrix_covariates = geno_df[idx_val, ],
-      add_flxed_effects = T
+      add_fixed_effects = T
     )
     fold_result["RKHS"] <- cor(
       f_hat_val_gaussian_krmm,
@@ -336,12 +336,12 @@ df_ <- as.data.frame(apply(df_, 2, as.numeric))
 method_names <- colnames(df_)
 
 # initialize plot_ly boxplot graphic
-boxplots_rpa_ <- plot_ly()
+boxplots_pa_ <- plot_ly()
 
 # add boxplots
 for (method_ in method_names) {
-  boxplots_rpa_ <- add_boxplot(
-    boxplots_rpa_,
+  boxplots_pa_ <- add_boxplot(
+    boxplots_pa_,
     y = df_[[method_]],
     name = method_,
     boxpoints = "all",
@@ -350,7 +350,7 @@ for (method_ in method_names) {
   )
 }
 # add layout
-boxplots_rpa_ <- boxplots_rpa_ %>%
+boxplots_pa_ <- boxplots_pa_ %>%
   layout(
     title = paste0(
       "Genomic prediction PA distributions of methods for ",
@@ -361,8 +361,8 @@ boxplots_rpa_ <- boxplots_rpa_ %>%
     legend = list(title = list(text = "Prediction method"))
   )
 
-# save boxplots_rpa_ graphics
-saveWidget(boxplots_rpa_, file = paste0(
+# save boxplots_pa_ graphics
+saveWidget(boxplots_pa_, file = paste0(
   output_pred_graphics_path, trait_, "/predictive_ability_",
   trait_, "_", snp_sample_size_, "_SNP_", k_folds_, "_folds_CV.html"
 ))
