@@ -7,6 +7,7 @@ library(MASS)
 library(data.table)
 library(stringr)
 library(lme4)
+library(tidyr)
 library(FactoMineR)
 library(doParallel)
 library(doRNG)
@@ -25,6 +26,8 @@ library(htmlwidgets)
 library(dplyr)
 library(reticulate)
 library(devtools)
+library(kernlab)
+library(whitening)
 if ("refpop_env" %in% conda_list()$name) {
   use_condaenv("refpop_env")
 }
@@ -54,7 +57,7 @@ py_module_available("tensorflow") # must return TRUE
 py_discover_config("keras") # more info on the python env, tf and keras
 
 # define computation mode, i.e. local or cluster
-computation_mode <- "local"
+computation_mode <- "cluster"
 
 # if comutations are local in rstudio, detect and set script path
 # automatically using rstudioapi
@@ -83,6 +86,12 @@ pkgs_to_export_ <- c(
 geno_dir_path <- "../../data/genotype_data/"
 pheno_dir_path <- "../../data/phenotype_data/"
 
+# set path for identified environment and phenotypic outliers
+outlier_dir_path <- "../../results/phenotype_outlier_detection/"
+
+# set path for wiser phenotypes estimated using whitening
+wiser_pheno_dir_path <- "../../data/phenotype_data/wiser_phenotypes/"
+
 # output result path for genotype graphics
 output_pred_results_path <- "../../results/genomic_prediction/"
 output_pred_graphics_path <- "../../results/graphics/genomic_prediction_graphics/"
@@ -97,7 +106,7 @@ selected_traits_ <- c(
 )
 
 # define trait_
-trait_ <- "Scab"
+trait_ <- "Harvest_date"
 
 # define shift seed value by
 mult_seed_by_ <- 100
@@ -106,44 +115,16 @@ mult_seed_by_ <- 100
 k_folds_ <- 5
 
 # define number of shuffles
-n_shuff_ <- 1
+n_shuff_ <- 20
 
-# color palette for families (28 counts)
-color_palette_family <- c(
-  "black",
-  "lightblue",
-  colorRampPalette(c("blue", "deepskyblue"))(10),
-  colorRampPalette(c("orange", "orange2"))(2),
-  colorRampPalette(c("aquamarine"))(1),
-  colorRampPalette(c("magenta", "magenta2"))(2),
-  colorRampPalette(c("firebrick3", "firebrick4"))(2),
-  colorRampPalette(c("green", "darkgreen"))(5),
-  colorRampPalette(c("darkorchid4"))(1),
-  colorRampPalette(c("gold1", "gold2"))(2),
-  colorRampPalette(c("lightcoral"))(1)
-)
+# kernel type, i.e. "linear", "gaussian" or "identity" for genomic covariance matrix
+# (i.e. Gram matrix). NB. "identity" is not recommended due to hypothesis of
+# independence between genotypes which is highly unlikely
+kernel_type_ <- "gaussian"
 
-# color palette for origins (11 counts)
-color_palette_origin <- c(
-  "magenta",
-  "lightblue",
-  "blue",
-  "orange",
-  "aquamarine",
-  "red",
-  "green",
-  "darkorchid4",
-  "gold2",
-  "lightcoral",
-  "yellow"
-)
-
-# get spats and adjusted ls-means phenotype and genotype data,
-# and family and origin info
-
-spats_pheno_df <- as.data.frame(fread(paste0(
-  pheno_dir_path, "spats_per_env_adjusted_phenotypes/",
-  trait_, "_spats_adjusted_phenotypes_long_format.csv"
+# get raw and adjusted ls-means phenotype and genotype data
+raw_pheno_df <- as.data.frame(fread(paste0(
+  pheno_dir_path, "phenotype_raw_data_no_outliers.csv"
 )))
 
 pheno_df <- as.data.frame(fread(paste0(
@@ -156,13 +137,23 @@ geno_df <- as.data.frame(fread(paste0(
   "genotype_data.csv"
 )))
 
-geno_fam_orig_df <- as.data.frame(fread(paste0(
-  geno_dir_path,
-  "genotype_family_origin_information.csv"
-)))
+# get environments based on (estimable) heritabilities which are not identified
+# as outliers (i.e. kept environments after SpATS(), cf.
+# refpop_1_spat_hetero_correct_per_env_trait_and_h2_estim.R)
+sel_env_ <- as.data.frame(
+  fread(
+    paste0(
+      outlier_dir_path,
+      "envir_per_trait_retained_based_on_non_miss_data_and_estimable_h2_non_outliers_for_adj_phenotypes.csv"
+    )
+  )
+)
+sel_env_ <- str_split(sel_env_[sel_env_$trait == trait_, ], pattern = ", ")[[2]]
+raw_pheno_df <- raw_pheno_df[raw_pheno_df$Envir %in% sel_env_, ]
 
-set.seed(1)
-pheno_df <- pheno_df[sample(1:100, replace = F), ]
+# # downsize data set for development and testing purposes
+# set.seed(123)
+# pheno_df <- pheno_df[sample(1:100, replace = F), ]
 
 # remove monomorphic markers
 geno_df <- remove_monomorphic_markers(geno_df)
@@ -202,42 +193,62 @@ rownames(geno_df) <- pheno_df$Genotype
 # get number of genotypes
 n <- nrow(geno_df)
 
-# compute the general mixed model (Rao & Keffe) Y = X*Beta + E = X*Beta + Zu + E
-# and whiten the residuals of E where Var(E) = Σ = sigma2_u*ZKZ' sigma2_e*In',
-# i.e. compute  Ytilde = Xtilde*Beta + Etilde where tilde terms are obtained
-# by multiplying by L^{-1} after Cholesky decomp. of Σ = LL'
-ebv_post_white_ <- compute_ebv_post_whitening(
-  trait_, spats_pheno_df, geno_df,
-  sigma2u = 1, sigma2e = 1
-)
-fitted_spats_pheno_df <- ebv_post_white_$fitted_spats_pheno_df
-x_mat <- ebv_post_white_$x_mat
-z_mat <- ebv_post_white_$z_mat
-k_mat <- ebv_post_white_$k_mat
-u_hat <- ebv_post_white_$u_hat
-beta_hat <- ebv_post_white_$beta_hat
-beta_hat
-plot(density(u_hat))
+# compute wiser phenotype: corrected for fixed effects which takes into account
+# genetic covariance between genotypes, using a whitening algorithm and
+# approximate bayesian computation (ABC)
+# since computations are long, save results for later use
 
-sigma2_upper_bound <- var(fitted_spats_pheno_df[, trait_])
-var_comp_estim_abc_ <- abc_variance_component_estimation(
-  trait_, fitted_spats_pheno_df,
-  x_mat, z_mat, k_mat,
-  beta_hat,
-  prior_sig2_u = c(1e-2, sigma2_upper_bound),
-  prior_sig2_e = c(1e-2, sigma2_upper_bound),
-  n_sim_ = 100,
-  quantile_threshold = 0.05
-)
-var_comp_estim_abc_
+# if exist, read corrected phenotype data for trait associated to the
+# defined kernel
+if (file.exists(paste0(
+  wiser_pheno_dir_path,
+  "wiser_phenotypes_", kernel_type_,
+  "_kernel_", trait_, ".csv"
+))) {
+  # load corrected phenotypes if file exists
+  v_hat <- as.data.frame(fread(paste0(
+    wiser_pheno_dir_path,
+    "wiser_phenotypes_", kernel_type_,
+    "_kernel_", trait_, ".csv"
+  )))
+  v_hat <- v_hat$V2
+} else {
+  pheno_obj <- estimate_wiser_phenotype(geno_df, raw_pheno_df, trait_,
+    fixed_effects_vars = c(
+      "Envir", "Country", "Year",
+      "Row", "Position", "Management"
+    ),
+    random_effect_vars = "Genotype",
+    kernel_type = kernel_type_,
+    whitening_method = "Cholesky"
+  )
+  v_hat <- pheno_obj$v_hat
 
-ebv_post_white_ <- compute_ebv_post_whitening(
-  trait_, spats_pheno_df, geno_df,
-  sigma2u = var_comp_estim_abc_$sigma2_u_hat_mean,
-  sigma2e = var_comp_estim_abc_$sigma2_e_hat_mean
-)
-u_hat <- ebv_post_white_$u_hat
-plot(density(u_hat))
+  # save corrected phenotype
+  fwrite(as.data.frame(v_hat), paste0(
+    wiser_pheno_dir_path,
+    "wiser_phenotypes_", kernel_type_,
+    "_kernel_", trait_, ".csv"
+  ), row.names = T, col.names = F)
+
+  # save variance component using abc
+  saveRDS(pheno_obj$var_comp_abc_obj, paste0(
+    wiser_pheno_dir_path,
+    "abc_var_comp_estim_", kernel_type_,
+    "_kernel_", trait_
+  ))
+}
+
+#dev.new()
+#par(mfrow = c(1, 3))
+#plot(density(v_hat), main = paste0(trait_, " v_hat"))
+#plot(density(pheno_df[, trait_]), main = paste0(trait_, " ls-means"))
+#plot(pheno_df[, trait_], v_hat,
+#  xlab = "ls-means",
+#  ylab = "v_hat",
+#  main = paste0(trait_, " ls-means versus v_hat")
+#)
+#cor(pheno_df[, trait_], v_hat)
 
 # register parallel backend
 cl <- makeCluster(detectCores())
@@ -265,14 +276,34 @@ df_result_ <- foreach(
     idx_train <- idx_[-idx_val_fold]
 
     # initialize vector of results for the current fold
-    fold_result <- c(
-      "GBLUP_ebv_post_whitening" = NA, "RKHS_ebv_post_whitening" = NA,
-      "GBLUP_ls_means" = NA, "RKHS_ls_means" = NA
-    )
-    # predict estimated breeding values (ebv), using ebv during training
+    if (kernel_type_ == "gaussian") {
+      fold_result <- c(
+        "GBLUP_wiser_gaussian" = NA,
+        "RKHS_wiser_gaussian" = NA,
+        "GBLUP_ls_means" = NA,
+        "RKHS_ls_means" = NA
+      )
+    } else if (kernel_type_ == "linear") {
+      fold_result <- c(
+        "GBLUP_wiser_linear" = NA,
+        "RKHS_wiser_linear" = NA,
+        "GBLUP_ls_means" = NA,
+        "RKHS_ls_means" = NA
+      )
+    } else {
+      fold_result <- c(
+        "GBLUP_wiser_identity" = NA,
+        "RKHS_wiser_identity" = NA,
+        "GBLUP_ls_means" = NA,
+        "RKHS_ls_means" = NA
+      )
+    }
+
+    # training and prediction based on computed phenotypes, i.e. v_hat
+
     # train and predict with GBLUP (linear kernel krmm)
     linear_krmm_model <- krmm(
-      Y = u_hat[idx_train],
+      Y = v_hat[idx_train],
       Matrix_covariates = geno_df[idx_train, ],
       method = "GBLUP"
     )
@@ -280,13 +311,13 @@ df_result_ <- foreach(
       Matrix_covariates = geno_df[idx_val, ],
       add_fixed_effects = T
     )
-    fold_result["GBLUP_ebv_post_whitening"] <- cor(
+    fold_result[1] <- cor(
       f_hat_val_linear_krmm,
-      u_hat[idx_val]
+      v_hat[idx_val]
     )
     # train and predict with RKHS (non-linear Gaussian kernel krmm)
     gaussian_krmm_model <- krmm(
-      Y = u_hat[idx_train],
+      Y = v_hat[idx_train],
       Matrix_covariates = geno_df[idx_train, ],
       method = "RKHS", kernel = "Gaussian",
       rate_decay_kernel = 0.1
@@ -295,11 +326,13 @@ df_result_ <- foreach(
       Matrix_covariates = geno_df[idx_val, ],
       add_fixed_effects = T
     )
-    fold_result["RKHS_ebv_post_whitening"] <- cor(
+    fold_result[2] <- cor(
       f_hat_val_gaussian_krmm,
-      u_hat[idx_val]
+      v_hat[idx_val]
     )
-    # predict ls-means, using ls-means during training
+
+    # training and prediction based on ls-means
+
     # train and predict with GBLUP (linear kernel krmm)
     linear_krmm_model <- krmm(
       Y = pheno_df[idx_train, trait_],
@@ -310,7 +343,7 @@ df_result_ <- foreach(
       Matrix_covariates = geno_df[idx_val, ],
       add_fixed_effects = T
     )
-    fold_result["GBLUP_ls_means"] <- cor(
+    fold_result[3] <- cor(
       f_hat_val_linear_krmm,
       pheno_df[idx_val, trait_]
     )
@@ -325,7 +358,7 @@ df_result_ <- foreach(
       Matrix_covariates = geno_df[idx_val, ],
       add_fixed_effects = T
     )
-    fold_result["RKHS_ls_means"] <- cor(
+    fold_result[4] <- cor(
       f_hat_val_gaussian_krmm,
       pheno_df[idx_val, trait_]
     )
@@ -369,14 +402,18 @@ boxplots_pa_ <- boxplots_pa_ %>%
       trait_, ", based on ", snp_sample_size_, " SNPs across ",
       n_shuff_, " shuffling scenarios for ", k_folds_, "-folds CV"
     ),
-    yaxis = list(title = "Predictive ability (PA)", range = c(0, 1)),
+    yaxis = list(
+      title = "Predictive ability (PA)",
+      range = c(-0.5, 1)
+    ),
     legend = list(title = list(text = "Prediction method"))
   )
 
 # save boxplots_pa_ graphics
 saveWidget(boxplots_pa_, file = paste0(
-  output_pred_graphics_path, trait_, "/post_whitening_predictive_ability_",
-  trait_, "_", snp_sample_size_, "_SNP_", k_folds_, "_folds_CV_single_step.html"
+  output_pred_graphics_path, trait_, "/wiser_phenotype_predictive_ability_",
+  trait_, "_", kernel_type_, "_kernel_", snp_sample_size_, "_SNP_",
+  k_folds_, "_folds_CV.html"
 ))
 
 # add stats and save predictive ability results
@@ -396,7 +433,7 @@ df_result_ <- rbind(df_result_, df_stat)
 fwrite(df_result_,
   file = paste0(
     output_pred_results_path,
-    "post_whitening_genomic_pred_results_", ncol(geno_df), "_SNP_",
-    trait_, "_", k_folds_, "_folds_CV_single_step.csv"
+    "wiser_phenotype_genomic_pred_results_", ncol(geno_df), "_SNP_",
+    trait_, "_", kernel_type_, "_kernel_", k_folds_, "_folds_CV.csv"
   ), row.names = T
 )

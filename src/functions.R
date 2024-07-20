@@ -685,82 +685,25 @@ remove_col_with_na_thresh <- function(df_, threshold) {
   ))
 }
 
+# function which normalizes the columns of a matrix
+normalize_matrix_columns <- function(matrix_) {
+  column_norms <- apply(matrix_, 2, function(col) sqrt(sum(col^2)))
+  matrix_ <- sweep(matrix_, 2, column_norms, FUN = "/")
+  return(matrix_)
+}
 
-# function which computes the ebv after residuals whitening
-compute_ebv_post_whitening <- function(trait_, spats_pheno_df, geno_df,
-                                       sigma2u = 1, sigma2e = 1) {
-  tryCatch(
-    {
-      # compute Gram matrix (i.e. genomic covariance matrix)
-      # and Cholesky decomposition
-      k_mat <- tcrossprod(scale(apply(geno_df, 2, as.numeric),
-        center = T, scale = F
-      ))
-      k_mat <- as.matrix(nearPD(k_mat)$mat) # is.positive.definite(k_mat, tol=1e-8)
-      rownames(k_mat) <- rownames(geno_df)
-      colnames(k_mat) <- rownames(k_mat)
+# function which computes trace of a matrix
+trace_mat <- function(matrix_) {
+  return(sum(diag(matrix_)))
+}
 
-      # get common geontype between spats_pheno_df and geno_df
-      spats_pheno_df <- spats_pheno_df[
-        spats_pheno_df$Genotype %in% rownames(k_mat),
-      ]
-      
-      # get phenotypes
-      y <- spats_pheno_df[, paste0(trait_, "_spats_adj_pheno")]
-      # get phenotypes
-      # y <- scale(spats_pheno_df[, paste0(trait_, "_spats_adj_pheno")])
-
-      # get incidence matrices for fixed and random effects
-      # NB. column of ones is added for intercept associated to fixed effects
-      x_mat <- model.matrix(~ Envir, data = spats_pheno_df)
-      colnames(x_mat) <- str_replace_all(
-        colnames(x_mat),
-        pattern = "Envir", replacement = ""
-      )
-      z_mat <- model.matrix(~ Genotype - 1, data = spats_pheno_df)
-      colnames(z_mat) <- str_replace_all(
-        colnames(z_mat),
-        pattern = "Genotype", replacement = ""
-      )
-
-      # compute Σ (sig_mat_) and its Cholesky decomposition, i.e. Σ = LL'
-      sig_mat_ <- sigma2u * crossprod(t(z_mat), tcrossprod(k_mat, z_mat)) +
-        sigma2e * diag(1, nrow(z_mat))
-      l_mat_t <- cholesky(sig_mat_, parallel = T)
-      l_mat_t_inv <- chol2inv(l_mat_t)
-      l_mat <- t(l_mat_t)
-      l_mat_inv <- t(l_mat_t_inv)
-
-      # compute y_tilde, x_mat_tilde and the ols estimates for fixed effects
-      # NB. intercept is already present in x_mat and x_mat_tilde
-      y_tilde <- l_mat_inv %*% y
-      x_mat_tilde <- l_mat_inv %*% x_mat
-      linear_model_tilde <- lm(y_tilde ~ 0 + x_mat_tilde) 
-      beta_hat <- coef(linear_model_tilde)
-      err_tilde_hat <- resid(linear_model_tilde)
-
-      # transform err_tilde_hat to original err_hat (recall: err = Zu + epsilon)
-      err_hat <- l_mat %*% err_tilde_hat
-
-      # get genetic values estimates using either ols and/or ridge
-      u_hat <- Matrix::solve(t(z_mat) %*% z_mat) %*% t(z_mat) %*% err_hat
-      plot(density(u_hat))
-    },
-    error = function(e) {
-      cat(
-        "Error with : ", conditionMessage(e), "\n"
-      )
-    }
-  )
-  return(list(
-    "trait_" = trait_,
-    "fitted_spats_pheno_df" = spats_pheno_df,
-    "x_mat" = x_mat,
-    "z_mat" = z_mat,
-    "k_mat" = k_mat,
-    "beta_hat" = beta_hat,
-    "u_hat" = u_hat
-  ))
+# function which regularizes a covariance matrix by adding a small
+# positive value delta to the diagonal
+regularize_covariance <- function(cov_mat_, alpha_ = 1e-2) {
+  n <- nrow(cov_mat_)
+  delta_ <- alpha_ * trace_mat(cov_mat_)
+  cov_mat_ <- cov_mat_ + delta_ * diag(n)
+  return(cov_mat_)
 }
 
 # function to simulate phenotype data
@@ -768,9 +711,6 @@ simulate_y <- function(x_mat, z_mat, beta_hat, sigma2_u, sigma2_e, k_mat) {
   # get incidence matrices dimensions
   n <- nrow(x_mat)
   q <- ncol(z_mat)
-
-  # add column for fixed effects intercept
-  # x_mat <- cbind(rep(1,n), x_mat)
 
   # simulate u and eps
   u <- mvrnorm(1, mu = rep(0, q), Sigma = sigma2_u * k_mat)
@@ -789,10 +729,10 @@ squared_l2_norm <- function(y, y_sim) {
 # function to simulate phenotypes and compute distance between simulated and
 # observed values
 simulate_and_compute_squared_l2_norm <- function(y, x_mat, z_mat, k_mat, beta_hat,
-                                                 prior_sig2_u, prior_sig2_e) {
+                                                 prior_sigma2_u, prior_sigma2_e) {
   # sample random values for variance components for prior ranges
-  sigma2_u <- runif(1, prior_sig2_u[1], prior_sig2_u[2])
-  sigma2_e <- runif(1, prior_sig2_e[1], prior_sig2_e[2])
+  sigma2_u <- runif(1, prior_sigma2_u[1], prior_sigma2_u[2])
+  sigma2_e <- runif(1, prior_sigma2_e[1], prior_sigma2_e[2])
 
   # simulate phenotypes
   y_sim <- simulate_y(x_mat, z_mat, beta_hat, sigma2_u, sigma2_e, k_mat)
@@ -804,31 +744,27 @@ simulate_and_compute_squared_l2_norm <- function(y, x_mat, z_mat, k_mat, beta_ha
 }
 
 # abc function to compute variance components
-abc_variance_component_estimation <- function(trait_, fitted_spats_pheno_df,
-                                              x_mat, z_mat, k_mat, beta_hat,
-                                              prior_sig2_u = c(1e-2, 3),
-                                              prior_sig2_e = c(1e-2, 3),
-                                              n_sim_ = 100,
-                                              quantile_threshold = 0.05) {
-  # get observed phenotypes for trait_
-  y <- fitted_spats_pheno_df[, trait_]
-
+abc_variance_component_estimation <- function(y, x_mat, z_mat, k_mat, beta_hat,
+                                              prior_sigma2_u, prior_sigma2_e,
+                                              n_sim_abc, seed_abc,
+                                              quantile_threshold_abc) {
   # register parallel backend
   cl <- makeCluster(detectCores())
   registerDoParallel(cl)
 
   # compute simulated phenotypes and distances
   df_results <- foreach(
-    shuff_ = 1:n_sim_,
+    sim_num = 1:n_sim_abc,
     .export = c(
-      "y", "x_mat", "z_mat", "k_mat", "beta_hat", "prior_sig2_u", "prior_sig2_e",
+      "y", "x_mat", "z_mat", "k_mat", "beta_hat", "prior_sigma2_u", "prior_sigma2_e",
       "simulate_y", "squared_l2_norm", "simulate_and_compute_squared_l2_norm"
     ),
     .packages = c("MASS"),
     .combine = rbind
   ) %dopar% {
+    set.seed(sim_num * seed_abc)
     simulate_and_compute_squared_l2_norm(
-      y, x_mat, z_mat, k_mat, beta_hat, prior_sig2_u, prior_sig2_e
+      y, x_mat, z_mat, k_mat, beta_hat, prior_sigma2_u, prior_sigma2_e
     )
   }
   # stop the parallel backend
@@ -842,8 +778,8 @@ abc_variance_component_estimation <- function(trait_, fitted_spats_pheno_df,
   # extract df_results
   vect_distances <- as.numeric(df_results[, "distance"])
 
-  # get rejection threshold based on define quantile_threshold
-  reject_thresh <- quantile(vect_distances, quantile_threshold)
+  # get rejection threshold based on define quantile_threshold_abc
+  reject_thresh <- quantile(vect_distances, quantile_threshold_abc)
 
   # get accepted variance components parameters for rejection threshold
   accepted_params <- as.data.frame(
@@ -863,80 +799,156 @@ abc_variance_component_estimation <- function(trait_, fitted_spats_pheno_df,
   ))
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# function which computes the ebv after residuals whitening
-compute_ebv_post_whitening_v1 <- function(trait_, spats_pheno_df, geno_df,
-                                          sigma2u = 1, sigma2e = 1) {
+# function which computes transformed fixed variables and least squares
+compute_transformed_vars_and_ols_estimates <- function(
+    geno_df, raw_pheno_df, fixed_effects_vars, random_effect_vars, trait_,
+    sigma2_u, sigma2_e, kernel_type,
+    rate_decay_kernel,
+    whitening_method) {
+  # sigma2_u <- 1
+  # sigma2_e <- 1
+  # kernel_type <- "gaussian"
+  # rate_decay_kernel <- 0.1
+  # random_effect_vars <- 'Genotype'
+  # fixed_effects_vars <- c("Envir", "Country",
+  # "Year", "Row", "Position","Management")
   tryCatch(
     {
-      # compute Gram matrix (i.e. genomic covariance matrix)
-      # and Cholesky decomposition
-      k_mat <- tcrossprod(scale(apply(geno_df, 2, as.numeric),
-        center = T, scale = F
-      ))
-      k_mat <- as.matrix(nearPD(k_mat)$mat) # is.positive.definite(k_mat, tol=1e-8)
-      rownames(k_mat) <- rownames(geno_df)
-      colnames(k_mat) <- rownames(k_mat)
+      # remove all rows with na w.r.t to trait_
+      raw_pheno_df <- raw_pheno_df %>% drop_na(all_of(trait_))
 
-      # get common geontype between spats_pheno_df and geno_df
-      spats_pheno_df <- spats_pheno_df[
-        spats_pheno_df$Genotype %in% rownames(k_mat),
+      # define variables of interest
+      sel_vars_ <- c(fixed_effects_vars, random_effect_vars, trait_)
+
+      # get only variables of interest from raw_pheno_df
+      raw_pheno_df <- raw_pheno_df[, sel_vars_]
+      raw_pheno_df <- na.omit(raw_pheno_df)
+
+      # compute Gram matrix (i.e. genomic covariance matrix)
+      geno_names <- rownames(geno_df)
+      geno_df <- apply(geno_df, 2, as.numeric)
+
+      if (kernel_type == "linear") {
+        k_mat <- tcrossprod(scale(apply(geno_df, 2, as.numeric),
+          center = T, scale = F
+        ))
+      } else if (kernel_type == "gaussian") {
+        kernel_function <- rbfdot(sigma = (1 / ncol(geno_df)) * rate_decay_kernel)
+        k_mat <- kernelMatrix(kernel_function, geno_df)
+      } else {
+        # kernel identity is not recommended due to constrained hypothesis about
+        # genotypes independence which may lead to low precision
+        k_mat <- as.matrix(diag(nrow(geno_df)))
+      }
+
+      # test positive definiteness and force it if necessary
+      if (!is.positive.definite(k_mat, tol = 1e-8)) {
+        k_mat <- as.matrix(nearPD(k_mat)$mat)
+      }
+
+      # assign genotype rownames and colnames to k_mat
+      colnames(k_mat) <- rownames(k_mat) <- geno_names
+
+      # get common geontype between raw_pheno_df and geno_df
+      raw_pheno_df <- raw_pheno_df[
+        raw_pheno_df$Genotype %in% rownames(k_mat),
       ]
+
+      # convert fixed effects variables to factors, and remove
+      # buffer for management if exists
+      for (fix_eff_var_ in fixed_effects_vars) {
+        raw_pheno_df[, fix_eff_var_] <- as.factor(raw_pheno_df[, fix_eff_var_])
+        if ("BUFFER" %in% raw_pheno_df[, fix_eff_var_]) {
+          raw_pheno_df <- raw_pheno_df[
+            raw_pheno_df[, fix_eff_var_] != "BUFFER",
+          ]
+        }
+      }
+      # droplevels in order to remove levels which don't exist anymore
+      raw_pheno_df <- droplevels(raw_pheno_df)
+
+      # get raw phenotypes associated to common genotypes
+      y <- raw_pheno_df[, trait_]
 
       # get incidence matrices for fixed and random effects
-      x_mat <- model.matrix(~ Envir - 1, data = spats_pheno_df)
-      colnames(x_mat) <- str_replace_all(
-        colnames(x_mat),
-        pattern = "Envir", replacement = ""
+      # NB. column of ones is added for intercept associated to fixed effects
+
+      # define list of incidence matrices for fixed effects
+      list_x_mat <- vector("list", length(fixed_effects_vars))
+      names(list_x_mat) <- fixed_effects_vars
+
+      # add incidence matrix for first fixed effect to list of matrices
+      fix_eff_var_ <- fixed_effects_vars[1]
+      list_x_mat[[fix_eff_var_]] <- model.matrix(
+        as.formula(paste0("~", fix_eff_var_)),
+        data = raw_pheno_df
       )
-      z_mat <- model.matrix(~ Genotype - 1, data = spats_pheno_df)
-      colnames(z_mat) <- str_replace_all(
-        colnames(z_mat),
-        pattern = "Genotype", replacement = ""
+      colnames(list_x_mat[[fix_eff_var_]]) <- str_replace_all(
+        colnames(list_x_mat[[fix_eff_var_]]),
+        pattern = fix_eff_var_, replacement = paste0(fix_eff_var_, "_")
       )
+
+      # add incidence matrices (without intercept) for other fixed effects to list
+      for (fix_eff_var_ in fixed_effects_vars[-1]) {
+        list_x_mat[[fix_eff_var_]] <- model.matrix(
+          as.formula(paste0("~", fix_eff_var_, " - 1")),
+          data = raw_pheno_df
+        )
+        colnames(list_x_mat[[fix_eff_var_]]) <- str_replace_all(
+          colnames(list_x_mat[[fix_eff_var_]]),
+          pattern = fix_eff_var_, replacement = paste0(fix_eff_var_, "_")
+        )
+      }
+      x_mat <- do.call(cbind, list_x_mat)
+      x_mat <- apply(x_mat, 2, as.numeric)
+
+      # define list of incidence matrices for random effects
+      list_z_mat <- vector("list", length(random_effect_vars))
+      names(list_z_mat) <- random_effect_vars
+
+      # add incidence matrices for random effects to list
+      for (rand_eff_var in random_effect_vars) {
+        list_z_mat[[rand_eff_var]] <- model.matrix(
+          as.formula(paste0("~", rand_eff_var, " - 1")),
+          data = raw_pheno_df
+        )
+        colnames(list_z_mat[[rand_eff_var]]) <- str_replace_all(
+          colnames(list_z_mat[[rand_eff_var]]),
+          pattern = rand_eff_var, replacement = paste0(rand_eff_var, "_")
+        )
+      }
+      z_mat <- do.call(cbind, list_z_mat)
+      z_mat <- apply(z_mat, 2, as.numeric)
 
       # compute Σ (sig_mat_) and its Cholesky decomposition, i.e. Σ = LL'
-      sig_mat_ <- sigma2u * crossprod(t(z_mat), tcrossprod(k_mat, z_mat)) +
-        sigma2e * diag(1, nrow(z_mat))
-      l_mat_t <- cholesky(sig_mat_, parallel = T)
-      l_mat_t_inv <- chol2inv(l_mat_t)
-      l_mat <- t(l_mat_t)
-      l_mat_inv <- t(l_mat_t_inv)
+      sig_mat_ <- sigma2_u * crossprod(t(z_mat), tcrossprod(k_mat, z_mat))
+      sig_mat_ <- regularize_covariance(sig_mat_, alpha_ = 0.01)
+      # regularize_covariance() adds α * trace(Σ) * I_n to the diagonal of Σ
+      # to ensure its positive semi definiteness (PSD)
 
-      # compute y_tilde, x_mat_tilde and the ols estimates for fixed effects
-      y_tilde <- l_mat_inv %*% spats_pheno_df[
-        , paste0(trait_, "_spats_adj_pheno")
-      ]
-      x_mat_tilde <- l_mat_inv %*% x_mat
+      if (whitening_method == "Cholesky") {
+        # compute w_mat = L^−1 from Cholesky decomposition
+        w_mat <- Matrix::solve(t(cholesky(sig_mat_, parallel = T)))
+      } else {
+        # compute w_mat from ZCA-cor
+        w_mat <- whiteningMatrix(sig_mat_, method = "ZCA-cor")
+      }
 
-      linear_model_tilde <- lm(y_tilde ~ x_mat_tilde)
-      beta_hat <- coef(linear_model_tilde)
-      err_tilde_hat <- resid(linear_model_tilde)
+      # NB. intercept is already present in x_mat and x_mat_tilde
+      x_mat_tilde <- w_mat %*% x_mat
 
-      # transform err_tilde_hat to original err_hat (recall: err = Zu + epsilon)
-      err_hat <- l_mat %*% err_tilde_hat
+      # get ols estimates for fixed effects and xi
+      beta_hat <- ginv(t(x_mat_tilde) %*% x_mat_tilde) %*% t(x_mat_tilde) %*% y
+      xi_hat <- y - x_mat_tilde %*% beta_hat
 
-      # get genetic values estimates using either ols and/or ridge
-      u_hat <- Matrix::solve(t(z_mat) %*% z_mat) %*% t(z_mat) %*% err_hat
+      return(list(
+        "x_mat" = x_mat,
+        "z_mat" = z_mat,
+        "k_mat" = k_mat,
+        "beta_hat" = beta_hat,
+        "xi_hat" = xi_hat,
+        "y" = y
+      ))
     },
     error = function(e) {
       cat(
@@ -944,13 +956,92 @@ compute_ebv_post_whitening_v1 <- function(trait_, spats_pheno_df, geno_df,
       )
     }
   )
-  return(list(
-    "trait_" = trait_,
-    "fitted_spats_pheno_df" = spats_pheno_df,
-    "x_mat" = x_mat,
-    "z_mat" = z_mat,
-    "k_mat" = k_mat,
-    "beta_hat" = beta_hat,
-    "u_hat" = u_hat
-  ))
+}
+
+# function which computes phenotypes approximating genetic values using whitening
+estimate_wiser_phenotype <- function(geno_df, raw_pheno_df, trait_,
+                                    fixed_effects_vars = c(
+                                      "Envir", "Country", "Year",
+                                      "Row", "Position", "Management"
+                                    ),
+                                    random_effect_vars = "Genotype",
+                                    init_sigma2_u = 1,
+                                    init_sigma2_e = 1,
+                                    n_sim_abc = 100,
+                                    seed_abc = 123,
+                                    quantile_threshold_abc = 0.05,
+                                    nb_iter_abc = 1,
+                                    kernel_type = "linear",
+                                    rate_decay_kernel = 0.1,
+                                    whitening_method = "Cholesky") {
+  # init_sigma2_u = 1
+  # init_sigma2_e = 1
+  # n_sim_abc = 100
+  # seed_abc = 123
+  # quantile_threshold_abc = 0.05
+  # nb_iter_abc = 1
+  # kernel_type = "gaussian"
+  # rate_decay_kernel = 0.1
+  tryCatch(
+    {
+      # compute transformed variables associated to fixed effects and least-squares
+      # to estimate these
+      transform_and_ls_obj <- compute_transformed_vars_and_ols_estimates(
+        geno_df, raw_pheno_df, fixed_effects_vars, random_effect_vars, trait_,
+        sigma2_u = init_sigma2_u,
+        sigma2_e = init_sigma2_e,
+        kernel_type, rate_decay_kernel,
+        whitening_method
+      )
+
+      # get an upper bound for sigma2_u et sigma2_e priors
+      prior_sigma2_upper_bound <- var(
+        transform_and_ls_obj$y
+      )
+
+      for (iter_ in 1:nb_iter_abc) {
+        # print(paste0('iter : ', iter_))
+        # compute variance components using abc
+        var_comp_abc_obj <- abc_variance_component_estimation(
+          y = transform_and_ls_obj$y,
+          x_mat = transform_and_ls_obj$x_mat,
+          z_mat = transform_and_ls_obj$z_mat,
+          k_mat = transform_and_ls_obj$k_mat,
+          beta_hat = transform_and_ls_obj$beta_hat,
+          prior_sigma2_u = c(1e-2, prior_sigma2_upper_bound),
+          prior_sigma2_e = c(1e-2, prior_sigma2_upper_bound),
+          n_sim_abc, seed_abc,
+          quantile_threshold_abc
+        )
+        # compute variance components again with abc using new estimates
+        transform_and_ls_obj <- compute_transformed_vars_and_ols_estimates(
+          geno_df, raw_pheno_df, fixed_effects_vars, random_effect_vars, trait_,
+          sigma2_u = var_comp_abc_obj$sigma2_u_hat_mean,
+          sigma2_e = var_comp_abc_obj$sigma2_e_hat_mean,
+          kernel_type, rate_decay_kernel,
+          whitening_method
+        )
+      }
+
+      # get estimated components after abc
+
+      # extract estimated fixed effects
+      beta_hat <- transform_and_ls_obj$beta_hat
+
+      # compute phenotypic values using ols
+      v_hat <- Matrix::solve(t(transform_and_ls_obj$z_mat) %*% transform_and_ls_obj$z_mat) %*%
+        t(transform_and_ls_obj$z_mat) %*% transform_and_ls_obj$xi_hat
+
+      return(list(
+        "var_comp_abc_obj" = var_comp_abc_obj,
+        "beta_hat" = beta_hat,
+        "v_hat" = v_hat
+      ))
+    },
+    error = function(e) {
+      cat(
+        "Error with : ", conditionMessage(e), "\n"
+      )
+    }
+  )
 }
