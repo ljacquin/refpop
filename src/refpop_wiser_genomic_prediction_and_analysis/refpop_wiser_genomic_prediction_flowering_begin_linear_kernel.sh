@@ -13,4 +13,4 @@
 ### --mail-user=laval.jacquin@inrae.fr
 ### --mail-type=ALL
 
-R -q --vanilla < refpop_wiser_genomic_prediction_harvest_date_linear_kernel.R
+R -q --vanilla < refpop_wiser_genomic_prediction_flowering_begin_linear_kernel.R

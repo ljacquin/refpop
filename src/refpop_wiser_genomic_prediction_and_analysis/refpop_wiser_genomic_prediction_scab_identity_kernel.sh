@@ -3,7 +3,7 @@
 #  script for launching genomic prediction for traits #
 #=====================================================#
 ### Requirements
-#SBATCH --partition=p01
+#SBATCH --partition=bigmem
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --mem-per-cpu=64
@@ -13,4 +13,4 @@
 ### --mail-user=laval.jacquin@inrae.fr
 ### --mail-type=ALL
 
-R -q --vanilla < refpop_wiser_genomic_prediction_harvest_date_linear_kernel.R
+R -q --vanilla < refpop_wiser_genomic_prediction_scab_identity_kernel.R

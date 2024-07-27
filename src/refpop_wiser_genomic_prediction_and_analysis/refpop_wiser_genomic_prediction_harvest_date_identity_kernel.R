@@ -120,7 +120,7 @@ n_shuff_ <- 20
 # kernel type, i.e. "linear", "gaussian" or "identity" for genomic covariance matrix
 # (i.e. Gram matrix). NB. "identity" is not recommended due to hypothesis of
 # independence between genotypes which is highly unlikely
-kernel_type_ <- "gaussian"
+kernel_type_ <- "identity"
 
 # get raw and adjusted ls-means phenotype and genotype data
 raw_pheno_df <- as.data.frame(fread(paste0(
@@ -213,15 +213,26 @@ if (file.exists(paste0(
   )))
   v_hat <- v_hat$V2
 } else {
+  # estimate wiser phenotype
+  start_time_ <- Sys.time()
   pheno_obj <- estimate_wiser_phenotype(geno_df, raw_pheno_df, trait_,
     fixed_effects_vars = c(
       "Envir", "Country", "Year",
       "Row", "Position", "Management"
     ),
-    random_effect_vars = "Genotype",
+    random_effects_vars = "Genotype",
     kernel_type = kernel_type_,
     whitening_method = "Cholesky"
   )
+  end_time_ <- Sys.time()
+  time_taken_ <- end_time_ - start_time_
+  print(paste0(
+    "Execution time for wiser computation of ",
+    trait_, " with ", kernel_type_, " kernel : ",
+    signif(time_taken_, 3)
+  ))
+
+  # get estimated wiser phenotype
   v_hat <- pheno_obj$v_hat
 
   # save corrected phenotype
@@ -239,16 +250,16 @@ if (file.exists(paste0(
   ))
 }
 
-#dev.new()
-#par(mfrow = c(1, 3))
-#plot(density(v_hat), main = paste0(trait_, " v_hat"))
-#plot(density(pheno_df[, trait_]), main = paste0(trait_, " ls-means"))
-#plot(pheno_df[, trait_], v_hat,
+# dev.new()
+# par(mfrow = c(1, 3))
+# plot(density(v_hat), main = paste0(trait_, " v_hat"))
+# plot(density(pheno_df[, trait_]), main = paste0(trait_, " ls-means"))
+# plot(pheno_df[, trait_], v_hat,
 #  xlab = "ls-means",
 #  ylab = "v_hat",
 #  main = paste0(trait_, " ls-means versus v_hat")
-#)
-#cor(pheno_df[, trait_], v_hat)
+# )
+# cor(pheno_df[, trait_], v_hat)
 
 # register parallel backend
 cl <- makeCluster(detectCores())
