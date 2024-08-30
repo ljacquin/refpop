@@ -91,7 +91,7 @@ The ```refpop/``` repository contains three main folders that are central to the
         <p> </p>
     
   * ```refpop_genomic_prediction_and_analysis/```
-    * ```refpop_genomic_prediction_and_analysis_trait.R```: This script evaluates, for a defined trait, the distributions of genomic prediction accuracies associated to several prediction methods, for the adjusted phenotypic ls-means. These distributions are evaluated using K-folds cross-validation, for n shuffling scenarios of the refpop population, and using the pearson correlation as a measure of accuracy between the predicted and observed adjusted phenotypic ls-means. The implemented prediction methods are random forest (RF), support vector regression (SVR), reproducing kernel hilbert space regression (RKHS), genomic blup (GBLUP) and least absolute shrinkage and selection operator (LASSO).
+    * ```refpop_genomic_prediction_trait.R```: This script evaluates, for a defined trait, the distributions of genomic prediction accuracies associated to several prediction methods, for the adjusted phenotypic ls-means. These distributions are evaluated using K-folds cross-validation, for n shuffling scenarios of the refpop population, and using the pearson correlation as a measure of accuracy between the predicted and observed adjusted phenotypic ls-means. The implemented prediction methods are random forest (RF), support vector regression (SVR), reproducing kernel hilbert space regression (RKHS), genomic blup (GBLUP) and least absolute shrinkage and selection operator (LASSO).
         <p> </p>
   
   * ```refpop_gem_interaction_analysis/```

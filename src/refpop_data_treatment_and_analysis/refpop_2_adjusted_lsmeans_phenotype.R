@@ -202,7 +202,6 @@ colnames(pheno_df)[str_detect(colnames(pheno_df), "_lsmean")] <-
   )
 fwrite(pheno_df, file=paste0(pheno_dir_path,'adjusted_ls_means_phenotypes.csv'))
 
-
 # compute correlation matrix
 cor_matrix <- cor(na.omit(pheno_df[, -na.omit(match(
   c(
