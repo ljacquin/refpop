@@ -95,9 +95,7 @@ The ```refpop/``` repository contains three main folders that are central to the
         <p> </p>
   
   * ```refpop_gem_interaction_analysis/```
-    * ```refpop_gem_data_structure_analysis.R```:
-    * ```..........```:
-    * ```..........```:
+    * ```refpop_gem_data_structure_analysis.R```
         <p> </p>
 
 ### 💻 Instructions
