@@ -91,7 +91,7 @@ The ```refpop/``` repository contains three main folders that are central to the
         <p> </p>
     
   * ```refpop_genomic_prediction_and_analysis/```
-    * ```refpop_genomic_prediction_and_analysis_trait.R```: This script evaluates, for a defined trait, the distributions of genomic prediction accuracies associated to several prediction methods, for the adjusted phenotypic ls-means. These distributions are evaluated using K-folds cross-validation, for n shuffling scenarios of the refpop population, and using the pearson correlation as a measure of accuracy between the predicted and observed adjusted phenotypic ls-means. The implemented prediction methods are random forest (RF), support vector regression (SVR), reproducing kernel hilbert space regression (RKHS), genomic blup (GBLUP) and least absolute shrinkage and selection operator (LASSO).
+    * ```refpop_genomic_prediction_trait.R```: This script evaluates, for a defined trait, the distributions of genomic prediction accuracies associated to several prediction methods, for the adjusted phenotypic ls-means. These distributions are evaluated using K-folds cross-validation, for n shuffling scenarios of the refpop population, and using the pearson correlation as a measure of accuracy between the predicted and observed adjusted phenotypic ls-means. The implemented prediction methods are random forest (RF), support vector regression (SVR), reproducing kernel hilbert space regression (RKHS), genomic blup (GBLUP) and least absolute shrinkage and selection operator (LASSO).
         <p> </p>
   
   * ```refpop_gem_interaction_analysis/```
@@ -110,14 +110,16 @@ Download the ```refpop``` repository in the current user's directory on a comput
   ⚠️ Make sure``` git``` is installed beforehand; if not, install it with ```sudo apt install git```.
   <p> </p>
 
-* Given that ```R ≥ 4.1.2``` is already installed, use the following command to install ```refpop``` required ```R``` libraries : 
+* Given that ```R ≥ 4.1.2``` is already installed, use the following command to install and test ```refpop``` required ```R``` libraries : 
 
   * ```R -q --vanilla < src/requirements.R```
+  * ```R -q --vanilla < src/test_requirements.R```
   <p> </p>
 
 * Within the ```refpop``` folder, execute the following commands to make scripts and programs executable :
 
   *  ```chmod u+rwx execute_refpop_tasks_and_analyses.sh```
+  *  ```chmod u+rwx src/refpop_genomic_prediction_and_analysis/*.sh```
   <p> </p>
 
 * Replace the ```data/``` folder with the directory found at https://data :  

@@ -3,26 +3,9 @@
 
 # clear memory and source libraries
 rm(list = ls())
-library(MASS)
-library(data.table)
-library(stringr)
-library(FactoMineR)
-library(doParallel)
-library(doRNG)
-library(robustbase)
-library(foreach)
-library(parallel)
-library(missForest)
-library(Matrix)
-library(rgl)
-library(cvTools)
-library(ggplot2)
-library(plotly)
-library(htmlwidgets)
-library(dplyr)
 library(reticulate)
-library(devtools)
 if ("refpop_env" %in% conda_list()$name) {
+  print("using refpop_env")
   use_condaenv("refpop_env")
 }
 # install other requirements from github if necessary
@@ -31,6 +14,7 @@ if (install_other_requirements) {
   # reticulate::install_miniconda()
   conda_create("refpop_env")
   use_condaenv("refpop_env")
+  library(devtools)
   devtools::install_github("ljacquin/KRMM")
   devtools::install_github("rstudio/tensorflow")
   library(tensorflow)
@@ -38,22 +22,47 @@ if (install_other_requirements) {
   py_install("umap-learn", pip = T, pip_ignore_installed = T)
   install.packages("umap")
 }
+use_tensorflow_or_umap <- F
+if (use_tensorflow_or_umap) {
+  library(tensorflow)
+  library(keras3)
+  library(umap)
+  tensorflow::tf$random$set_seed(0)
+  py_module_available("keras") # must return TRUE
+  py_module_available("tensorflow") # must return TRUE
+  py_discover_config("keras") # more info on the python env, tf and keras
+}
+library(MASS)
+library(data.table)
+library(stringr)
+library(lme4)
+library(tidyr)
+library(FactoMineR)
+library(doParallel)
+library(doRNG)
+library(robustbase)
+library(foreach)
+library(parallel)
+library(missForest)
+library(Matrix)
+library(matrixcalc)
+library(rgl)
+library(Rfast)
+library(cvTools)
+library(ggplot2)
+library(plotly)
+library(htmlwidgets)
+library(dplyr)
 library(KRMM)
 library(kernlab)
+library(whitening)
 library(glmnet)
 library(ranger)
-library(tensorflow)
-library(keras3)
-library(umap)
-tensorflow::tf$random$set_seed(0)
-py_module_available("keras") # must return TRUE
-py_module_available("tensorflow") # must return TRUE
-py_discover_config("keras") # more info on the python env, tf and keras
 
 # define computation mode, i.e. local or cluster
 computation_mode <- "cluster"
 
-# if comutations are local in rstudio, detect and set script path
+# if computations are local in rstudio, detect and set script path
 # automatically using rstudioapi
 if (identical(computation_mode, "local")) {
   library(rstudioapi)
@@ -84,8 +93,8 @@ pheno_dir_path <- "../../data/phenotype_data/"
 output_pred_results_path <- "../../results/genomic_prediction/"
 output_pred_graphics_path <- "../../results/graphics/genomic_prediction_graphics/"
 
-# define selected_traits_
-selected_traits_ <- c(
+# define traits_
+traits_ <- c(
   "Harvest_date", "Fruit_weight", "Fruit_number",
   "Fruit_weight_single", "Color_over", "Russet_freq_all",
   "Trunk_diameter", "Trunk_increment", "Flowering_intensity",
@@ -93,8 +102,14 @@ selected_traits_ <- c(
   "Scab", "Powdery_mildew", "Weight_sample", "Sample_size"
 )
 
+# get kernel and trait arguments
+args <- commandArgs(trailingOnly = TRUE)
+trait_num <- as.integer(args[1])
+
 # define trait_
-trait_ <- "Fruit_weight"
+trait_ <- traits_[trait_num]
+print(paste0("trait: ", trait_))
+
 
 # define shift seed value by
 mult_seed_by_ <- 100
@@ -104,36 +119,6 @@ k_folds_ <- 5
 
 # define number of shuffles
 n_shuff_ <- 20
-
-# color palette for families (28 counts)
-color_palette_family <- c(
-  "black",
-  "lightblue",
-  colorRampPalette(c("blue", "deepskyblue"))(10),
-  colorRampPalette(c("orange", "orange2"))(2),
-  colorRampPalette(c("aquamarine"))(1),
-  colorRampPalette(c("magenta", "magenta2"))(2),
-  colorRampPalette(c("firebrick3", "firebrick4"))(2),
-  colorRampPalette(c("green", "darkgreen"))(5),
-  colorRampPalette(c("darkorchid4"))(1),
-  colorRampPalette(c("gold1", "gold2"))(2),
-  colorRampPalette(c("lightcoral"))(1)
-)
-
-# color palette for origins (11 counts)
-color_palette_origin <- c(
-  "magenta",
-  "lightblue",
-  "blue",
-  "orange",
-  "aquamarine",
-  "red",
-  "green",
-  "darkorchid4",
-  "gold2",
-  "lightcoral",
-  "yellow"
-)
 
 # get phenotype and genotype data, and family and origin info
 pheno_df <- as.data.frame(fread(paste0(
@@ -170,9 +155,9 @@ geno_df <- geno_df[, c(
 
 # merge pheno_df and geno_df for integrity of analyses and slice the merged df
 merged_df <- merge(pheno_df, geno_df, by = "Genotype")
-pheno_df <- merged_df[, selected_traits_]
+pheno_df <- merged_df[, traits_]
 geno_df <- merged_df[, -match(
-  c("Genotype", selected_traits_),
+  c("Genotype", traits_),
   colnames(merged_df)
 )]
 

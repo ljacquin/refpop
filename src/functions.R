@@ -105,6 +105,7 @@ compute_indiv_location_clonal_mean_h2 <- function(lmer_mod_, nr_bar_) {
 }
 
 # function which computes individual location clonal mean heritability
+# for test purposes
 compute_indiv_location_clonal_mean_h2_var_comp <- function(lmer_mod_, nr_bar_) {
   tryCatch(
     {
@@ -645,7 +646,7 @@ remove_na_columns <- function(df) {
   return(df_filtered)
 }
 
-# function which compute average of each cell in a data.frame
+# function which compute mean of each cell in a data.frame
 compute_cell_mean <- function(cell_value) {
   # unlist cell if necessary
   values <- as.numeric(unlist(cell_value))
@@ -685,6 +686,307 @@ remove_col_with_na_thresh <- function(df_, threshold) {
   ))
 }
 
+# ****
+# function which computes the mode of a continuous density
+compute_density_mode <- function(data) {
+  if (is.numeric(data) && all(data == floor(data))) {
+    mode_value <- as.numeric(names(sort(table(data), decreasing = TRUE)[1]))
+  } else {
+    density_estimate <- density(data)
+    mode_value <- density_estimate$x[which.max(density_estimate$y)]
+  }
+  return(mode_value)
+}
+
+# funcrtion which computes the mode of a vector
+compute_vect_mode <- function(vect) {
+  freq <- table(vect)
+  mode <- names(freq)[freq == max(freq)][1]
+  return(mode)
+}
+
+# function which returns columns with at least two unique values
+find_columns_with_multiple_unique_values <- function(df_) {
+  cols_with_multiple_values <- colnames(df_)[apply(
+    df_, 2, function(col) length(unique(col)) > 1
+  )]
+  return(cols_with_multiple_values)
+}
+
+# reduce dataset based on genotype counts
+reduce_dataset_based_on_genotypes <- function(df_, nrow_lim = 10e3,
+                                              min_samples = 3) {
+  K <- nrow(df_) / nrow_lim
+
+  df_reduced <- df_ %>%
+    group_by(Genotype) %>%
+    group_modify(~ {
+      n_genotype <- nrow(.x)
+      samples_to_take <- max(min_samples, ceiling(n_genotype / K))
+      sample_n(.x, min(samples_to_take, n_genotype))
+    }) %>%
+    ungroup()
+
+  return(df_reduced)
+}
+
+# function which reduce dataset based on selected whitening method
+reduce_dataset_based_on_selected_whitening <- function(
+    whitening_method,
+    raw_pheno_df,
+    nrow_lim_raw_dataset_zca_cor,
+    nrow_lim_raw_dataset_pca_cor,
+    nrow_lim_raw_dataset_chol) {
+  set.seed(123)
+  if (whitening_method == "ZCA-cor") {
+    raw_pheno_df <- as.data.frame(
+      reduce_dataset_based_on_genotypes(
+        df_ = raw_pheno_df,
+        nrow_lim = nrow_lim_raw_dataset_zca_cor
+      )
+    )
+  } else if (whitening_method == "PCA-cor") {
+    raw_pheno_df <- as.data.frame(
+      reduce_dataset_based_on_genotypes(
+        df_ = raw_pheno_df,
+        nrow_lim = nrow_lim_raw_dataset_pca_cor
+      )
+    )
+  } else {
+    raw_pheno_df <- as.data.frame(
+      reduce_dataset_based_on_genotypes(
+        df_ = raw_pheno_df,
+        nrow_lim = nrow_lim_raw_dataset_chol
+      )
+    )
+  }
+  return(raw_pheno_df)
+}
+
+# function which get raw phenotypes and marker based on common genotypes
+raw_pheno_and_marker_based_on_trait_common_genotypes <- function(
+    raw_pheno_df,
+    omic_df,
+    trait_,
+    fixed_effects_vars,
+    random_effects_vars) {
+  # remove all rows with na w.r.t to trait_
+  raw_pheno_df <- raw_pheno_df %>% drop_na(all_of(trait_))
+
+  # define variables of interest
+  sel_vars_ <- c(fixed_effects_vars, random_effects_vars, trait_)
+
+  # get only variables of interest from raw_pheno_df
+  raw_pheno_df <- raw_pheno_df[, sel_vars_]
+  raw_pheno_df <- na.omit(raw_pheno_df)
+
+  # droplevels in order to remove levels which don't exist anymore
+  raw_pheno_df <- droplevels(raw_pheno_df)
+
+  # get phenotypes and marker data based on common genotypes
+  raw_pheno_df <- match_indices(raw_pheno_df, omic_df)
+  omic_df <- omic_df[rownames(omic_df) %in% unique(raw_pheno_df$Genotype), ]
+
+  return(list(
+    "raw_pheno_df" = raw_pheno_df,
+    "omic_df" = omic_df
+  ))
+}
+
+# function which computes fixed effect vars as factors for those declared as
+compute_fixed_effect_vars_declared_as_factors <- function(
+    raw_pheno_df,
+    fixed_effects_vars,
+    fixed_effects_vars_computed_as_factor,
+    site_var,
+    fixed_effects_vars_computed_as_factor_by_site) {
+  # convert fixed effects variables to factors for those declared
+  for (fix_eff_var_ in fixed_effects_vars) {
+    if ((length(fixed_effects_vars_computed_as_factor) > 0) &&
+      (fix_eff_var_ %in% fixed_effects_vars_computed_as_factor)
+    ) {
+      # if fix_eff_var_ is equal to management, remove buffer if exists
+      if ("buffer" %in% tolower(raw_pheno_df[, fix_eff_var_])) {
+        raw_pheno_df <- raw_pheno_df[
+          tolower(raw_pheno_df[, fix_eff_var_]) != "buffer",
+        ]
+      }
+      # compute fix_eff_var_ as factor by site, for those declared as,
+      # otherwise compute fix_eff_var_ as a factor only
+      if ((length(site_var) > 0 &&
+        length(fixed_effects_vars_computed_as_factor_by_site) > 0) &&
+        (fix_eff_var_ %in% fixed_effects_vars_computed_as_factor_by_site)
+      ) {
+        site_var_fix_eff_var_ <- paste0(
+          raw_pheno_df[, site_var], "_", fix_eff_var_, "_",
+          raw_pheno_df[, fix_eff_var_]
+        )
+        raw_pheno_df[, fix_eff_var_] <- as.factor(site_var_fix_eff_var_)
+      } else {
+        raw_pheno_df[, fix_eff_var_] <- as.factor(
+          raw_pheno_df[, fix_eff_var_]
+        )
+      }
+    }
+  }
+  return(droplevels(raw_pheno_df))
+}
+
+# function which computes the Gram matrix (i.e. genomic covariance matrix)
+compute_gram_matrix <- function(omic_df, kernel_type) {
+  geno_names <- rownames(omic_df)
+  omic_df <- apply(omic_df, 2, as.numeric)
+  if (kernel_type == "linear") {
+    k_mat <- tcrossprod(scale(apply(omic_df, 2, as.numeric),
+      center = T, scale = F
+    ))
+  } else {
+    # kernel identity is not recommended due to constrained hypothesis about
+    # genotypes independence which may lead to low precision
+    k_mat <- as.matrix(diag(nrow(omic_df)))
+  }
+  # test positive definiteness and force it if necessary
+  if (!is.positive.definite(k_mat, tol = 1e-8)) {
+    k_mat <- as.matrix(nearPD(k_mat)$mat)
+  }
+  # assign genotype rownames and colnames to k_mat
+  colnames(k_mat) <- rownames(k_mat) <- geno_names
+  return(k_mat)
+}
+
+# function which computes incidence matrices for fixed and random effects
+# NB. column of ones is added for intercept, and is associated to first
+# fixed effect (which must be factor or numeric) during construction
+compute_incidence_matrices_fixed_and_random_effects <- function(
+    fixed_effects_vars,
+    fixed_effects_vars_computed_as_factor,
+    random_effects_vars,
+    raw_pheno_df) {
+  # define list of incidence matrices for fixed effects
+  list_x_mat <- vector("list", length(fixed_effects_vars))
+  names(list_x_mat) <- fixed_effects_vars
+
+  # add incidence matrix for first fixed effect to list of matrices
+  fix_eff_var_ <- fixed_effects_vars[1]
+  if ((length(fixed_effects_vars_computed_as_factor) > 0) &&
+    (fix_eff_var_ %in% fixed_effects_vars_computed_as_factor)
+  ) {
+    list_x_mat[[fix_eff_var_]] <- model.matrix(
+      as.formula(paste0("~", fix_eff_var_)),
+      data = raw_pheno_df
+    )
+    colnames(list_x_mat[[fix_eff_var_]]) <- str_replace_all(
+      colnames(list_x_mat[[fix_eff_var_]]),
+      pattern = fix_eff_var_, replacement = paste0(fix_eff_var_, "_")
+    )
+  } else {
+    list_x_mat[[fix_eff_var_]] <- cbind(
+      rep(1, nrow(raw_pheno_df)),
+      raw_pheno_df[, fix_eff_var_]
+    )
+    colnames(list_x_mat[[fix_eff_var_]]) <- c("Intercept", fix_eff_var_)
+  }
+  # add incidence matrices (without intercept) for other fixed effects to list
+  for (fix_eff_var_ in fixed_effects_vars[-1]) {
+    if ((length(fixed_effects_vars_computed_as_factor) > 0) &&
+      (fix_eff_var_ %in% fixed_effects_vars_computed_as_factor)
+    ) {
+      list_x_mat[[fix_eff_var_]] <- model.matrix(
+        as.formula(paste0("~", fix_eff_var_, " - 1")),
+        data = raw_pheno_df
+      )
+      colnames(list_x_mat[[fix_eff_var_]]) <- str_replace_all(
+        colnames(list_x_mat[[fix_eff_var_]]),
+        pattern = fix_eff_var_, replacement = paste0(fix_eff_var_, "_")
+      )
+    } else {
+      list_x_mat[[fix_eff_var_]] <- raw_pheno_df[, fix_eff_var_]
+      names(list_x_mat[[fix_eff_var_]]) <- fix_eff_var_
+    }
+  }
+  x_mat <- do.call(cbind, list_x_mat)
+  x_mat <- apply(x_mat, 2, as.numeric)
+
+  # define list of incidence matrices for random effects
+  list_z_mat <- vector("list", length(random_effects_vars))
+  names(list_z_mat) <- random_effects_vars
+
+  # add incidence matrices for random effects to list
+  for (rand_eff_var in random_effects_vars) {
+    list_z_mat[[rand_eff_var]] <- model.matrix(
+      as.formula(paste0("~", rand_eff_var, " - 1")),
+      data = raw_pheno_df
+    )
+    colnames(list_z_mat[[rand_eff_var]]) <- str_replace_all(
+      colnames(list_z_mat[[rand_eff_var]]),
+      pattern = rand_eff_var, replacement = paste0(rand_eff_var, "_")
+    )
+  }
+  z_mat <- do.call(cbind, list_z_mat)
+  z_mat <- apply(z_mat, 2, as.numeric)
+  return(
+    list(
+      "x_mat" = x_mat,
+      "z_mat" = z_mat
+    )
+  )
+}
+
+# function which computes the whitening matrix for sig_mat_ based on the
+# selected whitening method
+compute_whitening_matrix_for_sig_mat_ <- function(whitening_method,
+                                                  regularization_method,
+                                                  parallelized_cholesky,
+                                                  sig_mat_, k_mat, sigma2_u,
+                                                  percent_eig_,
+                                                  non_zero_precision_eig_,
+                                                  alpha_frob_) {
+  # regularize covariance matrix, by adding a strictly positive value to the
+  # diagonal of Σ, to ensure its positive definiteness
+  if (regularization_method == "mean_small_eigenvalues") {
+    sig_mat_ <- regularize_covariance_mean_small_eigenvalues(
+      sig_mat_, k_mat, sigma2_u, percent_eig_, non_zero_precision_eig_
+    )
+  } else if (regularization_method == "mean_eigenvalues") {
+    sig_mat_ <- regularize_covariance_mean_eigenvalues(
+      sig_mat_
+    )
+  } else if (regularization_method == "frobenius_norm") {
+    sig_mat_ <- regularize_covariance_frobenius_norm(
+      sig_mat_, alpha_frob_
+    )
+  }
+  # compute whitening matrix, either from ZCA-cor or cholesky
+  # decomposition (i.e. Σ = LL' )
+  if (whitening_method == "ZCA-cor") {
+    # compute w_mat from ZCA-cor
+    w_mat <- whiteningMatrix(sig_mat_, method = "ZCA-cor")
+  } else if (whitening_method == "PCA-cor") {
+    # compute w_mat from ZCA-cor
+    w_mat <- whiteningMatrix(sig_mat_, method = "PCA-cor")
+  } else {
+    # compute w_mat = L^−1 from Cholesky decomposition
+    if (parallelized_cholesky) {
+      L <- t(cholesky(sig_mat_, parallel = T))
+    } else {
+      L <- t(cholesky(sig_mat_, parallel = F))
+    }
+    w_mat <- forwardsolve(L, diag(nrow(L)))
+  }
+  return(list(
+    "sig_mat_" = sig_mat_,
+    "w_mat" = w_mat
+  ))
+}
+
+# function which match indices (not only the first one)
+match_indices <- function(raw_pheno_df, omic_df) {
+  common_indices <- unlist(lapply(rownames(omic_df), function(g) {
+    which(raw_pheno_df$Genotype == g)
+  }))
+  return(raw_pheno_df[common_indices, ])
+}
+
 # function which normalizes the columns of a matrix
 normalize_matrix_columns <- function(matrix_) {
   column_norms <- apply(matrix_, 2, function(col) sqrt(sum(col^2)))
@@ -692,16 +994,71 @@ normalize_matrix_columns <- function(matrix_) {
   return(matrix_)
 }
 
-# function which computes trace of a matrix
+# function which computes the log of determinant
+log_det <- function(Sigma) {
+  return(2 * sum(log(diag(cholesky(Sigma, parallel = T)))))
+}
+
+# function which computes KL divergence in a more stable way numerically
+kl_divergence_ <- function(Sigma_1, Sigma_2) {
+  Sigma_1 <- regularize_covariance_mean_eigenvalues(Sigma_1)
+  Sigma_2 <- regularize_covariance_mean_eigenvalues(Sigma_2)
+
+  inv_Sigma_2 <- ginv(Sigma_2)
+  term_1 <- sum(diag(inv_Sigma_2 %*% Sigma_1))
+  term_2 <- log_det(Sigma_2) - log_det(Sigma_1)
+
+  k <- nrow(Sigma_1)
+  kl_div <- 0.5 * (term_1 - k + term_2)
+
+  return(kl_div)
+}
+
+# function which computes the trace of a matrix
 trace_mat <- function(matrix_) {
   return(sum(diag(matrix_)))
 }
 
-# function which regularizes a covariance matrix by adding a small
-# positive value delta to the diagonal
-regularize_covariance <- function(cov_mat_, alpha_ = 1e-2) {
+# function which computes the l2 norm of a matrix
+frobenius_norm <- function(matrix_) {
+  return(sqrt(sum(matrix_^2)))
+}
+
+# function which makes a covariance matrix positive definite by adding a
+# positive value delta to the diagonal, based on the mean of the percent_eig_%
+# strictly positive smallest eigenvalues
+regularize_covariance_mean_small_eigenvalues <- function(
+    cov_mat_, k_mat,
+    sigma2_u, percent_eig_, non_zero_precision_eig_) {
+  # compute the eigen values from k_mat
+  eig_val_ <- sigma2_u * (mixOmics::pca(k_mat, ncomp = ncol(k_mat))$sdev^2)
+
+  # get the percent_eig_% strictly positive smallest ones
+  thresh_ <- ceiling(percent_eig_ * length(eig_val_))
+  small_eig_val_ <- sort(eig_val_, decreasing = F)[1:thresh_]
+  delta_ <- mean(
+    small_eig_val_[small_eig_val_ > non_zero_precision_eig_]
+  )
+  # compute the regularized covariance matrix
   n <- nrow(cov_mat_)
-  delta_ <- alpha_ * trace_mat(cov_mat_)
+  cov_mat_ <- cov_mat_ + delta_ * diag(n)
+  return(cov_mat_)
+}
+
+# function which makes a covariance matrix positive definite by adding a
+# positive value delta to the diagonal, based on the trace
+regularize_covariance_mean_eigenvalues <- function(cov_mat_) {
+  n <- nrow(cov_mat_)
+  delta_ <- trace_mat(cov_mat_) / n
+  cov_mat_ <- cov_mat_ + delta_ * diag(n)
+  return(cov_mat_)
+}
+
+# function which makes a covariance matrix positive definite by adding a
+# positive value delta to the diagonal, based on l2 norm
+regularize_covariance_frobenius_norm <- function(cov_mat_, alpha_frob_) {
+  n <- nrow(cov_mat_)
+  delta_ <- alpha_frob_ * frobenius_norm(cov_mat_)
   cov_mat_ <- cov_mat_ + delta_ * diag(n)
   return(cov_mat_)
 }
@@ -756,7 +1113,6 @@ abc_variance_component_estimation <- function(y, x_mat, z_mat, k_mat, beta_hat,
   df_results <- foreach(
     sim_num = 1:n_sim_abc,
     .export = c(
-      "y", "x_mat", "z_mat", "k_mat", "beta_hat", "prior_sigma2_u", "prior_sigma2_e",
       "simulate_y", "squared_l2_norm", "simulate_and_compute_squared_l2_norm"
     ),
     .packages = c("MASS"),
@@ -801,151 +1157,121 @@ abc_variance_component_estimation <- function(y, x_mat, z_mat, k_mat, beta_hat,
 
 # function which computes transformed fixed variables and least squares
 compute_transformed_vars_and_ols_estimates <- function(
-    geno_df, raw_pheno_df, fixed_effects_vars, random_effect_vars, trait_,
+    omic_df, raw_pheno_df, trait_,
+    fixed_effects_vars,
+    fixed_effects_vars_computed_as_factor,
+    site_var,
+    fixed_effects_vars_computed_as_factor_by_site,
+    random_effects_vars,
     sigma2_u, sigma2_e, kernel_type,
-    rate_decay_kernel,
-    whitening_method) {
-  # sigma2_u <- 1
-  # sigma2_e <- 1
-  # kernel_type <- "gaussian"
-  # rate_decay_kernel <- 0.1
-  # random_effect_vars <- 'Genotype'
-  # fixed_effects_vars <- c("Envir", "Country",
-  # "Year", "Row", "Position","Management")
+    whitening_method,
+    regularization_method,
+    alpha_frob_,
+    percent_eig_,
+    non_zero_precision_eig_,
+    parallelized_cholesky,
+    reduce_raw_dataset_size_,
+    nrow_lim_raw_dataset_zca_cor,
+    nrow_lim_raw_dataset_pca_cor,
+    nrow_lim_raw_dataset_chol) {
   tryCatch(
     {
-      # remove all rows with na w.r.t to trait_
-      raw_pheno_df <- raw_pheno_df %>% drop_na(all_of(trait_))
+      # get raw phenotypes and omic data based on common genotypes
+      raw_data_obj <-
+        raw_pheno_and_marker_based_on_trait_common_genotypes(
+          raw_pheno_df,
+          omic_df,
+          trait_,
+          fixed_effects_vars,
+          random_effects_vars
+        )
+      raw_pheno_df <- raw_data_obj$raw_pheno_df
+      omic_df <- raw_data_obj$omic_df
 
-      # define variables of interest
-      sel_vars_ <- c(fixed_effects_vars, random_effect_vars, trait_)
-
-      # get only variables of interest from raw_pheno_df
-      raw_pheno_df <- raw_pheno_df[, sel_vars_]
-      raw_pheno_df <- na.omit(raw_pheno_df)
-
-      # compute Gram matrix (i.e. genomic covariance matrix)
-      geno_names <- rownames(geno_df)
-      geno_df <- apply(geno_df, 2, as.numeric)
-
-      if (kernel_type == "linear") {
-        k_mat <- tcrossprod(scale(apply(geno_df, 2, as.numeric),
-          center = T, scale = F
-        ))
-      } else if (kernel_type == "gaussian") {
-        kernel_function <- rbfdot(sigma = (1 / ncol(geno_df)) * rate_decay_kernel)
-        k_mat <- kernelMatrix(kernel_function, geno_df)
-      } else {
-        # kernel identity is not recommended due to constrained hypothesis about
-        # genotypes independence which may lead to low precision
-        k_mat <- as.matrix(diag(nrow(geno_df)))
+      # should raw dataset size be reduced wrt to selected whitening method ?
+      if (reduce_raw_dataset_size_) {
+        raw_pheno_df <- reduce_dataset_based_on_selected_whitening(
+          whitening_method,
+          raw_pheno_df,
+          nrow_lim_raw_dataset_zca_cor,
+          nrow_lim_raw_dataset_pca_cor,
+          nrow_lim_raw_dataset_chol
+        )
       }
 
-      # test positive definiteness and force it if necessary
-      if (!is.positive.definite(k_mat, tol = 1e-8)) {
-        k_mat <- as.matrix(nearPD(k_mat)$mat)
+      # computes fixed effect vars as factors for those declared as
+      raw_pheno_df <- compute_fixed_effect_vars_declared_as_factors(
+        raw_pheno_df,
+        fixed_effects_vars,
+        fixed_effects_vars_computed_as_factor,
+        site_var,
+        fixed_effects_vars_computed_as_factor_by_site
+      )
+
+      # get omic data associated to common genotypes
+      omic_df <- omic_df[rownames(omic_df) %in% unique(raw_pheno_df$Genotype), ]
+
+      # compute Gram matrix (e.g. genomic covariance matrix)
+      k_mat <- compute_gram_matrix(omic_df, kernel_type)
+
+      # remove fixed effects with no variance or unique level for factors
+      if (!is.null(ncol(raw_pheno_df[, fixed_effects_vars])) &&
+        ncol(raw_pheno_df[, fixed_effects_vars]) > 1) {
+        fixed_effects_vars <- find_columns_with_multiple_unique_values(
+          raw_pheno_df[, fixed_effects_vars]
+        )
       }
 
-      # assign genotype rownames and colnames to k_mat
-      colnames(k_mat) <- rownames(k_mat) <- geno_names
+      # get incidence matrices for fixed and random effects
+      # NB. column of ones is added for intercept associated to fixed effects
+      incid_obj <- compute_incidence_matrices_fixed_and_random_effects(
+        fixed_effects_vars,
+        fixed_effects_vars_computed_as_factor,
+        random_effects_vars,
+        raw_pheno_df
+      )
+      x_mat <- incid_obj$x_mat
+      z_mat <- incid_obj$z_mat
 
-      # get common geontype between raw_pheno_df and geno_df
-      raw_pheno_df <- raw_pheno_df[
-        raw_pheno_df$Genotype %in% rownames(k_mat),
-      ]
+      # compute Σu, i.e. sig_mat_ here
+      sig_mat_ <- sigma2_u * crossprod(t(z_mat), tcrossprod(k_mat, z_mat))
 
-      # convert fixed effects variables to factors, and remove
-      # buffer for management if exists
-      for (fix_eff_var_ in fixed_effects_vars) {
-        raw_pheno_df[, fix_eff_var_] <- as.factor(raw_pheno_df[, fix_eff_var_])
-        if ("BUFFER" %in% raw_pheno_df[, fix_eff_var_]) {
-          raw_pheno_df <- raw_pheno_df[
-            raw_pheno_df[, fix_eff_var_] != "BUFFER",
-          ]
-        }
-      }
-      # droplevels in order to remove levels which don't exist anymore
-      raw_pheno_df <- droplevels(raw_pheno_df)
+      # compute the whitening matrix for Σu based on the selected
+      # whitening method
+      white_obj <- compute_whitening_matrix_for_sig_mat_(
+        whitening_method,
+        regularization_method,
+        parallelized_cholesky,
+        sig_mat_, k_mat, sigma2_u,
+        percent_eig_,
+        non_zero_precision_eig_,
+        alpha_frob_
+      )
+      w_mat <- white_obj$w_mat
+      sig_mat_ <- white_obj$sig_mat_
+
+      # whiten x_mat using w_mat
+      # NB. intercept is already present in x_mat and x_mat_tilde
+      x_mat_tilde <- w_mat %*% x_mat
 
       # get raw phenotypes associated to common genotypes
       y <- raw_pheno_df[, trait_]
 
-      # get incidence matrices for fixed and random effects
-      # NB. column of ones is added for intercept associated to fixed effects
-
-      # define list of incidence matrices for fixed effects
-      list_x_mat <- vector("list", length(fixed_effects_vars))
-      names(list_x_mat) <- fixed_effects_vars
-
-      # add incidence matrix for first fixed effect to list of matrices
-      fix_eff_var_ <- fixed_effects_vars[1]
-      list_x_mat[[fix_eff_var_]] <- model.matrix(
-        as.formula(paste0("~", fix_eff_var_)),
-        data = raw_pheno_df
-      )
-      colnames(list_x_mat[[fix_eff_var_]]) <- str_replace_all(
-        colnames(list_x_mat[[fix_eff_var_]]),
-        pattern = fix_eff_var_, replacement = paste0(fix_eff_var_, "_")
-      )
-
-      # add incidence matrices (without intercept) for other fixed effects to list
-      for (fix_eff_var_ in fixed_effects_vars[-1]) {
-        list_x_mat[[fix_eff_var_]] <- model.matrix(
-          as.formula(paste0("~", fix_eff_var_, " - 1")),
-          data = raw_pheno_df
-        )
-        colnames(list_x_mat[[fix_eff_var_]]) <- str_replace_all(
-          colnames(list_x_mat[[fix_eff_var_]]),
-          pattern = fix_eff_var_, replacement = paste0(fix_eff_var_, "_")
-        )
-      }
-      x_mat <- do.call(cbind, list_x_mat)
-      x_mat <- apply(x_mat, 2, as.numeric)
-
-      # define list of incidence matrices for random effects
-      list_z_mat <- vector("list", length(random_effect_vars))
-      names(list_z_mat) <- random_effect_vars
-
-      # add incidence matrices for random effects to list
-      for (rand_eff_var in random_effect_vars) {
-        list_z_mat[[rand_eff_var]] <- model.matrix(
-          as.formula(paste0("~", rand_eff_var, " - 1")),
-          data = raw_pheno_df
-        )
-        colnames(list_z_mat[[rand_eff_var]]) <- str_replace_all(
-          colnames(list_z_mat[[rand_eff_var]]),
-          pattern = rand_eff_var, replacement = paste0(rand_eff_var, "_")
-        )
-      }
-      z_mat <- do.call(cbind, list_z_mat)
-      z_mat <- apply(z_mat, 2, as.numeric)
-
-      # compute Σ (sig_mat_) and its Cholesky decomposition, i.e. Σ = LL'
-      sig_mat_ <- sigma2_u * crossprod(t(z_mat), tcrossprod(k_mat, z_mat))
-      sig_mat_ <- regularize_covariance(sig_mat_, alpha_ = 0.01)
-      # regularize_covariance() adds α * trace(Σ) * I_n to the diagonal of Σ
-      # to ensure its positive semi definiteness (PSD)
-
-      if (whitening_method == "Cholesky") {
-        # compute w_mat = L^−1 from Cholesky decomposition
-        w_mat <- Matrix::solve(t(cholesky(sig_mat_, parallel = T)))
-      } else {
-        # compute w_mat from ZCA-cor
-        w_mat <- whiteningMatrix(sig_mat_, method = "ZCA-cor")
-      }
-
-      # NB. intercept is already present in x_mat and x_mat_tilde
-      x_mat_tilde <- w_mat %*% x_mat
-
       # get ols estimates for fixed effects and xi
       beta_hat <- ginv(t(x_mat_tilde) %*% x_mat_tilde) %*% t(x_mat_tilde) %*% y
-      xi_hat <- y - x_mat_tilde %*% beta_hat
+      y_hat <- x_mat_tilde %*% beta_hat
+      xi_hat <- y - y_hat
 
       return(list(
+        "omic_df" = omic_df,
+        "sig_mat_u" = sig_mat_,
+        "w_mat" = w_mat,
         "x_mat" = x_mat,
+        "x_mat_tilde" = x_mat_tilde,
         "z_mat" = z_mat,
         "k_mat" = k_mat,
         "beta_hat" = beta_hat,
+        "y_hat" = y_hat,
         "xi_hat" = xi_hat,
         "y" = y
       ))
@@ -959,39 +1285,59 @@ compute_transformed_vars_and_ols_estimates <- function(
 }
 
 # function which computes phenotypes approximating genetic values using whitening
-estimate_wiser_phenotype <- function(geno_df, raw_pheno_df, trait_,
-                                    fixed_effects_vars = c(
-                                      "Envir", "Country", "Year",
-                                      "Row", "Position", "Management"
-                                    ),
-                                    random_effect_vars = "Genotype",
-                                    init_sigma2_u = 1,
-                                    init_sigma2_e = 1,
-                                    n_sim_abc = 100,
-                                    seed_abc = 123,
-                                    quantile_threshold_abc = 0.05,
-                                    nb_iter_abc = 1,
-                                    kernel_type = "linear",
-                                    rate_decay_kernel = 0.1,
-                                    whitening_method = "Cholesky") {
-  # init_sigma2_u = 1
-  # init_sigma2_e = 1
-  # n_sim_abc = 100
-  # seed_abc = 123
-  # quantile_threshold_abc = 0.05
-  # nb_iter_abc = 1
-  # kernel_type = "gaussian"
-  # rate_decay_kernel = 0.1
+estimate_wiser_phenotype <- function(omic_df, raw_pheno_df, trait_,
+                                     fixed_effects_vars = c(
+                                       "Envir", "Country", "Year",
+                                       "Row", "Position", "Management"
+                                     ),
+                                     fixed_effects_vars_computed_as_factor = c(
+                                       "Envir", "Country", "Year",
+                                       "Row", "Position", "Management"
+                                     ),
+                                     site_var = "Country",
+                                     fixed_effects_vars_computed_as_factor_by_site = c("Row", "Position"),
+                                     random_effects_vars = "Genotype",
+                                     init_sigma2_u = 1,
+                                     init_sigma2_e = 1,
+                                     n_sim_abc = 100,
+                                     seed_abc = 123,
+                                     quantile_threshold_abc = 0.05,
+                                     nb_iter_abc = 1,
+                                     kernel_type = "linear",
+                                     whitening_method = "ZCA-cor",
+                                     regularization_method = "frobenius_norm",
+                                     alpha_frob_ = 0.01,
+                                     percent_eig_ = 0.05,
+                                     non_zero_precision_eig_ = 1e-5,
+                                     parallelized_cholesky = T,
+                                     reduce_raw_dataset_size_ = T,
+                                     nrow_lim_raw_dataset_zca_cor = 10e3,
+                                     nrow_lim_raw_dataset_pca_cor = 10e3,
+                                     nrow_lim_raw_dataset_chol = 40e3) {
   tryCatch(
     {
       # compute transformed variables associated to fixed effects and least-squares
       # to estimate these
       transform_and_ls_obj <- compute_transformed_vars_and_ols_estimates(
-        geno_df, raw_pheno_df, fixed_effects_vars, random_effect_vars, trait_,
+        omic_df, raw_pheno_df, trait_,
+        fixed_effects_vars,
+        fixed_effects_vars_computed_as_factor,
+        site_var,
+        fixed_effects_vars_computed_as_factor_by_site,
+        random_effects_vars,
         sigma2_u = init_sigma2_u,
         sigma2_e = init_sigma2_e,
-        kernel_type, rate_decay_kernel,
-        whitening_method
+        kernel_type,
+        whitening_method,
+        regularization_method,
+        alpha_frob_,
+        percent_eig_,
+        non_zero_precision_eig_,
+        parallelized_cholesky,
+        reduce_raw_dataset_size_,
+        nrow_lim_raw_dataset_zca_cor,
+        nrow_lim_raw_dataset_pca_cor,
+        nrow_lim_raw_dataset_chol
       )
 
       # get an upper bound for sigma2_u et sigma2_e priors
@@ -1015,27 +1361,69 @@ estimate_wiser_phenotype <- function(geno_df, raw_pheno_df, trait_,
         )
         # compute variance components again with abc using new estimates
         transform_and_ls_obj <- compute_transformed_vars_and_ols_estimates(
-          geno_df, raw_pheno_df, fixed_effects_vars, random_effect_vars, trait_,
+          omic_df, raw_pheno_df, trait_,
+          fixed_effects_vars,
+          fixed_effects_vars_computed_as_factor,
+          site_var,
+          fixed_effects_vars_computed_as_factor_by_site,
+          random_effects_vars,
           sigma2_u = var_comp_abc_obj$sigma2_u_hat_mean,
           sigma2_e = var_comp_abc_obj$sigma2_e_hat_mean,
-          kernel_type, rate_decay_kernel,
-          whitening_method
+          kernel_type,
+          whitening_method,
+          regularization_method,
+          alpha_frob_,
+          percent_eig_,
+          non_zero_precision_eig_,
+          parallelized_cholesky,
+          reduce_raw_dataset_size_,
+          nrow_lim_raw_dataset_zca_cor,
+          nrow_lim_raw_dataset_pca_cor,
+          nrow_lim_raw_dataset_chol
         )
       }
 
-      # get estimated components after abc
+      # get estimated and/or modified components after abc
+
+      # extract marker data in case of modification
+      omic_df <- transform_and_ls_obj$omic_df
 
       # extract estimated fixed effects
       beta_hat <- transform_and_ls_obj$beta_hat
 
       # compute phenotypic values using ols
-      v_hat <- Matrix::solve(t(transform_and_ls_obj$z_mat) %*% transform_and_ls_obj$z_mat) %*%
+      v_hat <- ginv(t(transform_and_ls_obj$z_mat) %*% transform_and_ls_obj$z_mat) %*%
         t(transform_and_ls_obj$z_mat) %*% transform_and_ls_obj$xi_hat
 
-      return(list(
-        "var_comp_abc_obj" = var_comp_abc_obj,
-        "beta_hat" = beta_hat,
+      # save wiser fixed effects estimates in a data frame
+      wiser_pheno_df <- data.frame(
+        "Genotype" = str_replace_all(
+          colnames(transform_and_ls_obj$z_mat),
+          pattern = "Genotype_",
+          replacement = ""
+        ),
         "v_hat" = v_hat
+      )
+
+      # save wiser phenotypes in a data frame
+      wiser_fix_eff_df <- data.frame(
+        "fixed_effect_var" = colnames(transform_and_ls_obj$x_mat),
+        "beta_hat_var" = beta_hat
+      )
+
+      return(list(
+        "wiser_omic_data" = omic_df,
+        "sig_mat_u" = transform_and_ls_obj$sig_mat_,
+        "w_mat" = transform_and_ls_obj$w_mat,
+        "wiser_fixed_effect_estimates" = wiser_fix_eff_df,
+        "wiser_abc_variance_component_estimates" = var_comp_abc_obj,
+        "wiser_phenotypes" = wiser_pheno_df,
+        "wiser_z_mat" = transform_and_ls_obj$z_mat,
+        "wiser_x_mat" = transform_and_ls_obj$x_mat,
+        "wiser_x_mat_tilde" = transform_and_ls_obj$x_mat_tilde,
+        "wiser_xi_hat" = transform_and_ls_obj$xi_hat,
+        "wiser_y_hat" = transform_and_ls_obj$y_hat,
+        "wiser_y" = transform_and_ls_obj$y
       ))
     },
     error = function(e) {
@@ -1044,4 +1432,391 @@ estimate_wiser_phenotype <- function(geno_df, raw_pheno_df, trait_,
       )
     }
   )
+}
+
+# function which performs parallelized k-folds cv using several prediction methods
+perform_kfold_cv_wiser <- function(omic_df, raw_pheno_df, trait_,
+                                   fixed_effects_vars,
+                                   fixed_effects_vars_computed_as_factor,
+                                   site_var,
+                                   fixed_effects_vars_computed_as_factor_by_site,
+                                   random_effects_vars,
+                                   whitening_method,
+                                   reg_method, alpha_frob,
+                                   pred_method, k_folds,
+                                   wiser_cache) {
+  # create a unique key for the whitening_method and alpha_frob function arguments
+  cache_key <- paste(whitening_method, alpha_frob, sep = "_")
+
+  # verify if results are already available in the cache
+  if (cache_key %in% names(wiser_cache)) {
+    wiser_obj <- wiser_cache[[cache_key]]
+  } else {
+    # if not, compute and save the result in the cache
+    wiser_obj <- estimate_wiser_phenotype(
+      omic_df, raw_pheno_df, trait_,
+      fixed_effects_vars,
+      fixed_effects_vars_computed_as_factor,
+      site_var,
+      fixed_effects_vars_computed_as_factor_by_site,
+      random_effects_vars,
+      whitening_method = whitening_method,
+      regularization_method = reg_method,
+      alpha_frob_ = alpha_frob,
+      reduce_raw_dataset_size_ = FALSE
+    )
+    wiser_cache[[cache_key]] <- wiser_obj
+  }
+  omic_df <- wiser_obj$wiser_omic_data
+  v_hat <- wiser_obj$wiser_phenotypes$v_hat
+
+  # set seed for reproducibility and get set of indices
+  set.seed(123)
+  idx <- 1:nrow(omic_df)
+
+  # create folds for k-folds cv
+  folds <- cvFolds(nrow(omic_df), K = k_folds, type = "consecutive")
+
+  # use future_lapply for folds
+  results <- future_lapply(1:k_folds,
+    future.seed = T,
+    function(fold) {
+      idx_train <- idx[folds$which != fold]
+      idx_val <- idx[folds$which == fold]
+
+      # train and predict with random forest (using ranger package)
+      if (pred_method == "rf") {
+        rf_model <- ranger(
+          y = v_hat[idx_train],
+          x = omic_df[idx_train, ],
+          mtry = ncol(omic_df) / 3,
+          num.trees = 1000
+        )
+        f_hat_val_rf <- predict(rf_model, omic_df[idx_val, ])
+        pa_ <- cor(
+          f_hat_val_rf$predictions,
+          v_hat[idx_val]
+        )
+        # train and predict with non-linear svr (using kernlab package)
+      } else if (pred_method == "svr") {
+        c_par <- max(
+          abs(mean(v_hat[idx_train])
+          + 3 * sd(v_hat[idx_train])),
+          abs(mean(v_hat[idx_train])
+          - 3 * sd(v_hat[idx_train]))
+        )
+        gaussian_svr_model <- ksvm(
+          x = as.matrix(omic_df[idx_train, ]),
+          y = v_hat[idx_train],
+          scaled = FALSE, type = "eps-svr",
+          kernel = "rbfdot",
+          kpar = "automatic", C = c_par, epsilon = 0.1
+        )
+        f_hat_val_gaussian_svr <- predict(
+          gaussian_svr_model,
+          as.matrix(omic_df[idx_val, ])
+        )
+        pa_ <- cor(
+          f_hat_val_gaussian_svr,
+          v_hat[idx_val]
+        )
+        # train and predict with gblup (using KRMM package)
+      } else if (pred_method == "gblup") {
+        linear_krmm_model <- krmm(
+          Y = v_hat[idx_train],
+          Matrix_covariates = omic_df[idx_train, ],
+          method = "GBLUP"
+        )
+        f_hat_val_linear_krmm <- predict_krmm(linear_krmm_model,
+          Matrix_covariates = omic_df[idx_val, ],
+          add_fixed_effects = T
+        )
+        pa_ <- cor(
+          f_hat_val_linear_krmm,
+          v_hat[idx_val]
+        )
+        # train and predict with rkhs (using KRMM package)
+      } else if (pred_method == "rkhs") {
+        gaussian_krmm_model <- krmm(
+          Y = v_hat[idx_train],
+          Matrix_covariates = omic_df[idx_train, ],
+          method = "RKHS", kernel = "Gaussian",
+          rate_decay_kernel = 0.1
+        )
+        f_hat_val_gaussian_krmm <- predict_krmm(gaussian_krmm_model,
+          Matrix_covariates = omic_df[idx_val, ],
+          add_fixed_effects = T
+        )
+        pa_ <- cor(
+          f_hat_val_gaussian_krmm,
+          v_hat[idx_val]
+        )
+        # train and predict with lasso (using glmnet package)
+      } else {
+        cv_fit_lasso_model <- cv.glmnet(
+          intercept = TRUE, y = v_hat[idx_train],
+          x = as.matrix(omic_df[idx_train, ]),
+          type.measure = "mse", alpha = 1.0, nfold = 10,
+          parallel = TRUE
+        )
+        f_hat_val_lasso <- predict(cv_fit_lasso_model,
+          newx = as.matrix(omic_df[idx_val, ]),
+          s = "lambda.min"
+        )
+        pa_ <- suppressWarnings(cor(
+          f_hat_val_lasso,
+          v_hat[idx_val]
+        ))
+      }
+      data.frame(pa = pa_)
+    }, future.packages = c(
+      "ranger", "KRMM", "kernlab",
+      "glmnet", "cvTools", "dplyr",
+      "stringr", "matrixcalc",
+      "Matrix", "whitening", "mixOmics"
+    )
+  )
+
+  df_results <- do.call(rbind, results)
+  mean_pa <- mean(df_results$pa, na.rm = T)
+  return(mean_pa)
+}
+
+# function which finds the optimal whitening method and regularization
+optimize_whitening_and_regularization <- function(
+    omic_df, raw_pheno_df, trait_,
+    fixed_effects_vars = c(
+      "Envir", "Country", "Year",
+      "Row", "Position", "Management"
+    ),
+    fixed_effects_vars_computed_as_factor = c(
+      "Envir", "Country", "Year",
+      "Row", "Position", "Management"
+    ),
+    site_var = "Country",
+    fixed_effects_vars_computed_as_factor_by_site = c("Row", "Position"),
+    random_effects_vars = "Genotype",
+    prediction_method = c("rf", "svr", "gblup", "rkhs", "lasso"),
+    whitening_method_grid = c("ZCA-cor", "PCA-cor", "Cholesky"),
+    regularization_method_ = "frobenius_norm",
+    alpha_frob_grid = c(0.01, 0.1),
+    reduce_raw_dataset_size_ = T,
+    nrow_lim_raw_dataset_ = 5e3,
+    parallelized_cholesky = T,
+    k_folds_ = 5) {
+  # remove all rows with na w.r.t to trait_
+  raw_pheno_df <- raw_pheno_df %>% drop_na(all_of(trait_))
+
+  # get raw phenotypes and marker data based on common genotypes
+  raw_pheno_df <- match_indices(raw_pheno_df, omic_df)
+  omic_df <- omic_df[rownames(omic_df) %in% raw_pheno_df$Genotype, ]
+
+  # define variables of interest
+  sel_vars_ <- c(fixed_effects_vars, random_effects_vars, trait_)
+
+  # get only variables of interest from raw_pheno_df
+  raw_pheno_df <- raw_pheno_df[, sel_vars_]
+  raw_pheno_df <- na.omit(raw_pheno_df)
+
+  # downsize dataset for computation time optimization purpose
+  if (reduce_raw_dataset_size_) {
+    set.seed(123)
+    raw_pheno_df <- as.data.frame(
+      reduce_dataset_based_on_genotypes(
+        df_ = raw_pheno_df,
+        nrow_lim = nrow_lim_raw_dataset_
+      )
+    )
+  }
+
+  # create a grid combining whitening methods, regularization parameter and
+  # prediction methods
+  grid_ <- expand.grid(
+    whitening_method = whitening_method_grid,
+    alpha_frob = alpha_frob_grid,
+    pred_method = prediction_method
+  )
+
+  # pre-compute unique wiser object for unique combinations
+  wiser_cache <- list()
+  unique_combinations <- unique(grid_[, c("whitening_method", "alpha_frob")])
+
+  for (j in 1:nrow(unique_combinations)) {
+    method <- unique_combinations$whitening_method[j]
+    alpha <- unique_combinations$alpha_frob[j]
+
+    wiser_obj <- estimate_wiser_phenotype(
+      omic_df, raw_pheno_df, trait_,
+      fixed_effects_vars,
+      fixed_effects_vars_computed_as_factor,
+      site_var,
+      fixed_effects_vars_computed_as_factor_by_site,
+      random_effects_vars,
+      whitening_method = method,
+      regularization_method = regularization_method_,
+      alpha_frob_ = alpha,
+      reduce_raw_dataset_size_ = FALSE
+    )
+
+    cache_key <- paste(method, alpha, sep = "_")
+    wiser_cache[[cache_key]] <- wiser_obj
+  }
+
+  # configure parallelization
+  plan(multisession, workers = parallel::detectCores())
+
+  df_results <- future_lapply(
+    1:nrow(grid_),
+    future.seed = T,
+    function(i) {
+      mean_pa <- tryCatch(
+        {
+          perform_kfold_cv_wiser(
+            omic_df, raw_pheno_df, trait_,
+            fixed_effects_vars,
+            fixed_effects_vars_computed_as_factor,
+            site_var,
+            fixed_effects_vars_computed_as_factor_by_site,
+            random_effects_vars,
+            whitening_method = grid_$whitening_method[i],
+            reg_method = regularization_method_,
+            alpha_frob = grid_$alpha_frob[i],
+            pred_method = grid_$pred_method[i],
+            k_folds = k_folds_,
+            wiser_cache = wiser_cache
+          )
+        },
+        error = function(e) {
+          cat("Error during iteration", i, ":", e$message, "\n")
+          return(NA)
+        }
+      )
+      data.frame(
+        "whitening_method" = grid_$whitening_method[i],
+        "alpha_frob" = grid_$alpha_frob[i],
+        "prediction_method" = grid_$pred_method[i],
+        "mean_pa" = mean_pa
+      )
+    }, future.packages = c(
+      "ranger", "KRMM", "kernlab",
+      "glmnet", "cvTools", "dplyr",
+      "stringr", "matrixcalc",
+      "Matrix", "whitening", "mixOmics"
+    )
+  )
+  df_results <- na.omit(do.call(rbind, df_results))
+
+  # get optimal whitening method based on mean pa for each prediction method
+  df_opt_ <- data.frame()
+  for (method_ in df_results$prediction_method) {
+    df_res_method_ <- df_results[
+      df_results$prediction_method == method_,
+    ]
+    df_res_method_$white_reg_combination <- paste0(
+      df_res_method_$whitening_method,
+      "/", df_res_method_$alpha_frob
+    )
+    df_opt_ <- rbind(
+      df_opt_,
+      df_res_method_[
+        which.max(df_res_method_$mean_pa),
+      ]
+    )
+  }
+  opt_mode_ <- compute_vect_mode(df_opt_$white_reg_combination)
+  opt_mode_ <- unlist(str_split(opt_mode_, pattern = "/"))
+  opt_whitening_method <- opt_mode_[1]
+  opt_alpha_frob <- as.numeric(opt_mode_[2])
+
+  # stop parallelization
+  plan(sequential)
+
+  return(list(
+    "opt_results" = df_opt_,
+    "opt_alpha_frob" = opt_alpha_frob,
+    "opt_whitening_method" = opt_whitening_method
+  ))
+}
+
+# function which make a scatter plot for ls-mean and wiser with a linear fit
+create_scatter_plot_with_linear_fit <- function(df_, trait_, env_) {
+  # fit simple linear regression
+  fit <- lm(v_hat ~ get(trait_), data = df_)
+  intercept <- coef(fit)[1]
+  slope <- coef(fit)[2]
+  r_squared <- summary(fit)$r.squared
+
+  # format data
+  intercept_formatted <- round(intercept, 2)
+  slope_formatted <- round(slope, 2)
+  r_squared_formatted <- round(r_squared, 2)
+
+  # create equation for text
+  eqn_text <- paste0(
+    "Y = ", slope_formatted, "X ",
+    ifelse(intercept_formatted >= 0, "+ ", "- "),
+    abs(intercept_formatted),
+    "\nR² = ", r_squared_formatted,
+    "\nPearson r = ", signif(cor(
+      df_[[trait_]],
+      df_$v_hat
+    ), 2)
+  )
+
+  # set annotation positions
+  x_annotation <- min(df_[[trait_]]) +
+    (max(df_[[trait_]]) - min(df_[[trait_]])) * 0.05
+  y_annotation <- max(df_$v_hat) -
+    (max(df_$v_hat) - min(df_$v_hat)) * 0.1
+
+  # make scatter plot with linear fit
+  fig_x_y <- plot_ly(
+    data = df_
+  ) %>%
+    add_trace(
+      x = ~ get(trait_),
+      y = ~v_hat,
+      type = "scatter",
+      mode = "markers",
+      marker = list(color = "blue"),
+      name = "Data points"
+    ) %>%
+    add_lines(
+      x = ~ get(trait_),
+      y = fitted(fit),
+      line = list(color = "red"),
+      name = "Linear fit"
+    ) %>%
+    layout(
+      title = list(
+        text = paste0(
+          trait_, " LS-means versus WISER phenotypes for ",
+          env_
+        ),
+        x = 0.5
+      ),
+      xaxis = list(
+        title = "Genotype LS-means phenotype"
+      ),
+      yaxis = list(
+        title = "Genotype WISER phenotype"
+      ),
+      annotations = list(
+        x = x_annotation,
+        y = y_annotation,
+        text = eqn_text,
+        showarrow = FALSE,
+        xanchor = "left",
+        yanchor = "top",
+        font = list(
+          size = 12,
+          color = "black"
+        ),
+        align = "left",
+        bgcolor = "rgba(255, 255, 255, 0.8)",
+        bordercolor = "black",
+        borderwidth = 1
+      )
+    )
+  return(fig_x_y)
 }
