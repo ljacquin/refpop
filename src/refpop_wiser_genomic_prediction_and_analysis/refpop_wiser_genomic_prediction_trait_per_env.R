@@ -98,7 +98,7 @@ pheno_dir_path <- "../../data/phenotype_data/"
 outlier_dir_path <- "../../results/phenotype_outlier_detection/"
 
 # set path for wiser phenotypes estimated using whitening
-wiser_pheno_dir_path <- "../../data/phenotype_data/wiser_phenotypes_and_estimates_env/"
+wiser_pheno_dir_path <- "../../data/phenotype_data/wiser_phenotype_estimates_env/"
 
 # output result path for genotype graphics
 output_pred_results_path <- "../../results/genomic_prediction_env/"
@@ -232,7 +232,7 @@ n <- length(pheno_df$Genotype)
 # defined kernel
 if (file.exists(paste0(
   wiser_pheno_dir_path,
-  "wiser_phenotypes_and_estimates_", kernel_,
+  "wiser_phenotype_estimates_env_", kernel_,
   "_kernel_", trait_, "_", env_, ".csv"
 ))) {
   # load corrected phenotypes if file exists
@@ -243,9 +243,7 @@ if (file.exists(paste0(
   ))
   wiser_pheno_df <- wiser_obj$wiser_phenotypes
   geno_df <- wiser_obj$wiser_genotypes
-  
 } else {
-  
   # get optimal whitening method and regularization parameter using k-folds CV
   opt_white_reg_par <- optimize_whitening_and_regularization(
     geno_df, raw_pheno_df, trait_,
@@ -269,8 +267,8 @@ if (file.exists(paste0(
   opt_whitening_method_ <- as.character(opt_white_reg_par$opt_whitening_method)
   opt_alpha_frob_ <- opt_white_reg_par$opt_alpha_frob
   rm(opt_white_reg_par)
-  
-  
+
+
   # estimate wiser phenotype
   start_time_ <- Sys.time()
   wiser_obj <- estimate_wiser_phenotype(geno_df, raw_pheno_df, trait_,
@@ -302,7 +300,7 @@ if (file.exists(paste0(
   # save wiser phenotype for kernel and trait
   fwrite(wiser_obj$wiser_phenotypes, paste0(
     wiser_pheno_dir_path,
-    "wiser_phenotypes_and_estimates_", kernel_,
+    "wiser_phenotype_estimates_env_", kernel_,
     "_kernel_", trait_, "_", env_, ".csv"
   ), row.names = F, col.names = T)
 
@@ -622,8 +620,8 @@ boxplots_pa_ <- boxplots_pa_ %>%
   layout(
     title = paste0(
       "Genomic prediction PA distributions of methods for ",
-      trait_, " associated to " ,env_,", based on ", snp_sample_size_,
-      " SNPs across ", n_shuff_, " shuffling scenarios for ", 
+      trait_, " associated to ", env_, ", based on ", snp_sample_size_,
+      " SNPs across ", n_shuff_, " shuffling scenarios for ",
       k_folds_, "-folds CV"
     ),
     yaxis = list(

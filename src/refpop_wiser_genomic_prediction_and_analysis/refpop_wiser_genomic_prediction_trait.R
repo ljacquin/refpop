@@ -98,7 +98,7 @@ pheno_dir_path <- "../../data/phenotype_data/"
 outlier_dir_path <- "../../results/phenotype_outlier_detection/"
 
 # set path for wiser phenotypes estimated using whitening
-wiser_pheno_dir_path <- "../../data/phenotype_data/wiser_phenotypes_and_estimates/"
+wiser_pheno_dir_path <- "../../data/phenotype_data/wiser_phenotype_estimates/"
 
 # output result path for genotype graphics
 output_pred_results_path <- "../../results/genomic_prediction/"
@@ -239,13 +239,13 @@ rm(opt_white_reg_par)
 # defined kernel
 if (file.exists(paste0(
   wiser_pheno_dir_path,
-  "wiser_phenotypes_and_estimates_", kernel_,
+  "wiser_phenotype_estimates_", kernel_,
   "_kernel_", trait_, ".csv"
 ))) {
   # load corrected phenotypes if file exists
   wiser_pheno_df <- as.data.frame(fread(paste0(
     wiser_pheno_dir_path,
-    "wiser_phenotypes_and_estimates_", kernel_,
+    "wiser_phenotype_estimates_", kernel_,
     "_kernel_", trait_, ".csv"
   )))
   v_hat <- wiser_pheno_df$v_hat
@@ -282,7 +282,7 @@ if (file.exists(paste0(
   # save wiser phenotype for kernel and trait
   fwrite(wiser_obj$wiser_phenotypes, paste0(
     wiser_pheno_dir_path,
-    "wiser_phenotypes_and_estimates_", kernel_,
+    "wiser_phenotype_estimates_", kernel_,
     "_kernel_", trait_, ".csv"
   ), row.names = F, col.names = T)
 

@@ -112,14 +112,16 @@ Download the ```refpop``` repository in the current user's directory on a comput
   ⚠️ Make sure``` git``` is installed beforehand; if not, install it with ```sudo apt install git```.
   <p> </p>
 
-* Given that ```R ≥ 4.1.2``` is already installed, use the following command to install ```refpop``` required ```R``` libraries : 
+* Given that ```R ≥ 4.1.2``` is already installed, use the following command to install and test ```refpop``` required ```R``` libraries : 
 
   * ```R -q --vanilla < src/requirements.R```
+  * ```R -q --vanilla < src/test_requirements.R```
   <p> </p>
 
 * Within the ```refpop``` folder, execute the following commands to make scripts and programs executable :
 
   *  ```chmod u+rwx execute_refpop_tasks_and_analyses.sh```
+  *  ```chmod u+rwx src/refpop_genomic_prediction_and_analysis/*.sh```
   <p> </p>
 
 * Replace the ```data/``` folder with the directory found at https://data :  

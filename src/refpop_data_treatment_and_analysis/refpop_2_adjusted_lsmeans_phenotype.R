@@ -29,11 +29,11 @@ library(tidyr)
 library(lsmeans)
 
 # define computation mode, i.e. "local" or "cluster"
-computation_mode <- 'cluster'
+computation_mode <- "cluster"
 
 # if comutations are local in rstudio, detect and set script path
 # automatically using rstudioapi
-if ( identical(computation_mode, 'local') ){
+if (identical(computation_mode, "local")) {
   library(rstudioapi)
   setwd(dirname(getActiveDocumentContext()$path))
 }
@@ -97,7 +97,7 @@ color_palette_origin <- c(
 
 # adjusted phenotype data analysis
 
-# get file names for spats adjusted phenotypes and replace pattern 
+# get file names for spats adjusted phenotypes and replace pattern
 # "_spats_adjusted_.*" with "" for trait names
 files_names_spats_adj_pheno <- list.files(spats_adj_pheno_path)
 trait_names_ <- str_replace_all(files_names_spats_adj_pheno,
@@ -200,7 +200,7 @@ colnames(pheno_df)[str_detect(colnames(pheno_df), "_lsmean")] <-
   str_replace_all(colnames(pheno_df)[str_detect(colnames(pheno_df), "_lsmean")],
     pattern = "_lsmean", replacement = ""
   )
-fwrite(pheno_df, file=paste0(pheno_dir_path,'adjusted_ls_means_phenotypes.csv'))
+fwrite(pheno_df, file = paste0(pheno_dir_path, "adjusted_ls_means_phenotypes.csv"))
 
 # compute correlation matrix
 cor_matrix <- cor(na.omit(pheno_df[, -na.omit(match(

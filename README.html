@@ -563,17 +563,19 @@ with <code>sudo apt install git</code>.
 </p>
 <ul>
 <li><p>Given that <code>R ≥ 4.1.2</code> is already installed, use the
-following command to install <code>refpop</code> required <code>R</code>
-libraries :</p>
+following command to install and test <code>refpop</code> required
+<code>R</code> libraries :</p>
 <ul>
-<li><code>R -q --vanilla &lt; src/requirements.R</code>
+<li><code>R -q --vanilla &lt; src/requirements.R</code></li>
+<li><code>R -q --vanilla &lt; src/test_requirements.R</code>
 <p>
 </p></li>
 </ul></li>
 <li><p>Within the <code>refpop</code> folder, execute the following
 commands to make scripts and programs executable :</p>
 <ul>
-<li><code>chmod u+rwx execute_refpop_tasks_and_analyses.sh</code>
+<li><code>chmod u+rwx execute_refpop_tasks_and_analyses.sh</code></li>
+<li><code>chmod u+rwx src/refpop_genomic_prediction_and_analysis/*.sh</code>
 <p>
 </p></li>
 </ul></li>
