@@ -133,8 +133,7 @@ kernel_ <- kernels_[kernel_num]
 print(paste0("kernel: ", kernel_))
 
 # define trait_
-# trait_ <- traits_[trait_num]
-trait_ <- c("Harvest_date", "Fruit_weight_single")[trait_num]
+trait_ <- traits_[trait_num]
 print(paste0("trait: ", trait_))
 
 # define shift seed value by
