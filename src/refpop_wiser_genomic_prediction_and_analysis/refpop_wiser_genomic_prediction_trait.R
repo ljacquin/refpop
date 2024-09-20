@@ -1,4 +1,5 @@
-# script meant to perform genomic prediction and analyses for refpop
+# script meant to perform wiser and ls-means genomic prediction and analyses for
+# the refpop
 # note: text is formatted from Addins using Style active file from styler package
 
 # clear memory and source libraries
@@ -77,9 +78,12 @@ if (identical(computation_mode, "local")) {
 source("../functions.R")
 
 # set options
-options(future.globals.maxSize = 6 * 1024^3)
+options(future.globals.maxSize = 60 * 1024^3)
 options(expressions = 5e5)
 options(warn = -1)
+
+# define number of cores
+nb_cores_ <- 12
 
 # define function(s) and package(s) to export for parallelization
 pkgs_to_export_ <- c(
@@ -129,7 +133,8 @@ kernel_ <- kernels_[kernel_num]
 print(paste0("kernel: ", kernel_))
 
 # define trait_
-trait_ <- traits_[trait_num]
+# trait_ <- traits_[trait_num]
+trait_ <- c("Harvest_date", "Fruit_weight_single")[trait_num]
 print(paste0("trait: ", trait_))
 
 # define shift seed value by
@@ -166,10 +171,10 @@ omic_df <- as.data.frame(fread(paste0(
 # has available data
 sel_env_ <- as.data.frame(
   fread(
-    paste0(
+    normalizePath(paste0(
       outlier_dir_path,
       "envir_per_trait_retained_based_on_non_miss_data_and_estimable_h2_non_outliers_for_adj_phenotypes.csv"
-    )
+    ))
   )
 )
 sel_env_ <- str_split(sel_env_[sel_env_$trait == trait_, ], pattern = ", ")[[2]]
@@ -209,29 +214,6 @@ rownames(omic_df) <- pheno_df$Genotype
 # get number of genotypes
 n <- length(pheno_df$Genotype)
 
-# get optimal whitening method and regularization parameter using k-folds CV
-opt_white_reg_par <- optimize_whitening_and_regularization(
-  omic_df, raw_pheno_df, trait_,
-  fixed_effects_vars = c(
-    "Envir", "Country", "Year",
-    "Row", "Position", "Management"
-  ),
-  fixed_effects_vars_computed_as_factor = c(
-    "Envir", "Country", "Year",
-    "Row", "Position", "Management"
-  ),
-  site_var = "Country",
-  fixed_effects_vars_computed_as_factor_by_site = c("Row", "Position"),
-  random_effects_vars = "Genotype",
-  whitening_method_grid = c("ZCA-cor", "PCA-cor", "Cholesky"),
-  alpha_frob_grid = c(0.01, 0.1),
-  k_folds = 5
-)
-print(opt_white_reg_par)
-opt_whitening_method_ <- as.character(opt_white_reg_par$opt_whitening_method)
-opt_alpha_frob_ <- opt_white_reg_par$opt_alpha_frob
-rm(opt_white_reg_par)
-
 # compute wiser phenotypes,
 # since computations are long, save results for later use
 
@@ -239,17 +221,41 @@ rm(opt_white_reg_par)
 # defined kernel
 if (file.exists(paste0(
   wiser_pheno_dir_path,
-  "wiser_phenotype_estimates_", kernel_,
-  "_kernel_", trait_, ".csv"
+  "wiser_obj_", kernel_,
+  "_kernel_", trait_
 ))) {
   # load corrected phenotypes if file exists
-  wiser_pheno_df <- as.data.frame(fread(paste0(
+  wiser_obj <- readRDS(paste0(
     wiser_pheno_dir_path,
-    "wiser_phenotype_estimates_", kernel_,
-    "_kernel_", trait_, ".csv"
-  )))
-  v_hat <- wiser_pheno_df$v_hat
+    "wiser_obj_", kernel_,
+    "_kernel_", trait_
+  ))
+  v_hat <- wiser_obj$wiser_phenotypes$v_hat
+  rm(wiser_obj)
 } else {
+  # get optimal whitening method and regularization parameter using k-folds CV
+  opt_white_reg_par <- optimize_whitening_and_regularization(
+    omic_df, raw_pheno_df, trait_,
+    fixed_effects_vars = c(
+      "Envir", "Country", "Year",
+      "Row", "Position", "Management"
+    ),
+    fixed_effects_vars_computed_as_factor = c(
+      "Envir", "Country", "Year",
+      "Row", "Position", "Management"
+    ),
+    site_var = "Country",
+    fixed_effects_vars_computed_as_factor_by_site = c("Row", "Position"),
+    random_effects_vars = "Genotype",
+    whitening_method_grid = c("ZCA-cor", "PCA-cor", "Cholesky"),
+    alpha_grid = c(0.01, 0.1),
+    k_folds = 5
+  )
+  print(opt_white_reg_par)
+  opt_whitening_method_ <- as.character(opt_white_reg_par$opt_whitening_method)
+  opt_alpha_ <- as.numeric(opt_white_reg_par$opt_alpha_)
+  rm(opt_white_reg_par)
+
   # estimate wiser phenotype
   start_time_ <- Sys.time()
   wiser_obj <- estimate_wiser_phenotype(omic_df, raw_pheno_df, trait_,
@@ -266,7 +272,7 @@ if (file.exists(paste0(
     random_effects_vars = "Genotype",
     kernel_type = kernel_,
     whitening_method = opt_whitening_method_,
-    alpha_frob_ = opt_alpha_frob_
+    alpha_ = opt_alpha_
   )
   end_time_ <- Sys.time()
   time_taken_ <- end_time_ - start_time_
@@ -278,13 +284,6 @@ if (file.exists(paste0(
 
   # get estimated wiser phenotype
   v_hat <- wiser_obj$wiser_phenotypes$v_hat
-
-  # save wiser phenotype for kernel and trait
-  fwrite(wiser_obj$wiser_phenotypes, paste0(
-    wiser_pheno_dir_path,
-    "wiser_phenotype_estimates_", kernel_,
-    "_kernel_", trait_, ".csv"
-  ), row.names = F, col.names = T)
 
   # save wiser object for kernel and trait
   saveRDS(wiser_obj, paste0(
@@ -316,7 +315,7 @@ if (file.exists(paste0(
 }
 
 # register parallel backend
-cl <- makeCluster(detectCores())
+cl <- makeCluster(nb_cores_)
 registerDoParallel(cl)
 
 # create folds for k-fold cross-validation

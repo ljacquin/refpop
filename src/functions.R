@@ -715,9 +715,8 @@ find_columns_with_multiple_unique_values <- function(df_) {
 
 # reduce dataset based on genotype counts
 reduce_dataset_based_on_genotypes <- function(df_, nrow_lim = 10e3,
-                                              min_samples = 3) {
+                                              min_samples = 1) {
   K <- nrow(df_) / nrow_lim
-
   df_reduced <- df_ %>%
     group_by(Genotype) %>%
     group_modify(~ {
@@ -771,6 +770,7 @@ raw_pheno_and_marker_based_on_trait_common_genotypes <- function(
     fixed_effects_vars,
     random_effects_vars) {
   # remove all rows with na w.r.t to trait_
+  raw_pheno_df[, trait_] <- as.numeric(raw_pheno_df[, trait_])
   raw_pheno_df <- raw_pheno_df %>% drop_na(all_of(trait_))
 
   # define variables of interest
@@ -913,6 +913,9 @@ compute_incidence_matrices_fixed_and_random_effects <- function(
 
   # add incidence matrices for random effects to list
   for (rand_eff_var in random_effects_vars) {
+    # make sure effect is indeed a factor
+    raw_pheno_df[, rand_eff_var] <- as.factor(raw_pheno_df[, rand_eff_var])
+    # build incidence matrix for random effect rand_eff_var
     list_z_mat[[rand_eff_var]] <- model.matrix(
       as.formula(paste0("~", rand_eff_var, " - 1")),
       data = raw_pheno_df
@@ -937,25 +940,37 @@ compute_incidence_matrices_fixed_and_random_effects <- function(
 compute_whitening_matrix_for_sig_mat_ <- function(whitening_method,
                                                   regularization_method,
                                                   parallelized_cholesky,
-                                                  sig_mat_, k_mat, sigma2_u,
-                                                  percent_eig_,
-                                                  non_zero_precision_eig_,
-                                                  alpha_frob_) {
+                                                  sig_mat_, alpha_) {
   # regularize covariance matrix, by adding a strictly positive value to the
   # diagonal of Σ, to ensure its positive definiteness
-  if (regularization_method == "mean_small_eigenvalues") {
-    sig_mat_ <- regularize_covariance_mean_small_eigenvalues(
-      sig_mat_, k_mat, sigma2_u, percent_eig_, non_zero_precision_eig_
+  if (regularization_method == "frobenius_norm_regularization") {
+    sig_mat_ <- frobenius_norm_regularization(
+      sig_mat_, alpha_
     )
-  } else if (regularization_method == "mean_eigenvalues") {
-    sig_mat_ <- regularize_covariance_mean_eigenvalues(
-      sig_mat_
+    print("Regularization method : frobenius_norm_regularization")
+  } else if (regularization_method == "frobenius_norm_shrinkage") {
+    sig_mat_ <- frobenius_norm_shrinkage(
+      sig_mat_, alpha_
     )
-  } else if (regularization_method == "frobenius_norm") {
-    sig_mat_ <- regularize_covariance_frobenius_norm(
-      sig_mat_, alpha_frob_
+  } else if (regularization_method == "frobenius_norm_partial_shrinkage") {
+    sig_mat_ <- frobenius_norm_partial_shrinkage(
+      sig_mat_, alpha_
+    )
+  } else if (regularization_method == "trace_sample_variance_regularization") {
+    print("Regularization method : trace_sample_variance_regularization")
+    sig_mat_ <- trace_sample_variance_regularization(
+      sig_mat_, alpha_
+    )
+  } else if (regularization_method == "trace_sample_variance_shrinkage") {
+    sig_mat_ <- trace_sample_variance_shrinkage(
+      sig_mat_, alpha_
+    )
+  } else if (regularization_method == "trace_sample_variance_partial_shrinkage") {
+    sig_mat_ <- trace_sample_variance_partial_shrinkage(
+      sig_mat_, alpha_
     )
   }
+
   # compute whitening matrix, either from ZCA-cor or cholesky
   # decomposition (i.e. Σ = LL' )
   if (whitening_method == "ZCA-cor") {
@@ -1024,43 +1039,66 @@ frobenius_norm <- function(matrix_) {
   return(sqrt(sum(matrix_^2)))
 }
 
-# function which makes a covariance matrix positive definite by adding a
-# positive value delta to the diagonal, based on the mean of the percent_eig_%
-# strictly positive smallest eigenvalues
-regularize_covariance_mean_small_eigenvalues <- function(
-    cov_mat_, k_mat,
-    sigma2_u, percent_eig_, non_zero_precision_eig_) {
-  # compute the eigen values from k_mat
-  eig_val_ <- sigma2_u * (mixOmics::pca(k_mat, ncomp = ncol(k_mat))$sdev^2)
-
-  # get the percent_eig_% strictly positive smallest ones
-  thresh_ <- ceiling(percent_eig_ * length(eig_val_))
-  small_eig_val_ <- sort(eig_val_, decreasing = F)[1:thresh_]
-  delta_ <- mean(
-    small_eig_val_[small_eig_val_ > non_zero_precision_eig_]
-  )
-  # compute the regularized covariance matrix
+# function which makes a covariance matrix positive definite by adding
+# a strictly positive diagonal matrix based on the Frobenius norm
+frobenius_norm_regularization <- function(cov_mat_, alpha_) {
   n <- nrow(cov_mat_)
-  cov_mat_ <- cov_mat_ + delta_ * diag(n)
+  cov_mat_ <- cov_mat_ + alpha_ * frobenius_norm(cov_mat_) * diag(n)
   return(cov_mat_)
 }
 
-# function which makes a covariance matrix positive definite by adding a
-# positive value delta to the diagonal, based on the trace
-regularize_covariance_mean_eigenvalues <- function(cov_mat_) {
+# function which makes a covariance matrix positive definite by using
+# a convex shrinkage estimator which adds a strictly positive diagonal matrix
+# based on the Frobenius norm
+frobenius_norm_shrinkage <- function(cov_mat_, alpha_) {
   n <- nrow(cov_mat_)
-  delta_ <- trace_mat(cov_mat_) / n
-  cov_mat_ <- cov_mat_ + delta_ * diag(n)
+  cov_mat_ <- (1 - alpha_) * cov_mat_ + alpha_ * frobenius_norm(cov_mat_) * diag(n)
   return(cov_mat_)
 }
 
-# function which makes a covariance matrix positive definite by adding a
-# positive value delta to the diagonal, based on l2 norm
-regularize_covariance_frobenius_norm <- function(cov_mat_, alpha_frob_) {
+# function which applies partial shrinkage to the diagonal elements
+# of a covariance matrix by adding a positive diagonal matrix based on
+# the Frobenius norm. This does not modify the off-diagonal elements.
+frobenius_norm_partial_shrinkage <- function(cov_mat_, alpha_) {
   n <- nrow(cov_mat_)
-  delta_ <- alpha_frob_ * frobenius_norm(cov_mat_)
-  cov_mat_ <- cov_mat_ + delta_ * diag(n)
+
+  # create a new matrix where only the diagonal is modified
+  cov_mat_reg <- cov_mat_
+  diag(cov_mat_reg) <- (1 - alpha_) * diag(cov_mat_) + alpha_ * frobenius_norm(cov_mat_)
+
+  return(cov_mat_reg)
+}
+
+# function which makes a covariance matrix positive definite by adding
+# a positive diagonal matrix based on the sum of sample variances
+# (i.e. trace of sample covariance matrix)
+trace_sample_variance_regularization <- function(cov_mat_, alpha_) {
+  n <- nrow(cov_mat_)
+  cov_mat_ <- cov_mat_ + alpha_ * trace_mat(cov_mat_) * diag(n)
   return(cov_mat_)
+}
+
+# function which makes a covariance matrix positive definite by using
+# a convex shrinkage estimator which adds a positive diagonal matrix based on
+# the sum of sample variances (i.e. trace of sample covariance matrix)
+trace_sample_variance_shrinkage <- function(cov_mat_, alpha_) {
+  n <- nrow(cov_mat_)
+  cov_mat_ <- (1 - alpha_) * cov_mat_ + alpha_ * trace_mat(cov_mat_) * diag(n)
+  return(cov_mat_)
+}
+
+# function which applies partial shrinkage to the diagonal elements
+# of a covariance matrix by adding a positive diagonal matrix based on
+# the sum of sample variances (i.e. trace of sample covariance matrix).
+# This does not modify the off-diagonal elements.
+trace_sample_variance_partial_shrinkage <- function(cov_mat_, alpha_) {
+  n <- nrow(cov_mat_)
+
+  # create a new matrix where only the diagonal is modified
+  cov_mat_reg <- cov_mat_
+  diag(cov_mat_reg) <- (1 - alpha_) * diag(cov_mat_) + alpha_ * trace_mat(cov_mat_)
+
+  return(cov_mat_reg)
 }
 
 # function to simulate phenotype data
@@ -1105,27 +1143,18 @@ abc_variance_component_estimation <- function(y, x_mat, z_mat, k_mat, beta_hat,
                                               prior_sigma2_u, prior_sigma2_e,
                                               n_sim_abc, seed_abc,
                                               quantile_threshold_abc) {
-  # register parallel backend
-  cl <- makeCluster(detectCores())
-  registerDoParallel(cl)
-
-  # compute simulated phenotypes and distances
-  df_results <- foreach(
-    sim_num = 1:n_sim_abc,
-    .export = c(
-      "simulate_y", "squared_l2_norm", "simulate_and_compute_squared_l2_norm"
-    ),
-    .packages = c("MASS"),
-    .combine = rbind
-  ) %dopar% {
-    set.seed(sim_num * seed_abc)
-    simulate_and_compute_squared_l2_norm(
-      y, x_mat, z_mat, k_mat, beta_hat, prior_sigma2_u, prior_sigma2_e
-    )
-  }
-  # stop the parallel backend
-  stopCluster(cl)
-  registerDoSEQ()
+  df_results <- future.apply::future_lapply(
+    1:n_sim_abc,
+    future.seed = T,
+    function(sim_num) {
+      set.seed(sim_num * seed_abc)
+      simulate_and_compute_squared_l2_norm(
+        y, x_mat, z_mat, k_mat, beta_hat, prior_sigma2_u, prior_sigma2_e
+      )
+    },
+    future.packages = c("MASS")
+  )
+  df_results <- do.call(rbind, df_results)
 
   # assign colnames to df_results
   df_results <- as.data.frame(df_results)
@@ -1166,9 +1195,7 @@ compute_transformed_vars_and_ols_estimates <- function(
     sigma2_u, sigma2_e, kernel_type,
     whitening_method,
     regularization_method,
-    alpha_frob_,
-    percent_eig_,
-    non_zero_precision_eig_,
+    alpha_,
     parallelized_cholesky,
     reduce_raw_dataset_size_,
     nrow_lim_raw_dataset_zca_cor,
@@ -1242,10 +1269,7 @@ compute_transformed_vars_and_ols_estimates <- function(
         whitening_method,
         regularization_method,
         parallelized_cholesky,
-        sig_mat_, k_mat, sigma2_u,
-        percent_eig_,
-        non_zero_precision_eig_,
-        alpha_frob_
+        sig_mat_, alpha_
       )
       w_mat <- white_obj$w_mat
       sig_mat_ <- white_obj$sig_mat_
@@ -1255,7 +1279,7 @@ compute_transformed_vars_and_ols_estimates <- function(
       x_mat_tilde <- w_mat %*% x_mat
 
       # get raw phenotypes associated to common genotypes
-      y <- raw_pheno_df[, trait_]
+      y <- as.numeric(raw_pheno_df[, trait_])
 
       # get ols estimates for fixed effects and xi
       beta_hat <- ginv(t(x_mat_tilde) %*% x_mat_tilde) %*% t(x_mat_tilde) %*% y
@@ -1305,14 +1329,12 @@ estimate_wiser_phenotype <- function(omic_df, raw_pheno_df, trait_,
                                      nb_iter_abc = 1,
                                      kernel_type = "linear",
                                      whitening_method = "ZCA-cor",
-                                     regularization_method = "frobenius_norm",
-                                     alpha_frob_ = 0.01,
-                                     percent_eig_ = 0.05,
-                                     non_zero_precision_eig_ = 1e-5,
+                                     regularization_method = "frobenius_norm_regularization",
+                                     alpha_ = 0.01,
                                      parallelized_cholesky = T,
                                      reduce_raw_dataset_size_ = T,
-                                     nrow_lim_raw_dataset_zca_cor = 10e3,
-                                     nrow_lim_raw_dataset_pca_cor = 10e3,
+                                     nrow_lim_raw_dataset_zca_cor = 20e3,
+                                     nrow_lim_raw_dataset_pca_cor = 20e3,
                                      nrow_lim_raw_dataset_chol = 40e3) {
   tryCatch(
     {
@@ -1330,9 +1352,7 @@ estimate_wiser_phenotype <- function(omic_df, raw_pheno_df, trait_,
         kernel_type,
         whitening_method,
         regularization_method,
-        alpha_frob_,
-        percent_eig_,
-        non_zero_precision_eig_,
+        alpha_,
         parallelized_cholesky,
         reduce_raw_dataset_size_,
         nrow_lim_raw_dataset_zca_cor,
@@ -1372,9 +1392,7 @@ estimate_wiser_phenotype <- function(omic_df, raw_pheno_df, trait_,
           kernel_type,
           whitening_method,
           regularization_method,
-          alpha_frob_,
-          percent_eig_,
-          non_zero_precision_eig_,
+          alpha_,
           parallelized_cholesky,
           reduce_raw_dataset_size_,
           nrow_lim_raw_dataset_zca_cor,
@@ -1442,33 +1460,12 @@ perform_kfold_cv_wiser <- function(omic_df, raw_pheno_df, trait_,
                                    fixed_effects_vars_computed_as_factor_by_site,
                                    random_effects_vars,
                                    whitening_method,
-                                   reg_method, alpha_frob,
+                                   reg_method, alpha_,
                                    pred_method, k_folds,
-                                   wiser_cache) {
-  # create a unique key for the whitening_method and alpha_frob function arguments
-  cache_key <- paste(whitening_method, alpha_frob, sep = "_")
-
-  # verify if results are already available in the cache
-  if (cache_key %in% names(wiser_cache)) {
-    wiser_obj <- wiser_cache[[cache_key]]
-  } else {
-    # if not, compute and save the result in the cache
-    wiser_obj <- estimate_wiser_phenotype(
-      omic_df, raw_pheno_df, trait_,
-      fixed_effects_vars,
-      fixed_effects_vars_computed_as_factor,
-      site_var,
-      fixed_effects_vars_computed_as_factor_by_site,
-      random_effects_vars,
-      whitening_method = whitening_method,
-      regularization_method = reg_method,
-      alpha_frob_ = alpha_frob,
-      reduce_raw_dataset_size_ = FALSE
-    )
-    wiser_cache[[cache_key]] <- wiser_obj
-  }
-  omic_df <- wiser_obj$wiser_omic_data
-  v_hat <- wiser_obj$wiser_phenotypes$v_hat
+                                   wiser_obj_local) {
+  # extract the local wiser object
+  omic_df <- wiser_obj_local$wiser_omic_data
+  v_hat <- wiser_obj_local$wiser_phenotypes$v_hat
 
   # set seed for reproducibility and get set of indices
   set.seed(123)
@@ -1598,12 +1595,13 @@ optimize_whitening_and_regularization <- function(
     random_effects_vars = "Genotype",
     prediction_method = c("rf", "svr", "gblup", "rkhs", "lasso"),
     whitening_method_grid = c("ZCA-cor", "PCA-cor", "Cholesky"),
-    regularization_method_ = "frobenius_norm",
-    alpha_frob_grid = c(0.01, 0.1),
+    regularization_method_ = "frobenius_norm_regularization",
+    alpha_grid = c(0.01, 0.1),
     reduce_raw_dataset_size_ = T,
     nrow_lim_raw_dataset_ = 5e3,
     parallelized_cholesky = T,
-    k_folds_ = 5) {
+    k_folds_ = 5,
+    nb_cores_ = 12) {
   # remove all rows with na w.r.t to trait_
   raw_pheno_df <- raw_pheno_df %>% drop_na(all_of(trait_))
 
@@ -1633,17 +1631,17 @@ optimize_whitening_and_regularization <- function(
   # prediction methods
   grid_ <- expand.grid(
     whitening_method = whitening_method_grid,
-    alpha_frob = alpha_frob_grid,
+    alpha_ = alpha_grid,
     pred_method = prediction_method
   )
 
   # pre-compute unique wiser object for unique combinations
   wiser_cache <- list()
-  unique_combinations <- unique(grid_[, c("whitening_method", "alpha_frob")])
+  unique_combinations <- unique(grid_[, c("whitening_method", "alpha_")])
 
   for (j in 1:nrow(unique_combinations)) {
     method <- unique_combinations$whitening_method[j]
-    alpha <- unique_combinations$alpha_frob[j]
+    alpha <- unique_combinations$alpha_[j]
 
     wiser_obj <- estimate_wiser_phenotype(
       omic_df, raw_pheno_df, trait_,
@@ -1654,7 +1652,7 @@ optimize_whitening_and_regularization <- function(
       random_effects_vars,
       whitening_method = method,
       regularization_method = regularization_method_,
-      alpha_frob_ = alpha,
+      alpha_ = alpha,
       reduce_raw_dataset_size_ = FALSE
     )
 
@@ -1663,12 +1661,16 @@ optimize_whitening_and_regularization <- function(
   }
 
   # configure parallelization
-  plan(multisession, workers = parallel::detectCores())
+  plan(multisession, workers = nb_cores_)
 
   df_results <- future_lapply(
     1:nrow(grid_),
     future.seed = T,
     function(i) {
+      # retrieve the precomputed wiser_obj for this combination
+      cache_key <- paste(grid_$whitening_method[i], grid_$alpha_[i], sep = "_")
+      wiser_obj_local <- wiser_cache[[cache_key]]
+
       mean_pa <- tryCatch(
         {
           perform_kfold_cv_wiser(
@@ -1680,10 +1682,10 @@ optimize_whitening_and_regularization <- function(
             random_effects_vars,
             whitening_method = grid_$whitening_method[i],
             reg_method = regularization_method_,
-            alpha_frob = grid_$alpha_frob[i],
+            alpha_ = grid_$alpha_[i],
             pred_method = grid_$pred_method[i],
             k_folds = k_folds_,
-            wiser_cache = wiser_cache
+            wiser_obj_local = wiser_obj_local
           )
         },
         error = function(e) {
@@ -1693,7 +1695,7 @@ optimize_whitening_and_regularization <- function(
       )
       data.frame(
         "whitening_method" = grid_$whitening_method[i],
-        "alpha_frob" = grid_$alpha_frob[i],
+        "alpha_" = grid_$alpha_[i],
         "prediction_method" = grid_$pred_method[i],
         "mean_pa" = mean_pa
       )
@@ -1714,26 +1716,26 @@ optimize_whitening_and_regularization <- function(
     ]
     df_res_method_$white_reg_combination <- paste0(
       df_res_method_$whitening_method,
-      "/", df_res_method_$alpha_frob
+      "/", df_res_method_$alpha_
     )
     df_opt_ <- rbind(
       df_opt_,
-      df_res_method_[
-        which.max(df_res_method_$mean_pa),
-      ]
+      unique(df_res_method_[
+        which.max(df_res_method_$mean_pa)[1],
+      ])
     )
   }
   opt_mode_ <- compute_vect_mode(df_opt_$white_reg_combination)
   opt_mode_ <- unlist(str_split(opt_mode_, pattern = "/"))
   opt_whitening_method <- opt_mode_[1]
-  opt_alpha_frob <- as.numeric(opt_mode_[2])
+  opt_alpha_ <- as.numeric(opt_mode_[2])
 
   # stop parallelization
   plan(sequential)
 
   return(list(
-    "opt_results" = df_opt_,
-    "opt_alpha_frob" = opt_alpha_frob,
+    "opt_results" = unique(df_opt_),
+    "opt_alpha_" = opt_alpha_,
     "opt_whitening_method" = opt_whitening_method
   ))
 }

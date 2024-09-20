@@ -2,8 +2,8 @@
 #===============================================================#
 #  script for launching wiser genomic prediction for all traits #
 #===============================================================#
-n_kernel=2
-n_trait=15
+n_kernel=1
+n_trait=6
 for kernel_num in $( seq 1 1 $n_kernel )
  do
  for trait_num in $( seq 1 1 $n_trait )
