@@ -1,4 +1,4 @@
-# script meant to analyse refpop genotypic data
+# script meant to gem structure analyses
 # note: text is formatted from Addins using Style active file from styler package
 
 # clear memory and source libraries
