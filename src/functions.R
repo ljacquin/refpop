@@ -686,7 +686,6 @@ remove_col_with_na_thresh <- function(df_, threshold) {
   ))
 }
 
-# ****
 # function which computes the mode of a continuous density
 compute_density_mode <- function(data) {
   if (is.numeric(data) && all(data == floor(data))) {
@@ -698,7 +697,13 @@ compute_density_mode <- function(data) {
   return(mode_value)
 }
 
-# funcrtion which computes the mode of a vector
+# function which computes genomic h2
+compute_genomic_h2 <- function(sigma2K, sigma2E) {
+  h2 <- sigma2K / (sigma2K + sigma2E)
+  return(h2)
+}
+
+# function which computes the mode of a vector
 compute_vect_mode <- function(vect) {
   freq <- table(vect)
   mode <- names(freq)[freq == max(freq)][1]
@@ -714,15 +719,19 @@ find_columns_with_multiple_unique_values <- function(df_) {
 }
 
 # reduce dataset based on genotype counts
-reduce_dataset_based_on_genotypes <- function(df_, nrow_lim = 10e3,
-                                              min_samples = 1) {
-  K <- nrow(df_) / nrow_lim
+reduce_dataset_based_on_genotypes <- function(df_, nrow_approx_lim = 10e3,
+                                              min_samples = 30) {
+  K <- nrow(df_) / nrow_approx_lim
   df_reduced <- df_ %>%
     group_by(Genotype) %>%
     group_modify(~ {
       n_genotype <- nrow(.x)
-      samples_to_take <- max(min_samples, ceiling(n_genotype / K))
-      sample_n(.x, min(samples_to_take, n_genotype))
+      if (n_genotype < min_samples) {
+        samples_to_take <- n_genotype
+      } else {
+        samples_to_take <- ceiling(n_genotype / K)
+      }
+      sample_n(.x, samples_to_take)
     }) %>%
     ungroup()
 
@@ -733,29 +742,29 @@ reduce_dataset_based_on_genotypes <- function(df_, nrow_lim = 10e3,
 reduce_dataset_based_on_selected_whitening <- function(
     whitening_method,
     raw_pheno_df,
-    nrow_lim_raw_dataset_zca_cor,
-    nrow_lim_raw_dataset_pca_cor,
-    nrow_lim_raw_dataset_chol) {
+    nrow_approx_lim_raw_dataset_zca_cor,
+    nrow_approx_lim_raw_dataset_pca_cor,
+    nrow_approx_lim_raw_dataset_chol) {
   set.seed(123)
   if (whitening_method == "ZCA-cor") {
     raw_pheno_df <- as.data.frame(
       reduce_dataset_based_on_genotypes(
         df_ = raw_pheno_df,
-        nrow_lim = nrow_lim_raw_dataset_zca_cor
+        nrow_approx_lim = nrow_approx_lim_raw_dataset_zca_cor
       )
     )
   } else if (whitening_method == "PCA-cor") {
     raw_pheno_df <- as.data.frame(
       reduce_dataset_based_on_genotypes(
         df_ = raw_pheno_df,
-        nrow_lim = nrow_lim_raw_dataset_pca_cor
+        nrow_approx_lim = nrow_approx_lim_raw_dataset_pca_cor
       )
     )
   } else {
     raw_pheno_df <- as.data.frame(
       reduce_dataset_based_on_genotypes(
         df_ = raw_pheno_df,
-        nrow_lim = nrow_lim_raw_dataset_chol
+        nrow_approx_lim = nrow_approx_lim_raw_dataset_chol
       )
     )
   }
@@ -947,7 +956,6 @@ compute_whitening_matrix_for_sig_mat_ <- function(whitening_method,
     sig_mat_ <- frobenius_norm_regularization(
       sig_mat_, alpha_
     )
-    print("Regularization method : frobenius_norm_regularization")
   } else if (regularization_method == "frobenius_norm_shrinkage") {
     sig_mat_ <- frobenius_norm_shrinkage(
       sig_mat_, alpha_
@@ -957,7 +965,6 @@ compute_whitening_matrix_for_sig_mat_ <- function(whitening_method,
       sig_mat_, alpha_
     )
   } else if (regularization_method == "trace_sample_variance_regularization") {
-    print("Regularization method : trace_sample_variance_regularization")
     sig_mat_ <- trace_sample_variance_regularization(
       sig_mat_, alpha_
     )
@@ -1198,9 +1205,9 @@ compute_transformed_vars_and_ols_estimates <- function(
     alpha_,
     parallelized_cholesky,
     reduce_raw_dataset_size_,
-    nrow_lim_raw_dataset_zca_cor,
-    nrow_lim_raw_dataset_pca_cor,
-    nrow_lim_raw_dataset_chol) {
+    nrow_approx_lim_raw_dataset_zca_cor,
+    nrow_approx_lim_raw_dataset_pca_cor,
+    nrow_approx_lim_raw_dataset_chol) {
   tryCatch(
     {
       # get raw phenotypes and omic data based on common genotypes
@@ -1216,13 +1223,21 @@ compute_transformed_vars_and_ols_estimates <- function(
       omic_df <- raw_data_obj$omic_df
 
       # should raw dataset size be reduced wrt to selected whitening method ?
-      if (reduce_raw_dataset_size_) {
+      if (reduce_raw_dataset_size_ && (
+        (whitening_method == "ZCA-cor" &&
+          nrow(raw_pheno_df) > nrow_approx_lim_raw_dataset_zca_cor) ||
+          (whitening_method == "PCA-cor" &&
+            nrow(raw_pheno_df) > nrow_approx_lim_raw_dataset_pca_cor) ||
+          (whitening_method == "Cholesky" &&
+            nrow(raw_pheno_df) > nrow_approx_lim_raw_dataset_chol)
+      )
+      ) {
         raw_pheno_df <- reduce_dataset_based_on_selected_whitening(
           whitening_method,
           raw_pheno_df,
-          nrow_lim_raw_dataset_zca_cor,
-          nrow_lim_raw_dataset_pca_cor,
-          nrow_lim_raw_dataset_chol
+          nrow_approx_lim_raw_dataset_zca_cor,
+          nrow_approx_lim_raw_dataset_pca_cor,
+          nrow_approx_lim_raw_dataset_chol
         )
       }
 
@@ -1241,7 +1256,7 @@ compute_transformed_vars_and_ols_estimates <- function(
       # compute Gram matrix (e.g. genomic covariance matrix)
       k_mat <- compute_gram_matrix(omic_df, kernel_type)
 
-      # remove fixed effects with no variance or unique level for factors
+      # retain fixed effects with variance or non unique level for factors
       if (!is.null(ncol(raw_pheno_df[, fixed_effects_vars])) &&
         ncol(raw_pheno_df[, fixed_effects_vars]) > 1) {
         fixed_effects_vars <- find_columns_with_multiple_unique_values(
@@ -1323,6 +1338,7 @@ estimate_wiser_phenotype <- function(omic_df, raw_pheno_df, trait_,
                                      random_effects_vars = "Genotype",
                                      init_sigma2_u = 1,
                                      init_sigma2_e = 1,
+                                     prior_sigma2_lower_bound = 1e-2,
                                      n_sim_abc = 100,
                                      seed_abc = 123,
                                      quantile_threshold_abc = 0.05,
@@ -1333,9 +1349,9 @@ estimate_wiser_phenotype <- function(omic_df, raw_pheno_df, trait_,
                                      alpha_ = 0.01,
                                      parallelized_cholesky = T,
                                      reduce_raw_dataset_size_ = T,
-                                     nrow_lim_raw_dataset_zca_cor = 20e3,
-                                     nrow_lim_raw_dataset_pca_cor = 20e3,
-                                     nrow_lim_raw_dataset_chol = 40e3) {
+                                     nrow_approx_lim_raw_dataset_zca_cor = 20e3,
+                                     nrow_approx_lim_raw_dataset_pca_cor = 20e3,
+                                     nrow_approx_lim_raw_dataset_chol = 40e3) {
   tryCatch(
     {
       # compute transformed variables associated to fixed effects and least-squares
@@ -1355,9 +1371,9 @@ estimate_wiser_phenotype <- function(omic_df, raw_pheno_df, trait_,
         alpha_,
         parallelized_cholesky,
         reduce_raw_dataset_size_,
-        nrow_lim_raw_dataset_zca_cor,
-        nrow_lim_raw_dataset_pca_cor,
-        nrow_lim_raw_dataset_chol
+        nrow_approx_lim_raw_dataset_zca_cor,
+        nrow_approx_lim_raw_dataset_pca_cor,
+        nrow_approx_lim_raw_dataset_chol
       )
 
       # get an upper bound for sigma2_u et sigma2_e priors
@@ -1366,7 +1382,6 @@ estimate_wiser_phenotype <- function(omic_df, raw_pheno_df, trait_,
       )
 
       for (iter_ in 1:nb_iter_abc) {
-        # print(paste0('iter : ', iter_))
         # compute variance components using abc
         var_comp_abc_obj <- abc_variance_component_estimation(
           y = transform_and_ls_obj$y,
@@ -1374,8 +1389,14 @@ estimate_wiser_phenotype <- function(omic_df, raw_pheno_df, trait_,
           z_mat = transform_and_ls_obj$z_mat,
           k_mat = transform_and_ls_obj$k_mat,
           beta_hat = transform_and_ls_obj$beta_hat,
-          prior_sigma2_u = c(1e-2, prior_sigma2_upper_bound),
-          prior_sigma2_e = c(1e-2, prior_sigma2_upper_bound),
+          prior_sigma2_u = c(
+            prior_sigma2_lower_bound,
+            prior_sigma2_upper_bound
+          ),
+          prior_sigma2_e = c(
+            prior_sigma2_lower_bound,
+            prior_sigma2_upper_bound
+          ),
           n_sim_abc, seed_abc,
           quantile_threshold_abc
         )
@@ -1395,9 +1416,9 @@ estimate_wiser_phenotype <- function(omic_df, raw_pheno_df, trait_,
           alpha_,
           parallelized_cholesky,
           reduce_raw_dataset_size_,
-          nrow_lim_raw_dataset_zca_cor,
-          nrow_lim_raw_dataset_pca_cor,
-          nrow_lim_raw_dataset_chol
+          nrow_approx_lim_raw_dataset_zca_cor,
+          nrow_approx_lim_raw_dataset_pca_cor,
+          nrow_approx_lim_raw_dataset_chol
         )
       }
 
@@ -1451,6 +1472,7 @@ estimate_wiser_phenotype <- function(omic_df, raw_pheno_df, trait_,
     }
   )
 }
+
 
 # function which performs parallelized k-folds cv using several prediction methods
 perform_kfold_cv_wiser <- function(omic_df, raw_pheno_df, trait_,
@@ -1598,7 +1620,7 @@ optimize_whitening_and_regularization <- function(
     regularization_method_ = "frobenius_norm_regularization",
     alpha_grid = c(0.01, 0.1),
     reduce_raw_dataset_size_ = T,
-    nrow_lim_raw_dataset_ = 5e3,
+    nrow_approx_lim_raw_dataset_ = 5e3,
     parallelized_cholesky = T,
     k_folds_ = 5,
     nb_cores_ = 12) {
@@ -1617,12 +1639,13 @@ optimize_whitening_and_regularization <- function(
   raw_pheno_df <- na.omit(raw_pheno_df)
 
   # downsize dataset for computation time optimization purpose
-  if (reduce_raw_dataset_size_) {
+  if (reduce_raw_dataset_size_ &&
+    (nrow(raw_pheno_df) > nrow_approx_lim_raw_dataset_)) {
     set.seed(123)
     raw_pheno_df <- as.data.frame(
       reduce_dataset_based_on_genotypes(
         df_ = raw_pheno_df,
-        nrow_lim = nrow_lim_raw_dataset_
+        nrow_approx_lim = nrow_approx_lim_raw_dataset_
       )
     )
   }
