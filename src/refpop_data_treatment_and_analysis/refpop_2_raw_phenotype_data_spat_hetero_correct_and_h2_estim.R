@@ -1,4 +1,4 @@
-# script meant to correct for spatial heterogenity for a specific trait_
+# script meant to correct for spatial heterogenity within environments for all traits
 # note: text is formatted from Addins using Style active file from styler package
 
 # clear memory and source libraries
@@ -24,11 +24,11 @@ library(parallel)
 library(doParallel)
 
 # define computation mode, i.e. "local" or "cluster"
-computation_mode <- 'cluster'
+computation_mode <- "cluster"
 
 # if comutations are local in rstudio, detect and set script path
 # automatically using rstudioapi
-if ( identical(computation_mode, 'local') ){
+if (identical(computation_mode, "local")) {
   library(rstudioapi)
   setwd(dirname(getActiveDocumentContext()$path))
 }
@@ -41,12 +41,21 @@ options(expressions = 5e5)
 options(warn = -1)
 
 # set paths
-# input and output data paths
 pheno_dir_path_ <- "../../data/phenotype_data/"
-pheno_file_path_ <- paste0(pheno_dir_path_, "phenotype_raw_data_no_outliers.csv")
-output_spats_file_path <- paste0(pheno_dir_path_, "spats_per_env_adjusted_phenotypes/")
+
+pheno_file_path_ <- paste0(
+  pheno_dir_path_,
+  "raw_phenotype_data_correc_manage_type_no_md_outliers.csv"
+)
+
+output_spats_file_path <- paste0(
+  pheno_dir_path_,
+  "spats_per_env_adjusted_phenotypes/"
+)
+
 # outlier results data paths
 pheno_outliers_results_path <- "../../results/phenotype_outlier_detection/"
+
 # output result path for phenotype graphics
 output_pheno_graphics_path <- "../../results/graphics/phenotype_graphics/"
 
@@ -67,20 +76,27 @@ selected_traits_ <- c(
   "Scab", "Powdery_mildew", "Scab_fruits", "Weight_sample",
   "Sample_size"
 )
+
 vars_to_keep_ <- c(
   "Envir", "Management", "Row",
   "Position", "Genotype"
 )
+
 excluded_pseudo_trait_for_save_ <- "Sample_size"
 
+# colors for boxplots
+blue_gradient <- c("#3D9BC5", "#005AB5", "#00407A", "#002A66")
+yellow_orange_gradient <- colorRampPalette(c("#149414", "#3b5534"))(4)
+bp_colors_ <- c(blue_gradient, yellow_orange_gradient)
+
 # define parameters for computations
-convert_date_to_days_ <- FALSE # true only if Flowering_begin has not already been converted to days
-plot_h2_per_trait_ <- TRUE
+convert_date_to_days_ <- F # true only if Flowering_begin has not already been converted to days
+plot_h2_per_trait_ <- T
 h2_mad_value_factor <- 2.5
 min_obs_lmer_ <- 5 # cannot fit lmer if less than that.. Note  5 is pretty small
 # and doesn't necessarily make sense either, its somewhat arbitrary
 
-# get pheno_df and detect attributes, e.g. number of modalities, for specific variables
+# get pheno_df and detect attributes, e.g. number of modalities or levels for specific variables
 pheno_df_ <- as.data.frame(fread(pheno_file_path_))
 management_types <- unique(pheno_df_$Management)
 n_management <- length(management_types)
@@ -115,7 +131,7 @@ miss_data_singular_model_h2_out_vect_ <-
       ))
     }
 
-    # get unique environments (i.e.location-year) for trait_
+    # get unique environments (i.e.location-year-management) for trait_
     env_years_ <- unique(str_extract(unique(df_$Envir), "\\d{4}"))
     env_list_ <- reordered_cols(unique(df_$Envir),
       prefix_order_patterns = env_years_
@@ -201,7 +217,7 @@ miss_data_singular_model_h2_out_vect_ <-
                   df_trait_env_$Management == manage_type_,
                 ]
                 df_trait_manage_env_ <- droplevels(df_trait_manage_env_)
-                
+
                 if (nrow(df_trait_manage_env_) > 1 &&
                   length(unique(df_trait_manage_env_$Genotype)) > min_obs_lmer_) {
                   nr_bar_manage_ <- mean(table(df_trait_manage_env_$Genotype))
@@ -319,7 +335,7 @@ miss_data_singular_model_h2_out_vect_ <-
                   df_trait_spats_env_$Management == manage_type_,
                 ]
                 df_trait_spats_manage_env_ <- droplevels(df_trait_spats_manage_env_)
-                
+
                 if (nrow(df_trait_spats_manage_env_) > 1 &&
                   length(unique(df_trait_spats_manage_env_$Genotype)) > min_obs_lmer_) {
                   nr_bar_spats_manage_ <- mean(table(df_trait_spats_manage_env_$Genotype))
@@ -413,9 +429,9 @@ miss_data_singular_model_h2_out_vect_ <-
       h2_mad_value_factor
     )
     # get outliers for h2_raw type 1 management
-    if (length(h2_raw_pheno_manage_types_mad_out$idx_outliers[[3]]) > 0) {
-      env_h2_raw_manage_type_1_out_ <- env_h2_raw_pheno_manage_list_[[3]][
-        h2_raw_pheno_manage_types_mad_out$idx_outliers[[3]]
+    if (length(h2_raw_pheno_manage_types_mad_out$idx_outliers[[2]]) > 0) {
+      env_h2_raw_manage_type_1_out_ <- env_h2_raw_pheno_manage_list_[[2]][
+        h2_raw_pheno_manage_types_mad_out$idx_outliers[[2]]
       ]
       miss_data_singular_model_h2_out_list_[[trait_]] <- c(
         miss_data_singular_model_h2_out_list_[[trait_]],
@@ -427,9 +443,9 @@ miss_data_singular_model_h2_out_vect_ <-
       )
     }
     # get outliers for h2_raw type 2 management
-    if (length(h2_raw_pheno_manage_types_mad_out$idx_outliers[[2]]) > 0) {
-      env_h2_raw_manage_type_2_out_ <- env_h2_raw_pheno_manage_list_[[2]][
-        h2_raw_pheno_manage_types_mad_out$idx_outliers[[2]]
+    if (length(h2_raw_pheno_manage_types_mad_out$idx_outliers[[4]]) > 0) {
+      env_h2_raw_manage_type_2_out_ <- env_h2_raw_pheno_manage_list_[[4]][
+        h2_raw_pheno_manage_types_mad_out$idx_outliers[[4]]
       ]
       miss_data_singular_model_h2_out_list_[[trait_]] <- c(
         miss_data_singular_model_h2_out_list_[[trait_]],
@@ -440,6 +456,21 @@ miss_data_singular_model_h2_out_vect_ <-
         )
       )
     }
+    # get outliers for h2_raw type 3 management
+    if (length(h2_raw_pheno_manage_types_mad_out$idx_outliers[[3]]) > 0) {
+      env_h2_raw_manage_type_3_out_ <- env_h2_raw_pheno_manage_list_[[3]][
+        h2_raw_pheno_manage_types_mad_out$idx_outliers[[3]]
+      ]
+      miss_data_singular_model_h2_out_list_[[trait_]] <- c(
+        miss_data_singular_model_h2_out_list_[[trait_]],
+        paste0(
+          "h2_raw management type 3 outlier detected for ",
+          names(env_h2_raw_manage_type_3_out_), ": ",
+          as.numeric(env_h2_raw_manage_type_3_out_)
+        )
+      )
+    }
+
     env_h2_raw_pheno_manage_list_ <- h2_raw_pheno_manage_types_mad_out$data_no_outliers
 
     # get h2 outliers associated to adjusted phenotypes for type 1 & 2 managements
@@ -452,9 +483,9 @@ miss_data_singular_model_h2_out_vect_ <-
       h2_mad_value_factor
     )
     # get outliers for h2_adj type 1 management
-    if (length(h2_adj_pheno_manage_types_mad_out$idx_outliers[[3]]) > 0) {
-      env_h2_adj_manage_type_1_out_ <- env_h2_adj_pheno_manage_list_[[3]][
-        h2_adj_pheno_manage_types_mad_out$idx_outliers[[3]]
+    if (length(h2_adj_pheno_manage_types_mad_out$idx_outliers[[2]]) > 0) {
+      env_h2_adj_manage_type_1_out_ <- env_h2_adj_pheno_manage_list_[[2]][
+        h2_adj_pheno_manage_types_mad_out$idx_outliers[[2]]
       ]
       miss_data_singular_model_h2_out_list_[[trait_]] <- c(
         miss_data_singular_model_h2_out_list_[[trait_]],
@@ -466,9 +497,9 @@ miss_data_singular_model_h2_out_vect_ <-
       )
     }
     # get outliers for h2_adj type 2 management
-    if (length(h2_adj_pheno_manage_types_mad_out$idx_outliers[[2]]) > 0) {
-      env_h2_adj_manage_type_2_out_ <- env_h2_adj_pheno_manage_list_[[2]][
-        h2_adj_pheno_manage_types_mad_out$idx_outliers[[2]]
+    if (length(h2_adj_pheno_manage_types_mad_out$idx_outliers[[4]]) > 0) {
+      env_h2_adj_manage_type_2_out_ <- env_h2_adj_pheno_manage_list_[[4]][
+        h2_adj_pheno_manage_types_mad_out$idx_outliers[[4]]
       ]
       miss_data_singular_model_h2_out_list_[[trait_]] <- c(
         miss_data_singular_model_h2_out_list_[[trait_]],
@@ -479,20 +510,34 @@ miss_data_singular_model_h2_out_vect_ <-
         )
       )
     }
+    # get outliers for h2_adj type 3 management
+    if (length(h2_adj_pheno_manage_types_mad_out$idx_outliers[[3]]) > 0) {
+      env_h2_adj_manage_type_3_out_ <- env_h2_adj_pheno_manage_list_[[3]][
+        h2_adj_pheno_manage_types_mad_out$idx_outliers[[3]]
+      ]
+      miss_data_singular_model_h2_out_list_[[trait_]] <- c(
+        miss_data_singular_model_h2_out_list_[[trait_]],
+        paste0(
+          "h2_adj management type 3 outlier detected for ",
+          names(env_h2_adj_manage_type_3_out_), ": ",
+          as.numeric(env_h2_adj_manage_type_3_out_)
+        )
+      )
+    }
     env_h2_adj_pheno_manage_list_ <- h2_adj_pheno_manage_types_mad_out$data_no_outliers
 
-    # detect type 3 management, if any, and remove them
-    idx_manage_type_3 <- which(str_detect(miss_data_singular_model_h2_out_list_[[trait_]],
+    # detect BUFFER management, if any, and remove them
+    idx_manage_type_buffer <- which(str_detect(miss_data_singular_model_h2_out_list_[[trait_]],
       pattern = "BUFFER"
     ))
-    if (length(idx_manage_type_3) > 0) {
+    if (length(idx_manage_type_buffer) > 0) {
       miss_data_singular_model_h2_out_list_[[trait_]] <-
-        miss_data_singular_model_h2_out_list_[[trait_]][-idx_manage_type_3]
+        miss_data_singular_model_h2_out_list_[[trait_]][-idx_manage_type_buffer]
     }
 
     # sort list
     miss_data_singular_model_h2_out_list_[[trait_]] <-
-      sort(miss_data_singular_model_h2_out_list_[[trait_]], decreasing = TRUE)
+      sort(miss_data_singular_model_h2_out_list_[[trait_]], decreasing = T)
 
     # keep environments considered as non outliers for adjusted phenotypes since
     # this data will be used for further analysis and prediction
@@ -521,38 +566,42 @@ miss_data_singular_model_h2_out_vect_ <-
       "_spats_adjusted_phenotypes_long_format.csv"
     ))
 
-    # get and write retained environments for traits according to h2 outliers removed
+    # get and write retained environments for traits according to h2 inliers
     df_trait_env_retain_ <- data.frame(
       "trait" = trait_,
-      "env_retained_based_on_h2" =
+      "env_retained_based_on_inlier_h2" =
         paste0(env_to_keep_, collapse = ", ")
     )
     fwrite(df_trait_env_retain_, paste0(
       output_spats_file_path, trait_,
-      "_env_retained_based_on_h2.csv"
+      "_env_retained_based_on_inlier_h2.csv"
     ))
 
     # boxplots of heritabilities for adjusted and raw phenotypes accross environments
     if (plot_h2_per_trait_) {
       # convert to df
-      list_raw_adj_data <- vector("list", 6)
+      list_raw_adj_data <- vector("list", 8)
 
       names(list_raw_adj_data) <- c(
         "h2_raw",
         "h2_raw_manage_type_1",
         "h2_raw_manage_type_2",
+        "h2_adj_manage_type_3",
         "h2_adj",
         "h2_adj_manage_type_1",
-        "h2_adj_manage_type_2"
+        "h2_adj_manage_type_2",
+        "h2_adj_manage_type_3"
       )
 
       list_raw_adj_data[["h2_raw"]] <- na.omit(env_h2_raw_pheno_vect_)
-      list_raw_adj_data[["h2_raw_manage_type_1"]] <- na.omit(env_h2_raw_pheno_manage_list_[[3]])
-      list_raw_adj_data[["h2_raw_manage_type_2"]] <- na.omit(env_h2_raw_pheno_manage_list_[[2]])
+      list_raw_adj_data[["h2_raw_manage_type_1"]] <- na.omit(env_h2_raw_pheno_manage_list_[[2]])
+      list_raw_adj_data[["h2_raw_manage_type_2"]] <- na.omit(env_h2_raw_pheno_manage_list_[[4]])
+      list_raw_adj_data[["h2_raw_manage_type_3"]] <- na.omit(env_h2_raw_pheno_manage_list_[[3]])
 
       list_raw_adj_data[["h2_adj"]] <- na.omit(env_h2_adj_pheno_vect_)
-      list_raw_adj_data[["h2_adj_manage_type_1"]] <- na.omit(env_h2_adj_pheno_manage_list_[[3]])
-      list_raw_adj_data[["h2_adj_manage_type_2"]] <- na.omit(env_h2_adj_pheno_manage_list_[[2]])
+      list_raw_adj_data[["h2_adj_manage_type_1"]] <- na.omit(env_h2_adj_pheno_manage_list_[[2]])
+      list_raw_adj_data[["h2_adj_manage_type_2"]] <- na.omit(env_h2_adj_pheno_manage_list_[[4]])
+      list_raw_adj_data[["h2_adj_manage_type_3"]] <- na.omit(env_h2_raw_pheno_manage_list_[[3]])
 
       # get all registered environments for the computed h2
       all_env_names <- unique(unlist(lapply(list_raw_adj_data, names)))
@@ -563,73 +612,105 @@ miss_data_singular_model_h2_out_vect_ <-
         h2_raw = rep(NA, length(all_env_names)),
         h2_raw_manage_type_1 = rep(NA, length(all_env_names)),
         h2_raw_manage_type_2 = rep(NA, length(all_env_names)),
+        h2_raw_manage_type_3 = rep(NA, length(all_env_names)),
         h2_adj = rep(NA, length(all_env_names)),
         h2_adj_manage_type_1 = rep(NA, length(all_env_names)),
-        h2_adj_manage_type_2 = rep(NA, length(all_env_names))
+        h2_adj_manage_type_2 = rep(NA, length(all_env_names)),
+        h2_adj_manage_type_3 = rep(NA, length(all_env_names))
       )
 
       # assign the values in the corresponding columns
       for (env_name in all_env_names) {
+        ##
         if (env_name %in% names(list_raw_adj_data[["h2_raw"]])) {
           df_h2_raw_adj_and_manage_types_[
             df_h2_raw_adj_and_manage_types_$Environment == env_name,
             "h2_raw"
           ] <- list_raw_adj_data[["h2_raw"]][[env_name]]
         }
-
         if (env_name %in% names(list_raw_adj_data[["h2_raw_manage_type_1"]])) {
           df_h2_raw_adj_and_manage_types_[
             df_h2_raw_adj_and_manage_types_$Environment == env_name,
             "h2_raw_manage_type_1"
           ] <- list_raw_adj_data[["h2_raw_manage_type_1"]][[env_name]]
         }
-
         if (env_name %in% names(list_raw_adj_data[["h2_raw_manage_type_2"]])) {
           df_h2_raw_adj_and_manage_types_[
             df_h2_raw_adj_and_manage_types_$Environment == env_name,
             "h2_raw_manage_type_2"
           ] <- list_raw_adj_data[["h2_raw_manage_type_2"]][[env_name]]
         }
-
+        if (env_name %in% names(list_raw_adj_data[["h2_raw_manage_type_3"]])) {
+          df_h2_raw_adj_and_manage_types_[
+            df_h2_raw_adj_and_manage_types_$Environment == env_name,
+            "h2_raw_manage_type_3"
+          ] <- list_raw_adj_data[["h2_raw_manage_type_3"]][[env_name]]
+        }
+        ##
         if (env_name %in% names(list_raw_adj_data[["h2_adj"]])) {
           df_h2_raw_adj_and_manage_types_[
             df_h2_raw_adj_and_manage_types_$Environment == env_name,
             "h2_adj"
           ] <- list_raw_adj_data[["h2_adj"]][[env_name]]
         }
-
         if (env_name %in% names(list_raw_adj_data[["h2_adj_manage_type_1"]])) {
           df_h2_raw_adj_and_manage_types_[
             df_h2_raw_adj_and_manage_types_$Environment == env_name,
             "h2_adj_manage_type_1"
           ] <- list_raw_adj_data[["h2_adj_manage_type_1"]][[env_name]]
         }
-
         if (env_name %in% names(list_raw_adj_data[["h2_adj_manage_type_2"]])) {
           df_h2_raw_adj_and_manage_types_[
             df_h2_raw_adj_and_manage_types_$Environment == env_name,
             "h2_adj_manage_type_2"
           ] <- list_raw_adj_data[["h2_adj_manage_type_2"]][[env_name]]
         }
+        if (env_name %in% names(list_raw_adj_data[["h2_adj_manage_type_3"]])) {
+          df_h2_raw_adj_and_manage_types_[
+            df_h2_raw_adj_and_manage_types_$Environment == env_name,
+            "h2_adj_manage_type_3"
+          ] <- list_raw_adj_data[["h2_adj_manage_type_3"]][[env_name]]
+        }
       }
 
       # create boxplots
       boxplots_ <- plot_ly(df_h2_raw_adj_and_manage_types_, type = "box")
 
+      # initialize a counter for the colors
+      color_counter <- 1
+
       # add each column as a trace on the graphic
       for (col in names(df_h2_raw_adj_and_manage_types_)[-1]) {
         # add legend
         legend_label <- paste0(col, " (", sum(!is.na(df_h2_raw_adj_and_manage_types_[[col]])), " envir.)")
+
+        # assign color based on the counter
+        color_to_use <- bp_colors_[color_counter]
+
+        # increment the color counter for the next loop
+        color_counter <- color_counter + 1
+
+        # reset color counter if it exceeds the number of available colors
+        if (color_counter > length(bp_colors_)) {
+          color_counter <- 1
+        }
+
         # add trace with legend name
-        boxplots_ <- add_trace(boxplots_,
+        boxplots_ <- add_trace(
+          boxplots_,
           y = df_h2_raw_adj_and_manage_types_[[col]],
           name = legend_label,
-          boxpoints = "all", jitter = 0.3, pointpos = -1.8,
+          boxpoints = "all",
+          jitter = 0.3,
+          pointpos = -1.8,
+          marker = list(color = color_to_use),
+          fillcolor = color_to_use,
+          line = list(color = color_to_use),
           text = paste("Environment: ", df_h2_raw_adj_and_manage_types_$Environment)
         )
       }
 
-      # add axe and title
+      # add axes and title
       boxplots_ <- layout(boxplots_,
         yaxis = list(title = "Individual-location clonal mean heritability (h2)", range = c(0, 1.0)),
         xaxis = list(title = ""),
@@ -652,14 +733,14 @@ miss_data_singular_model_h2_out_vect_ <-
       boxplots_ <- boxplots_ %>%
         layout(hovermode = "closest")
 
-      # add annotations next to the graphics
+      # add annotations
       annotations <- list(
         list(
           text = "&#8226; <b>h2_raw :</b> h2 computed from raw phenotypes for environments",
           x = 1.2, y = 0.2,
           xref = "paper", yref = "paper",
           xanchor = "right", yanchor = "bottom",
-          showarrow = FALSE,
+          showarrow = F,
           font = list(size = 11)
         ),
         list(
@@ -667,7 +748,7 @@ miss_data_singular_model_h2_out_vect_ <-
           x = 1.2, y = 0.15,
           xref = "paper", yref = "paper",
           xanchor = "right", yanchor = "bottom",
-          showarrow = FALSE,
+          showarrow = F,
           font = list(size = 11)
         ),
         list(
@@ -675,7 +756,7 @@ miss_data_singular_model_h2_out_vect_ <-
           x = 1.2, y = 0.1,
           xref = "paper", yref = "paper",
           xanchor = "right", yanchor = "bottom",
-          showarrow = FALSE,
+          showarrow = F,
           font = list(size = 11)
         ),
         list(
@@ -683,7 +764,7 @@ miss_data_singular_model_h2_out_vect_ <-
           x = 1.2, y = 0.05,
           xref = "paper", yref = "paper",
           xanchor = "right", yanchor = "bottom",
-          showarrow = FALSE,
+          showarrow = F,
           font = list(size = 11)
         )
       )
@@ -712,24 +793,31 @@ stopCluster(cl)
 # write errors saved in miss_data_singular_model_h2_out_vect_
 writeLines(miss_data_singular_model_h2_out_vect_, paste0(
   pheno_outliers_results_path,
-  "envir_per_trait_with_miss_data_singular_model_h2_outliers.csv"
+  "envir_per_trait_with_miss_data_or_singular_model_or_h2_outliers.csv"
 ))
 
 # reformat data of retained environments for traits according to h2 outlier eviction
 file_list <- list.files(
   path = output_spats_file_path,
-  pattern = "_env_retained_based_on_h2.csv",
-  full.names = TRUE
+  pattern = "_env_retained_based_on_inlier_h2.csv",
+  full.names = T
 )
 
 # concatenate all data for these files into a single source and write the output
 df_all_trait_env_retain_ <- map_df(file_list, fread)
 fwrite(df_all_trait_env_retain_, paste0(
   pheno_outliers_results_path,
-  "envir_per_trait_retained_based_on_non_miss_data_and_estimable_h2_non_outliers_for_adj_phenotypes.csv"
+  "envir_per_trait_retained_based_on_inlier_h2_for_adj_phenotypes.csv"
+))
+
+# write new phenotype data source with retained environments
+sel_env_ <- unique(str_split(df_all_trait_env_retain_[[2]], pattern = ", ")[[2]])
+pheno_df_ <- pheno_df_[pheno_df_$Envir %in% sel_env_, ]
+
+fwrite(pheno_df_, paste0(
+  pheno_dir_path_,
+  "phenotype_data.csv"
 ))
 
 # remove single files for df_trait_env_retain_
 file.remove(file_list)
-
-

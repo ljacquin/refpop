@@ -1,4 +1,5 @@
-# script meant to detect phenotype outliers in the raw dataset
+# script meant to detect mahalanobis distance (md) outliers for phenotypic measurement
+# in the raw phenotype dataset
 # note: text is formatted from Addins using Style active file from styler package
 
 # clear memory and source libraries
@@ -23,11 +24,11 @@ library(ggplot2)
 library(plotly)
 
 # define computation mode, i.e. "local" or "cluster"
-computation_mode <- 'cluster'
+computation_mode <- "cluster"
 
 # if comutations are local in rstudio, detect and set script path
 # automatically using rstudioapi
-if ( identical(computation_mode, 'local') ){
+if (identical(computation_mode, "local")) {
   library(rstudioapi)
   setwd(dirname(getActiveDocumentContext()$path))
 }
@@ -40,16 +41,34 @@ options(expressions = 5e5)
 options(warn = -1)
 
 # set paths
-# input and output data paths
 pheno_dir_path <- "../../data/phenotype_data/"
-raw_pheno_file_path <- paste0(pheno_dir_path, "phenotype_raw_data.csv")
-pheno_no_outliers_file_path <- paste0(pheno_dir_path, "phenotype_raw_data_no_outliers.csv")
+
+raw_pheno_file_path <- paste0(
+  pheno_dir_path,
+  "raw_data_phenotype_corrected_management_types.csv"
+)
+
+pheno_no_outliers_file_path <- paste0(
+  pheno_dir_path,
+  "raw_phenotype_data_correc_manage_type_no_md_outliers.csv"
+)
+
 # outlier results data paths
 pheno_outliers_results_path <- "../../results/phenotype_outlier_detection/"
-pheno_outliers_dir_path <- paste0(pheno_outliers_results_path, "outliers_per_env_phenotypes/")
-pheno_outliers_file_path <- paste0(pheno_outliers_results_path, "phenotype_raw_data_outliers.csv")
+
+pheno_outliers_dir_path <- paste0(
+  pheno_outliers_results_path,
+  "md_outliers_per_env_raw_phenotype_data/"
+)
+
+pheno_outliers_file_path <- paste0(
+  pheno_outliers_results_path,
+  "raw_phenotype_data_correc_manage_type_md_outliers.csv"
+)
+
 # output result path for phenotype graphics
-output_pheno_graphics_path <- "../../results/graphics/phenotype_graphics/"
+output_pheno_graphics_path <-
+  "../../results/graphics/phenotype_graphics/md_outliers_per_env_raw_phenotype_data/"
 
 
 # define selected_traits_ and vars_to_keep_ for output
@@ -63,33 +82,29 @@ selected_traits_ <- c(
 )
 n_traits_ <- length(selected_traits_)
 
-# define status for imputation using miss forest
-use_miss_forest_imput_for_outlier_detection_ <- TRUE
-
 # use pca for dimension reduction
-use_pca_dim_reduc <- TRUE
+use_pca_dim_reduc <- T
 
 # knowledge based outlier detection rules
-test_sample_size_sup_to_fruit_number_ <- TRUE
-test_sample_size_sup_to_value_ <- TRUE
+test_sample_size_sup_to_fruit_number_ <- T
+test_sample_size_sup_to_value_ <- T
 size_value_ <- 20
 
 # define level of risk alpha_ for outlier detection
 alpha_ <- 0.01
 
 # plot confidence ellipse for outliers
-plot_conf_ellipse_outliers_ <- TRUE
+plot_conf_ellipse_outliers_ <- T
 
 # read raw pheno data and define proxy for outlier detection
 df_raw_ <- as.data.frame(fread(raw_pheno_file_path))
 df_proxy_ <- df_raw_
 
 # perform imputation or read already imputed data for df_proxy_
-if (use_miss_forest_imput_for_outlier_detection_ &&
-  !file.exists(paste0(
-    pheno_dir_path,
-    "phenotype_miss_forest_imputed_data_proxy.csv"
-  ))) {
+if (!file.exists(paste0(
+  pheno_dir_path,
+  "raw_phenotype_data_correc_manage_type_miss_forest_proxy.csv"
+))) {
   # set cluster for parallelized computations
   cl <- makeCluster(n_traits_)
   registerDoParallel(cl)
@@ -108,14 +123,14 @@ if (use_miss_forest_imput_for_outlier_detection_ &&
   fwrite(df_proxy_,
     file = paste0(
       pheno_dir_path,
-      "phenotype_miss_forest_imputed_data_proxy.csv"
+      "raw_phenotype_data_correc_manage_type_miss_forest_proxy.csv"
     ),
     sep = ","
   )
-} else if (use_miss_forest_imput_for_outlier_detection_) {
+} else {
   df_proxy_ <- as.data.frame(fread(paste0(
     pheno_dir_path,
-    "phenotype_miss_forest_imputed_data_proxy.csv"
+    "raw_phenotype_data_correc_manage_type_miss_forest_proxy.csv"
   ), sep = ","))
 }
 
@@ -220,12 +235,12 @@ for (env_ in env_list_) {
   # write results
   fwrite(df_raw_env_outliers_, file = paste0(
     pheno_outliers_dir_path, env_,
-    "_phenotype_outliers.csv"
+    "_raw_phenotype_data_outliers.csv"
   ))
   fwrite(df_loc_scale_,
     file = paste0(
       pheno_outliers_dir_path, env_,
-      "_location_scale_parameters.csv"
+      "_raw_phenotype_data_location_scale_parameters.csv"
     )
   )
 }
@@ -247,7 +262,7 @@ fwrite(df_raw_[-idx_outliers_df_raw_, ],
 
 # create a confidence ellipse for first env outlier detection
 if (plot_conf_ellipse_outliers_) {
-  # perform pca again but with graph = TRUE
+  # perform pca again but with graph = T
 
   # get data for env_
   for (env_ in env_list_) {
@@ -277,7 +292,7 @@ if (plot_conf_ellipse_outliers_) {
           # in an attempt to avoid the curse of dimensionality
           pca_obj <- PCA(df_proxy_env_[, selected_traits_],
             ncp = length(selected_traits_),
-            graph = TRUE
+            graph = T
           )
           n_comp_required <- n_comp_required_for_percent_explained_var(pca_obj,
             percent_explained_var = 99.999999
@@ -321,16 +336,6 @@ if (plot_conf_ellipse_outliers_) {
         idx_three_outliers_
       ))
 
-      # plot Mahalanobis dist against chi square with p = n_comp_required degrees of freedom to
-      # test for normality hypothesis of data, the latter is visibly not multivariate normal
-      # set.seed(123)
-      # maha_dist_vect <- sort(maha_dist_)
-      # chisq_vect <- sort(rchisq(
-      #   n = length(maha_dist_),
-      #   df = n_comp_required, ncp = 0
-      # ))
-      # qqplot(maha_dist_vect, chisq_vect)
-
       # plot cumulative percentage of explained variance as a function of the number of components
       n_comp_required <- n_comp_required_for_percent_explained_var(pca_obj,
         percent_explained_var = 99.999999
@@ -368,7 +373,7 @@ if (plot_conf_ellipse_outliers_) {
         )
       ggsave(paste0(
         output_pheno_graphics_path,
-        "_outlier_detection/nb_comp_99_variance_",
+        "nb_comp_99_variance_",
         env_, ".pdf"
       ))
 
@@ -377,7 +382,7 @@ if (plot_conf_ellipse_outliers_) {
       n_comp <- 2
       pdf(paste0(
         output_pheno_graphics_path,
-        "_outlier_detection/pca_cor_circle_",
+        "pca_cor_circle_",
         env_, ".pdf"
       ))
       plot(pca_obj,
@@ -454,7 +459,7 @@ if (plot_conf_ellipse_outliers_) {
       ggsave(
         paste0(
           output_pheno_graphics_path,
-          "_outlier_detection/2d_plot_outlier_detection_",
+          "2d_plot_outlier_detection_",
           env_, ".pdf"
         )
       )
@@ -513,7 +518,7 @@ if (plot_conf_ellipse_outliers_) {
       )
       rgl.snapshot(paste0(
         output_pheno_graphics_path,
-        "_outlier_detection/3d_plot_outlier_detection_",
+        "3d_plot_outlier_detection_",
         env_, ".png"
       ))
       rgl.clear()

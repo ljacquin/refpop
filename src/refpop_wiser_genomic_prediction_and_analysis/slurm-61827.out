@@ -1,0 +1,635 @@
+[1] "using refpop_env"
+Le chargement a nécessité le package : Matrix
+
+Attachement du package : ‘tidyr’
+
+Les objets suivants sont masqués depuis ‘package:Matrix’:
+
+    expand, pack, unpack
+
+Le chargement a nécessité le package : foreach
+Le chargement a nécessité le package : iterators
+Le chargement a nécessité le package : parallel
+Le chargement a nécessité le package : rngtools
+This build of rgl does not include OpenGL functions.  Use
+ rglwidget() to display results, e.g. via options(rgl.printRglwidget = TRUE).
+Le chargement a nécessité le package : Rcpp
+Le chargement a nécessité le package : RcppZiggurat
+Le chargement a nécessité le package : RcppParallel
+
+Attachement du package : ‘RcppParallel’
+
+L'objet suivant est masqué depuis ‘package:Rcpp’:
+
+    LdFlags
+
+
+Rfast: 2.1.0
+ ___ __ __ __ __    __ __ __ __ __ _             _               __ __ __ __ __     __ __ __ __ __ __   
+|  __ __ __ __  |  |  __ __ __ __ _/            / \             |  __ __ __ __ /   /__ __ _   _ __ __\  
+| |           | |  | |                         / _ \            | |                        / /          
+| |           | |  | |                        / / \ \           | |                       / /          
+| |           | |  | |                       / /   \ \          | |                      / /          
+| |__ __ __ __| |  | |__ __ __ __           / /     \ \         | |__ __ __ __ _        / /__/\          
+|    __ __ __ __|  |  __ __ __ __|         / /__ _ __\ \        |_ __ __ __ _   |      / ___  /           
+|   \              | |                    / _ _ _ _ _ _ \                     | |      \/  / /       
+| |\ \             | |                   / /           \ \                    | |         / /          
+| | \ \            | |                  / /             \ \                   | |        / /          
+| |  \ \           | |                 / /               \ \                  | |       / /          
+| |   \ \__ __ _   | |                / /                 \ \     _ __ __ __ _| |      / /          
+|_|    \__ __ __\  |_|               /_/                   \_\   /_ __ __ __ ___|      \/             team
+
+Attachement du package : ‘Rfast’
+
+Les objets suivants sont masqués depuis ‘package:robustbase’:
+
+    colMedians, rowMedians
+
+L'objet suivant est masqué depuis ‘package:data.table’:
+
+    transpose
+
+Le chargement a nécessité le package : lattice
+
+Attachement du package : ‘plotly’
+
+L'objet suivant est masqué depuis ‘package:ggplot2’:
+
+    last_plot
+
+L'objet suivant est masqué depuis ‘package:MASS’:
+
+    select
+
+L'objet suivant est masqué depuis ‘package:stats’:
+
+    filter
+
+L'objet suivant est masqué depuis ‘package:graphics’:
+
+    layout
+
+
+Attachement du package : ‘dplyr’
+
+L'objet suivant est masqué depuis ‘package:Rfast’:
+
+    nth
+
+Les objets suivants sont masqués depuis ‘package:data.table’:
+
+    between, first, last
+
+L'objet suivant est masqué depuis ‘package:MASS’:
+
+    select
+
+Les objets suivants sont masqués depuis ‘package:stats’:
+
+    filter, lag
+
+Les objets suivants sont masqués depuis ‘package:base’:
+
+    intersect, setdiff, setequal, union
+
+
+Attachement du package : ‘kernlab’
+
+L'objet suivant est masqué depuis ‘package:ggplot2’:
+
+    alpha
+
+Le chargement a nécessité le package : corpcor
+
+Attachement du package : ‘corpcor’
+
+L'objet suivant est masqué depuis ‘package:matrixcalc’:
+
+    is.positive.definite
+
+Loaded glmnet 4.1-8
+
+Loaded mixOmics 6.25.1
+Thank you for using mixOmics!
+Tutorials: http://mixomics.org
+Bookdown vignette: https://mixomicsteam.github.io/Bookdown
+Questions, issues: Follow the prompts at http://mixomics.org/contact-us
+Cite us:  citation('mixOmics')
+
+[1] "kernel: linear"
+[1] "trait: Trunk_increment"
+                RF_wiser SVR_wiser GBLUP_wiser RKHS_wiser LASSO_wiser
+gp_scenario_1       0.55      0.64        0.62       0.62        0.59
+gp_scenario_2       0.55      0.57        0.49       0.58        0.58
+gp_scenario_3       0.50      0.51        0.46       0.49        0.39
+gp_scenario_4       0.63      0.63        0.55       0.61        0.59
+gp_scenario_5       0.53      0.51        0.41       0.50        0.48
+gp_scenario_6       0.62      0.56        0.48       0.58        0.55
+gp_scenario_7       0.59      0.56        0.49       0.58        0.53
+gp_scenario_8       0.51      0.51        0.49       0.49        0.38
+gp_scenario_9       0.51      0.54        0.51       0.55        0.47
+gp_scenario_10      0.50      0.57        0.51       0.57        0.49
+gp_scenario_11      0.53      0.62        0.54       0.61        0.52
+gp_scenario_12      0.53      0.60        0.58       0.58        0.56
+gp_scenario_13      0.54      0.53        0.47       0.51        0.48
+gp_scenario_14      0.65      0.62        0.51       0.60        0.59
+gp_scenario_15      0.49      0.49        0.46       0.48        0.45
+gp_scenario_16      0.57      0.60        0.58       0.58        0.51
+gp_scenario_17      0.53      0.52        0.38       0.52        0.50
+gp_scenario_18      0.54      0.53        0.47       0.51        0.47
+gp_scenario_19      0.60      0.59        0.49       0.58        0.56
+gp_scenario_20      0.56      0.55        0.53       0.58        0.54
+gp_scenario_21      0.50      0.53        0.51       0.53        0.52
+gp_scenario_22      0.46      0.54        0.53       0.53        0.46
+gp_scenario_23      0.67      0.65        0.58       0.66        0.54
+gp_scenario_24      0.52      0.57        0.56       0.53        0.47
+gp_scenario_25      0.55      0.63        0.59       0.62        0.59
+gp_scenario_26      0.55      0.56        0.50       0.58        0.47
+gp_scenario_27      0.47      0.42        0.35       0.45        0.41
+gp_scenario_28      0.42      0.50        0.48       0.49        0.40
+gp_scenario_29      0.55      0.55        0.48       0.54        0.53
+gp_scenario_30      0.63      0.62        0.55       0.61        0.56
+gp_scenario_31      0.57      0.57        0.52       0.58        0.54
+gp_scenario_32      0.53      0.57        0.51       0.56        0.53
+gp_scenario_33      0.51      0.55        0.48       0.52        0.47
+gp_scenario_34      0.58      0.61        0.58       0.62        0.56
+gp_scenario_35      0.51      0.52        0.48       0.52        0.50
+gp_scenario_36      0.50      0.57        0.53       0.54        0.48
+gp_scenario_37      0.55      0.55        0.49       0.54        0.51
+gp_scenario_38      0.60      0.57        0.51       0.57        0.58
+gp_scenario_39      0.50      0.60        0.49       0.57        0.50
+gp_scenario_40      0.60      0.61        0.56       0.58        0.55
+gp_scenario_41      0.58      0.55        0.48       0.57        0.52
+gp_scenario_42      0.59      0.61        0.60       0.60        0.59
+gp_scenario_43      0.61      0.62        0.51       0.63        0.61
+gp_scenario_44      0.46      0.50        0.48       0.49        0.45
+gp_scenario_45      0.50      0.51        0.48       0.52        0.45
+gp_scenario_46      0.58      0.57        0.52       0.58        0.53
+gp_scenario_47      0.54      0.51        0.45       0.49        0.49
+gp_scenario_48      0.57      0.58        0.53       0.57        0.50
+gp_scenario_49      0.57      0.58        0.52       0.58        0.56
+gp_scenario_50      0.57      0.61        0.52       0.61        0.55
+gp_scenario_51      0.49      0.52        0.50       0.52        0.50
+gp_scenario_52      0.65      0.61        0.47       0.61        0.46
+gp_scenario_53      0.42      0.46        0.50       0.47        0.35
+gp_scenario_54      0.56      0.59        0.58       0.56        0.54
+gp_scenario_55      0.59      0.56        0.48       0.55        0.52
+gp_scenario_56      0.55      0.54        0.43       0.56        0.53
+gp_scenario_57      0.58      0.57        0.48       0.57        0.51
+gp_scenario_58      0.44      0.50        0.48       0.47        0.37
+gp_scenario_59      0.54      0.57        0.50       0.57        0.55
+gp_scenario_60      0.55      0.57        0.56       0.57        0.56
+gp_scenario_61      0.59      0.61        0.59       0.61        0.53
+gp_scenario_62      0.54      0.58        0.54       0.59        0.53
+gp_scenario_63      0.51      0.59        0.52       0.57        0.54
+gp_scenario_64      0.54      0.55        0.51       0.54        0.51
+gp_scenario_65      0.59      0.59        0.53       0.57        0.51
+gp_scenario_66      0.57      0.62        0.62       0.58        0.56
+gp_scenario_67      0.56      0.59        0.54       0.59        0.56
+gp_scenario_68      0.54      0.56        0.50       0.55        0.57
+gp_scenario_69      0.56      0.54        0.54       0.55        0.49
+gp_scenario_70      0.49      0.48        0.39       0.48        0.47
+gp_scenario_71      0.51      0.47        0.42       0.48        0.49
+gp_scenario_72      0.62      0.63        0.64       0.62        0.58
+gp_scenario_73      0.60      0.62        0.54       0.61        0.53
+gp_scenario_74      0.56      0.60        0.55       0.60        0.58
+gp_scenario_75      0.53      0.59        0.50       0.57        0.56
+gp_scenario_76      0.57      0.60        0.53       0.60        0.56
+gp_scenario_77      0.62      0.62        0.62       0.62        0.60
+gp_scenario_78      0.57      0.61        0.52       0.58        0.50
+gp_scenario_79      0.45      0.53        0.50       0.51        0.44
+gp_scenario_80      0.51      0.48        0.41       0.46        0.40
+gp_scenario_81      0.59      0.64        0.56       0.66        0.52
+gp_scenario_82      0.56      0.60        0.57       0.58        0.56
+gp_scenario_83      0.51      0.55        0.50       0.56        0.49
+gp_scenario_84      0.55      0.58        0.52       0.57        0.51
+gp_scenario_85      0.60      0.62        0.58       0.61        0.54
+gp_scenario_86      0.53      0.61        0.57       0.60        0.53
+gp_scenario_87      0.60      0.64        0.59       0.62        0.59
+gp_scenario_88      0.58      0.59        0.52       0.59        0.51
+gp_scenario_89      0.57      0.61        0.59       0.60        0.56
+gp_scenario_90      0.51      0.51        0.50       0.49        0.46
+gp_scenario_91      0.60      0.59        0.51       0.58        0.50
+gp_scenario_92      0.53      0.52        0.47       0.51        0.44
+gp_scenario_93      0.58      0.63        0.62       0.63        0.57
+gp_scenario_94      0.49      0.51        0.46       0.50        0.48
+gp_scenario_95      0.57      0.60        0.61       0.58        0.53
+gp_scenario_96      0.61      0.62        0.61       0.63        0.54
+gp_scenario_97      0.62      0.61        0.54       0.61        0.58
+gp_scenario_98      0.54      0.56        0.49       0.57        0.54
+gp_scenario_99      0.46      0.48        0.43       0.48        0.45
+gp_scenario_100     0.44      0.46        0.41       0.45        0.39
+pa_median           0.55      0.57        0.51       0.57        0.52
+pa_iqr              0.07      0.08        0.07       0.08        0.08
+                RF_ls_means SVR_ls_means GBLUP_ls_means RKHS_ls_means
+gp_scenario_1         0.600         0.62           0.56         0.590
+gp_scenario_2         0.560         0.58           0.49         0.590
+gp_scenario_3         0.480         0.49           0.40         0.480
+gp_scenario_4         0.550         0.57           0.50         0.580
+gp_scenario_5         0.530         0.50           0.41         0.500
+gp_scenario_6         0.590         0.59           0.49         0.630
+gp_scenario_7         0.640         0.59           0.49         0.620
+gp_scenario_8         0.530         0.53           0.50         0.500
+gp_scenario_9         0.480         0.51           0.45         0.510
+gp_scenario_10        0.390         0.43           0.41         0.430
+gp_scenario_11        0.530         0.57           0.47         0.570
+gp_scenario_12        0.590         0.61           0.59         0.590
+gp_scenario_13        0.490         0.52           0.42         0.490
+gp_scenario_14        0.590         0.60           0.51         0.610
+gp_scenario_15        0.510         0.45           0.38         0.450
+gp_scenario_16        0.560         0.59           0.55         0.550
+gp_scenario_17        0.510         0.47           0.34         0.480
+gp_scenario_18        0.400         0.46           0.39         0.440
+gp_scenario_19        0.650         0.55           0.46         0.590
+gp_scenario_20        0.540         0.54           0.49         0.570
+gp_scenario_21        0.540         0.53           0.47         0.520
+gp_scenario_22        0.500         0.49           0.46         0.520
+gp_scenario_23        0.570         0.60           0.51         0.600
+gp_scenario_24        0.540         0.60           0.56         0.570
+gp_scenario_25        0.540         0.56           0.51         0.560
+gp_scenario_26        0.510         0.56           0.48         0.550
+gp_scenario_27        0.430         0.43           0.36         0.470
+gp_scenario_28        0.600         0.65           0.60         0.620
+gp_scenario_29        0.500         0.43           0.39         0.440
+gp_scenario_30        0.600         0.56           0.51         0.570
+gp_scenario_31        0.560         0.55           0.51         0.570
+gp_scenario_32        0.550         0.55           0.45         0.560
+gp_scenario_33        0.500         0.52           0.46         0.500
+gp_scenario_34        0.570         0.58           0.52         0.590
+gp_scenario_35        0.530         0.53           0.46         0.510
+gp_scenario_36        0.500         0.51           0.49         0.500
+gp_scenario_37        0.570         0.53           0.47         0.540
+gp_scenario_38        0.610         0.57           0.45         0.580
+gp_scenario_39        0.530         0.56           0.45         0.550
+gp_scenario_40        0.580         0.60           0.52         0.570
+gp_scenario_41        0.520         0.53           0.45         0.530
+gp_scenario_42        0.520         0.53           0.49         0.540
+gp_scenario_43        0.630         0.61           0.51         0.650
+gp_scenario_44        0.430         0.46           0.45         0.470
+gp_scenario_45        0.530         0.53           0.46         0.530
+gp_scenario_46        0.500         0.54           0.50         0.550
+gp_scenario_47        0.470         0.42           0.35         0.420
+gp_scenario_48        0.580         0.58           0.51         0.570
+gp_scenario_49        0.510         0.56           0.48         0.580
+gp_scenario_50        0.560         0.57           0.49         0.550
+gp_scenario_51        0.530         0.55           0.46         0.560
+gp_scenario_52        0.720         0.62           0.46         0.640
+gp_scenario_53        0.510         0.49           0.47         0.510
+gp_scenario_54        0.450         0.48           0.48         0.460
+gp_scenario_55        0.500         0.48           0.41         0.490
+gp_scenario_56        0.610         0.60           0.50         0.620
+gp_scenario_57        0.550         0.55           0.47         0.550
+gp_scenario_58        0.470         0.48           0.44         0.480
+gp_scenario_59        0.520         0.51           0.38         0.520
+gp_scenario_60        0.480         0.53           0.51         0.520
+gp_scenario_61        0.560         0.57           0.52         0.570
+gp_scenario_62        0.470         0.53           0.52         0.540
+gp_scenario_63        0.540         0.61           0.56         0.590
+gp_scenario_64        0.580         0.59           0.50         0.600
+gp_scenario_65        0.590         0.58           0.52         0.590
+gp_scenario_66        0.540         0.58           0.57         0.550
+gp_scenario_67        0.610         0.57           0.51         0.580
+gp_scenario_68        0.540         0.57           0.51         0.580
+gp_scenario_69        0.460         0.47           0.42         0.500
+gp_scenario_70        0.540         0.50           0.43         0.500
+gp_scenario_71        0.570         0.52           0.38         0.530
+gp_scenario_72        0.550         0.60           0.58         0.580
+gp_scenario_73        0.590         0.60           0.57         0.600
+gp_scenario_74        0.510         0.54           0.51         0.530
+gp_scenario_75        0.500         0.52           0.45         0.530
+gp_scenario_76        0.550         0.62           0.49         0.620
+gp_scenario_77        0.580         0.61           0.60         0.600
+gp_scenario_78        0.520         0.54           0.45         0.530
+gp_scenario_79        0.540         0.56           0.50         0.550
+gp_scenario_80        0.510         0.50           0.44         0.490
+gp_scenario_81        0.600         0.65           0.56         0.680
+gp_scenario_82        0.540         0.57           0.50         0.570
+gp_scenario_83        0.520         0.52           0.46         0.540
+gp_scenario_84        0.460         0.49           0.43         0.500
+gp_scenario_85        0.590         0.57           0.48         0.570
+gp_scenario_86        0.530         0.56           0.50         0.560
+gp_scenario_87        0.630         0.60           0.51         0.610
+gp_scenario_88        0.620         0.59           0.49         0.600
+gp_scenario_89        0.460         0.52           0.51         0.500
+gp_scenario_90        0.480         0.52           0.51         0.500
+gp_scenario_91        0.540         0.49           0.36         0.480
+gp_scenario_92        0.520         0.48           0.41         0.490
+gp_scenario_93        0.560         0.62           0.64         0.620
+gp_scenario_94        0.510         0.55           0.50         0.540
+gp_scenario_95        0.560         0.58           0.55         0.560
+gp_scenario_96        0.580         0.54           0.50         0.560
+gp_scenario_97        0.640         0.62           0.54         0.650
+gp_scenario_98        0.540         0.57           0.49         0.590
+gp_scenario_99        0.430         0.45           0.40         0.450
+gp_scenario_100       0.430         0.43           0.36         0.430
+pa_median             0.540         0.55           0.49         0.550
+pa_iqr                0.065         0.07           0.06         0.082
+                LASSO_ls_means RF_blups SVR_blups GBLUP_blups RKHS_blups
+gp_scenario_1             0.57    0.430      0.50       0.460       0.44
+gp_scenario_2             0.56    0.380      0.40       0.350       0.40
+gp_scenario_3             0.43    0.330      0.40       0.330       0.40
+gp_scenario_4             0.56    0.380      0.40       0.310       0.41
+gp_scenario_5             0.48    0.200      0.23       0.160       0.22
+gp_scenario_6             0.60    0.370      0.38       0.310       0.39
+gp_scenario_7             0.60    0.350      0.36       0.280       0.42
+gp_scenario_8             0.43    0.430      0.47       0.410       0.42
+gp_scenario_9             0.45    0.320      0.40       0.370       0.37
+gp_scenario_10            0.42    0.150      0.22       0.220       0.18
+gp_scenario_11            0.51    0.410      0.46       0.320       0.45
+gp_scenario_12            0.54    0.500      0.51       0.500       0.51
+gp_scenario_13            0.45    0.260      0.33       0.220       0.26
+gp_scenario_14            0.56    0.370      0.35       0.340       0.37
+gp_scenario_15            0.43    0.240      0.23       0.170       0.20
+gp_scenario_16            0.47    0.410      0.45       0.410       0.41
+gp_scenario_17            0.49    0.340      0.35       0.220       0.34
+gp_scenario_18            0.36    0.440      0.44       0.370       0.38
+gp_scenario_19            0.56    0.320      0.30       0.240       0.31
+gp_scenario_20            0.53    0.180      0.23       0.200       0.25
+gp_scenario_21            0.42    0.320      0.31       0.330       0.30
+gp_scenario_22            0.43    0.390      0.41       0.380       0.40
+gp_scenario_23            0.48    0.260      0.32       0.300       0.33
+gp_scenario_24            0.51    0.370      0.45       0.430       0.40
+gp_scenario_25            0.49    0.380      0.45       0.380       0.41
+gp_scenario_26            0.43    0.390      0.45       0.410       0.42
+gp_scenario_27            0.47    0.055      0.11       0.088       0.15
+gp_scenario_28            0.55    0.550      0.56       0.490       0.53
+gp_scenario_29            0.39    0.180      0.17       0.180       0.16
+gp_scenario_30            0.51    0.410      0.41       0.360       0.40
+gp_scenario_31            0.53    0.360      0.38       0.370       0.38
+gp_scenario_32            0.52    0.370      0.36       0.340       0.35
+gp_scenario_33            0.48    0.360      0.42       0.340       0.36
+gp_scenario_34            0.58    0.400      0.43       0.340       0.43
+gp_scenario_35            0.50    0.340      0.34       0.260       0.32
+gp_scenario_36            0.45    0.310      0.40       0.380       0.36
+gp_scenario_37            0.53    0.320      0.29       0.270       0.30
+gp_scenario_38            0.55    0.380      0.32       0.240       0.32
+gp_scenario_39            0.50    0.440      0.47       0.350       0.46
+gp_scenario_40            0.45    0.500      0.52       0.400       0.45
+gp_scenario_41            0.49    0.380      0.37       0.280       0.37
+gp_scenario_42            0.49    0.330      0.36       0.290       0.33
+gp_scenario_43            0.58    0.300      0.33       0.220       0.34
+gp_scenario_44            0.44    0.340      0.39       0.420       0.39
+gp_scenario_45            0.49    0.440      0.42       0.360       0.42
+gp_scenario_46            0.49    0.390      0.39       0.350       0.42
+gp_scenario_47            0.38    0.110      0.17       0.150       0.14
+gp_scenario_48            0.51    0.370      0.38       0.370       0.36
+gp_scenario_49            0.53    0.350      0.39       0.350       0.39
+gp_scenario_50            0.50    0.450      0.48       0.370       0.46
+gp_scenario_51            0.54    0.380      0.37       0.270       0.38
+gp_scenario_52            0.59    0.360      0.35       0.220       0.34
+gp_scenario_53            0.41    0.310      0.30       0.360       0.33
+gp_scenario_54            0.39    0.350      0.37       0.390       0.36
+gp_scenario_55            0.46    0.280      0.38       0.310       0.35
+gp_scenario_56            0.58    0.340      0.39       0.310       0.39
+gp_scenario_57            0.51    0.390      0.41       0.370       0.38
+gp_scenario_58            0.43    0.260      0.30       0.290       0.27
+gp_scenario_59            0.46    0.470      0.41       0.300       0.44
+gp_scenario_60            0.49    0.320      0.37       0.370       0.36
+gp_scenario_61            0.52    0.380      0.38       0.340       0.36
+gp_scenario_62            0.46    0.370      0.40       0.390       0.40
+gp_scenario_63            0.52    0.410      0.50       0.460       0.45
+gp_scenario_64            0.52    0.450      0.46       0.390       0.46
+gp_scenario_65            0.52    0.380      0.42       0.390       0.42
+gp_scenario_66            0.49    0.350      0.41       0.450       0.37
+gp_scenario_67            0.64    0.410      0.40       0.330       0.40
+gp_scenario_68            0.51    0.370      0.44       0.390       0.44
+gp_scenario_69            0.44    0.310      0.31       0.280       0.30
+gp_scenario_70            0.38    0.340      0.31       0.230       0.30
+gp_scenario_71            0.54    0.390      0.30       0.130       0.30
+gp_scenario_72            0.48    0.380      0.45       0.470       0.40
+gp_scenario_73            0.52    0.410      0.48       0.440       0.47
+gp_scenario_74            0.53    0.270      0.34       0.370       0.32
+gp_scenario_75            0.51    0.350      0.37       0.330       0.36
+gp_scenario_76            0.53    0.430      0.50       0.370       0.47
+gp_scenario_77            0.54    0.400      0.48       0.490       0.47
+gp_scenario_78            0.46    0.370      0.41       0.320       0.37
+gp_scenario_79            0.54    0.420      0.41       0.370       0.40
+gp_scenario_80            0.48    0.240      0.29       0.250       0.24
+gp_scenario_81            0.61    0.410      0.47       0.370       0.48
+gp_scenario_82            0.54    0.440      0.49       0.410       0.48
+gp_scenario_83            0.49    0.320      0.34       0.280       0.31
+gp_scenario_84            0.44    0.330      0.35       0.310       0.34
+gp_scenario_85            0.53    0.380      0.42       0.350       0.41
+gp_scenario_86            0.51    0.260      0.39       0.350       0.36
+gp_scenario_87            0.54    0.390      0.39       0.350       0.37
+gp_scenario_88            0.58    0.430      0.44       0.330       0.46
+gp_scenario_89            0.40    0.370      0.44       0.410       0.40
+gp_scenario_90            0.44    0.350      0.35       0.350       0.33
+gp_scenario_91            0.40    0.270      0.26       0.170       0.22
+gp_scenario_92            0.43    0.300      0.31       0.270       0.31
+gp_scenario_93            0.52    0.320      0.43       0.520       0.39
+gp_scenario_94            0.42    0.430      0.45       0.350       0.43
+gp_scenario_95            0.54    0.450      0.46       0.410       0.44
+gp_scenario_96            0.50    0.410      0.40       0.380       0.40
+gp_scenario_97            0.58    0.460      0.44       0.350       0.47
+gp_scenario_98            0.55    0.280      0.34       0.290       0.35
+gp_scenario_99            0.41    0.290      0.36       0.320       0.35
+gp_scenario_100           0.42    0.240      0.24       0.170       0.23
+pa_median                 0.50    0.370      0.39       0.350       0.38
+pa_iqr                    0.09    0.090      0.10       0.100       0.09
+                LASSO_blups
+gp_scenario_1         0.310
+gp_scenario_2         0.320
+gp_scenario_3         0.260
+gp_scenario_4         0.310
+gp_scenario_5         0.150
+gp_scenario_6         0.330
+gp_scenario_7         0.350
+gp_scenario_8         0.340
+gp_scenario_9         0.390
+gp_scenario_10        0.160
+gp_scenario_11        0.370
+gp_scenario_12        0.500
+gp_scenario_13        0.150
+gp_scenario_14        0.340
+gp_scenario_15        0.170
+gp_scenario_16        0.290
+gp_scenario_17        0.210
+gp_scenario_18        0.330
+gp_scenario_19        0.190
+gp_scenario_20        0.250
+gp_scenario_21        0.260
+gp_scenario_22        0.250
+gp_scenario_23        0.150
+gp_scenario_24        0.250
+gp_scenario_25        0.370
+gp_scenario_26        0.260
+gp_scenario_27        0.140
+gp_scenario_28        0.430
+gp_scenario_29        0.110
+gp_scenario_30        0.310
+gp_scenario_31        0.380
+gp_scenario_32        0.300
+gp_scenario_33        0.340
+gp_scenario_34        0.390
+gp_scenario_35        0.300
+gp_scenario_36        0.280
+gp_scenario_37        0.250
+gp_scenario_38        0.270
+gp_scenario_39        0.420
+gp_scenario_40        0.350
+gp_scenario_41        0.280
+gp_scenario_42        0.340
+gp_scenario_43        0.220
+gp_scenario_44        0.370
+gp_scenario_45        0.340
+gp_scenario_46        0.380
+gp_scenario_47        0.055
+gp_scenario_48        0.330
+gp_scenario_49        0.280
+gp_scenario_50        0.440
+gp_scenario_51        0.360
+gp_scenario_52        0.280
+gp_scenario_53        0.200
+gp_scenario_54        0.280
+gp_scenario_55        0.250
+gp_scenario_56        0.240
+gp_scenario_57        0.360
+gp_scenario_58        0.200
+gp_scenario_59        0.280
+gp_scenario_60        0.260
+gp_scenario_61        0.300
+gp_scenario_62        0.270
+gp_scenario_63        0.320
+gp_scenario_64        0.350
+gp_scenario_65        0.330
+gp_scenario_66        0.250
+gp_scenario_67        0.400
+gp_scenario_68        0.270
+gp_scenario_69        0.270
+gp_scenario_70        0.098
+gp_scenario_71        0.300
+gp_scenario_72        0.300
+gp_scenario_73        0.330
+gp_scenario_74        0.340
+gp_scenario_75        0.370
+gp_scenario_76        0.340
+gp_scenario_77        0.280
+gp_scenario_78        0.300
+gp_scenario_79        0.370
+gp_scenario_80        0.190
+gp_scenario_81        0.370
+gp_scenario_82        0.400
+gp_scenario_83        0.190
+gp_scenario_84        0.300
+gp_scenario_85        0.270
+gp_scenario_86        0.270
+gp_scenario_87        0.340
+gp_scenario_88        0.390
+gp_scenario_89        0.290
+gp_scenario_90        0.250
+gp_scenario_91        0.190
+gp_scenario_92        0.220
+gp_scenario_93        0.270
+gp_scenario_94        0.430
+gp_scenario_95        0.350
+gp_scenario_96        0.300
+gp_scenario_97        0.250
+gp_scenario_98        0.330
+gp_scenario_99        0.280
+gp_scenario_100       0.220
+pa_median             0.300
+pa_iqr                0.090
+                GBLUP_wiser GBLUP_ls_means GBLUP_blups
+gp_scenario_1         0.530           0.49        0.39
+gp_scenario_2         0.580           0.51        0.44
+gp_scenario_3         0.610           0.52        0.43
+gp_scenario_4         0.580           0.56        0.49
+gp_scenario_5         0.640           0.59        0.55
+gp_scenario_6         0.610           0.54        0.47
+gp_scenario_7         0.620           0.54        0.47
+gp_scenario_8         0.610           0.52        0.42
+gp_scenario_9         0.570           0.54        0.46
+gp_scenario_10        0.560           0.56        0.50
+gp_scenario_11        0.550           0.52        0.42
+gp_scenario_12        0.500           0.45        0.32
+gp_scenario_13        0.610           0.55        0.49
+gp_scenario_14        0.610           0.53        0.47
+gp_scenario_15        0.660           0.62        0.56
+gp_scenario_16        0.580           0.50        0.41
+gp_scenario_17        0.610           0.58        0.50
+gp_scenario_18        0.590           0.52        0.43
+gp_scenario_19        0.610           0.56        0.50
+gp_scenario_20        0.600           0.58        0.52
+gp_scenario_21        0.640           0.58        0.52
+gp_scenario_22        0.540           0.53        0.43
+gp_scenario_23        0.600           0.55        0.49
+gp_scenario_24        0.550           0.50        0.42
+gp_scenario_25        0.590           0.52        0.44
+gp_scenario_26        0.580           0.52        0.43
+gp_scenario_27        0.640           0.59        0.53
+gp_scenario_28        0.580           0.45        0.33
+gp_scenario_29        0.620           0.62        0.58
+gp_scenario_30        0.590           0.52        0.45
+gp_scenario_31        0.610           0.56        0.49
+gp_scenario_32        0.560           0.53        0.46
+gp_scenario_33        0.600           0.53        0.45
+gp_scenario_34        0.570           0.53        0.45
+gp_scenario_35        0.610           0.54        0.46
+gp_scenario_36        0.550           0.51        0.43
+gp_scenario_37        0.640           0.60        0.55
+gp_scenario_38        0.640           0.58        0.52
+gp_scenario_39        0.560           0.53        0.44
+gp_scenario_40        0.570           0.48        0.39
+gp_scenario_41        0.620           0.58        0.51
+gp_scenario_42        0.540           0.53        0.45
+gp_scenario_43        0.580           0.52        0.46
+gp_scenario_44        0.620           0.55        0.46
+gp_scenario_45        0.600           0.55        0.46
+gp_scenario_46        0.600           0.55        0.46
+gp_scenario_47        0.660           0.61        0.57
+gp_scenario_48        0.570           0.52        0.45
+gp_scenario_49        0.580           0.51        0.43
+gp_scenario_50        0.550           0.50        0.40
+gp_scenario_51        0.590           0.54        0.46
+gp_scenario_52        0.620           0.55        0.49
+gp_scenario_53        0.610           0.57        0.49
+gp_scenario_54        0.540           0.53        0.45
+gp_scenario_55        0.630           0.56        0.49
+gp_scenario_56        0.630           0.51        0.43
+gp_scenario_57        0.620           0.57        0.51
+gp_scenario_58        0.580           0.55        0.49
+gp_scenario_59        0.580           0.53        0.44
+gp_scenario_60        0.560           0.52        0.45
+gp_scenario_61        0.570           0.54        0.47
+gp_scenario_62        0.570           0.52        0.43
+gp_scenario_63        0.610           0.52        0.43
+gp_scenario_64        0.560           0.51        0.43
+gp_scenario_65        0.600           0.55        0.47
+gp_scenario_66        0.540           0.51        0.43
+gp_scenario_67        0.590           0.54        0.46
+gp_scenario_68        0.610           0.51        0.41
+gp_scenario_69        0.580           0.56        0.50
+gp_scenario_70        0.640           0.58        0.53
+gp_scenario_71        0.660           0.63        0.57
+gp_scenario_72        0.530           0.47        0.39
+gp_scenario_73        0.580           0.49        0.40
+gp_scenario_74        0.610           0.55        0.49
+gp_scenario_75        0.560           0.54        0.47
+gp_scenario_76        0.570           0.50        0.42
+gp_scenario_77        0.560           0.48        0.39
+gp_scenario_78        0.580           0.53        0.45
+gp_scenario_79        0.570           0.53        0.45
+gp_scenario_80        0.660           0.63        0.57
+gp_scenario_81        0.560           0.49        0.41
+gp_scenario_82        0.540           0.51        0.41
+gp_scenario_83        0.590           0.55        0.48
+gp_scenario_84        0.610           0.58        0.52
+gp_scenario_85        0.580           0.54        0.46
+gp_scenario_86        0.550           0.52        0.45
+gp_scenario_87        0.590           0.55        0.48
+gp_scenario_88        0.590           0.53        0.44
+gp_scenario_89        0.530           0.50        0.41
+gp_scenario_90        0.640           0.56        0.50
+gp_scenario_91        0.640           0.61        0.56
+gp_scenario_92        0.630           0.58        0.51
+gp_scenario_93        0.540           0.48        0.40
+gp_scenario_94        0.590           0.53        0.45
+gp_scenario_95        0.550           0.49        0.39
+gp_scenario_96        0.560           0.56        0.48
+gp_scenario_97        0.650           0.53        0.45
+gp_scenario_98        0.570           0.51        0.44
+gp_scenario_99        0.630           0.57        0.48
+gp_scenario_100       0.620           0.59        0.54
+h2_median             0.590           0.53        0.46
+h2_iqr                0.042           0.04        0.06
