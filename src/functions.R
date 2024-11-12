@@ -915,6 +915,9 @@ compute_incidence_matrices_fixed_and_random_effects <- function(
   }
   x_mat <- do.call(cbind, list_x_mat)
   x_mat <- apply(x_mat, 2, as.numeric)
+  # verify that columns has at least a minimum number of 2 values different
+  # from 0 in an attempt to avoid multicollinearity and unreliable estimates
+  x_mat <- x_mat[, colSums(x_mat != 0) > 1]
 
   # define list of incidence matrices for random effects
   list_z_mat <- vector("list", length(random_effects_vars))
@@ -1323,6 +1326,36 @@ compute_transformed_vars_and_ols_estimates <- function(
   )
 }
 
+# function to generate row and position variables by environment
+generate_row_position_variables_by_environment <- function(df) {
+  for (country in unique(df$Country)) {
+    for (year in unique(df$Year)) {
+      for (management in unique(df$Management)) {
+        # variables new names
+        row_col_name <- paste0(
+          substr(country, 1, 3), "_", year, "_", management, "_row"
+        )
+        pos_col_name <- paste0(
+          substr(country, 1, 3), "_", year, "_", management, "_position"
+        )
+        # add new columns
+        df[[row_col_name]] <- ifelse(
+          df$Country == country & df$Year == year &
+            df$Management == management,
+          df$Row, 0
+        )
+        df[[pos_col_name]] <- ifelse(
+          df$Country == country & df$Year == year &
+            df$Management == management,
+          df$Position, 0
+        )
+      }
+    }
+  }
+  return(df)
+}
+
+
 # function which computes phenotypes approximating genetic values using whitening
 estimate_wiser_phenotype <- function(omic_df, raw_pheno_df, trait_,
                                      fixed_effects_vars = c(
@@ -1352,10 +1385,10 @@ estimate_wiser_phenotype <- function(omic_df, raw_pheno_df, trait_,
                                      nrow_approx_lim_raw_dataset_zca_cor = 20e3,
                                      nrow_approx_lim_raw_dataset_pca_cor = 20e3,
                                      nrow_approx_lim_raw_dataset_chol = 40e3) {
+  # compute transformed variables associated to fixed effects and least-squares
+  # to estimate these
   tryCatch(
     {
-      # compute transformed variables associated to fixed effects and least-squares
-      # to estimate these
       transform_and_ls_obj <- compute_transformed_vars_and_ols_estimates(
         omic_df, raw_pheno_df, trait_,
         fixed_effects_vars,
@@ -1466,9 +1499,9 @@ estimate_wiser_phenotype <- function(omic_df, raw_pheno_df, trait_,
       ))
     },
     error = function(e) {
-      cat(
+      return(cat(
         "Error with : ", conditionMessage(e), "\n"
-      )
+      ))
     }
   )
 }

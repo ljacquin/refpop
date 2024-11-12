@@ -458,9 +458,12 @@ subfolders of <code>src/</code> are described as follows:</p>
 <ul>
 <li><p><code>refpop_data_treatment_and_analysis/</code></p>
 <ul>
-<li><p><code>refpop_0_phenotype_outlier_detection_per_env.R</code>: This
-script conducts outlier detection for phenotypes using two methods. The
-first method employs robust multivariate outlier detection, which
+<li><p><code>refpop_0_raw_phenotype_data_manage_type_correction.R</code>:
+This script corrects manual annotation errors related to management
+types in the raw phenotypic dataset.</p></li>
+<li><p><code>refpop_1_raw_phenotype_data_outlier_detection_per_env.R</code>:
+This script conducts outlier detection for phenotypes using two methods.
+The first method employs robust multivariate outlier detection, which
 considers the covariance structure among phenotypic measurements of
 traits. This method utilizes the Mahalanobis distance (MD) with the
 minimum covariance determinant (MCD) estimator to mitigate contamination
@@ -479,7 +482,7 @@ of fruits per tree (at harvest date).<br />
 <p>
 </p></li>
 </ul></li>
-<li><p><code>refpop_1_spat_hetero_correct_per_env_trait_and_h2_estim.R</code>:
+<li><p><code>refpop_2_raw_phenotype_data_spat_hetero_correct_and_h2_estim.R</code>:
 For each trait, this script applies spatial heterogeneity correction to
 the cleaned phenotype dataset and computes the distributions of
 heritability values, which are derived from estimates in each
@@ -492,18 +495,20 @@ using the median absolute deviation (MAD) as a unilateral test and
 excludes them for further analysis and computations, such as adjusted
 least squares means (ls-means) of phenotypes or the computed
 heritability using pooled data from all environments.</p></li>
-<li><p><code>refpop_2_adjusted_lsmeans_phenotype.R</code>: This script
+<li><p><code>refpop_3_adjusted_ls_mean_phenotypes.R</code>: This script
 computes the adjusted phenotypic ls-means for each genotype across
 environments, using the adjusted phenotypes obtained from spatial
 heterogeneity correction in each environment. The least-squares means
 (ls-means) are computed after fitting a multiple linear regression model
 that includes genotype and environment effects as covariates, along with
-the overall mean.</p></li>
-</ul>
+the overall mean.</p>
+<p>
+</p>
 <p>Note that the <code>R</code> script in this subfolder are prefixed
 with <code>refpop_0</code>, <code>refpop_1</code>, and
 <code>refpop_2</code>, indicating their sequential execution
 order.</p></li>
+</ul></li>
 <li><p><code>refpop_data_structure_analysis/</code></p>
 <ul>
 <li><code>refpop_genomic_data_structure_analysis.R</code>: This script
@@ -522,9 +527,12 @@ recommended for this (future work).
 <p>
 </p></li>
 </ul></li>
-<li><p><code>refpop_genomic_prediction_and_analysis/</code></p>
+<li><p><code>refpop_genomic_prediction_and_analysis/</code> (superseded
+by <code>refpop_wiser_genomic_prediction_and_analysis/</code> in the
+workflow, see <code>execute_refpop_tasks_and_analyses.sh</code> in the
+main <code>refpop/</code> repository)</p>
 <ul>
-<li><p><code>refpop_genomic_prediction_trait.R</code>: This script
+<li><code>refpop_genomic_prediction_trait.R</code>: This script
 evaluates, for a defined trait, the distributions of genomic prediction
 accuracies associated to several prediction methods, for the adjusted
 phenotypic ls-means. These distributions are evaluated using K-folds
@@ -534,14 +542,19 @@ ability) between the predicted and adjusted phenotypic ls-means. The
 implemented prediction methods are random forest (RF), support vector
 regression (SVR), reproducing kernel hilbert space regression (RKHS),
 genomic blup (GBLUP) and least absolute shrinkage and selection operator
-(LASSO).</p></li>
-<li><p><code>refpop_wiser_genomic_prediction_trait.R</code>: This script
+(LASSO).
+<p>
+</p></li>
+</ul></li>
+<li><p><code>refpop_wiser_genomic_prediction_and_analysis/</code></p>
+<ul>
+<li><code>refpop_wiser_genomic_prediction_trait.R</code>: This script
 evaluates, for a defined trait, the distributions of genomic prediction
 accuracies associated to several prediction methods, for wiser estimated
 phenotypes and the adjusted phenotypic ls-means. These distributions are
 evaluated using K-folds cross-validation, for n shuffling scenarios of
 the refpop population, and using the pearson correlation as a measure of
-accuracy (predictive ability) between :</p>
+accuracy (predictive ability) between :
 <ul>
 <li><ol style="list-style-type: decimal">
 <li>predicted and wiser estimated phenotypes.</li>
@@ -552,10 +565,10 @@ accuracy (predictive ability) between :</p>
 </p></li>
 </ol></li>
 </ul>
-<p>The implemented prediction methods are random forest (RF), support
+The implemented prediction methods are random forest (RF), support
 vector regression (SVR), reproducing kernel hilbert space regression
 (RKHS), genomic blup (GBLUP), and least absolute shrinkage and selection
-operator (LASSO).</p></li>
+operator (LASSO).</li>
 </ul></li>
 </ul></li>
 </ul>

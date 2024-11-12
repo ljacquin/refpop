@@ -106,9 +106,6 @@ pkgs_to_export_ <- c(
 geno_dir_path <- "../../data/genotype_data/"
 pheno_dir_path <- "../../data/phenotype_data/"
 
-# set path for identified environment and phenotypic outliers
-outlier_dir_path <- "../../results/phenotype_outlier_detection/"
-
 # set path for wiser phenotypes estimated using whitening
 wiser_pheno_dir_path <- "../../data/phenotype_data/wiser_phenotype_estimates_env/"
 
@@ -128,8 +125,11 @@ traits_ <- c(
   "Scab", "Powdery_mildew", "Weight_sample"
 )
 
+# define selected year and management type for analysis
+sel_year_management <- "2023_1"
+
 # get kernel and trait arguments
-args <- commandArgs(trailingOnly = TRUE)
+args <- commandArgs(trailingOnly = T)
 env_num <- as.integer(args[1])
 kernel_num <- as.integer(args[2])
 trait_num <- as.integer(args[3])
@@ -155,33 +155,23 @@ n_shuff_ <- 20
 # according to a uniform distribution
 snp_sample_size_ <- 50e3
 
-# get environments based on (estimable) heritabilities which are not identified
-# as outliers (i.e. kept environments after SpATS(), cf.
-# refpop_1_spat_hetero_correct_per_env_trait_and_h2_estim.R)
-sel_env_ <- as.data.frame(
-  fread(
-    normalizePath(paste0(
-      outlier_dir_path,
-      "envir_per_trait_retained_based_on_non_miss_data_and_estimable_h2_non_outliers_for_adj_phenotypes.csv"
-    ))
-  )
-)
-sel_env_ <- str_split(
-  sel_env_[sel_env_$trait == trait_, ],
-  pattern = ", "
-)[[2]]
-sel_env_ <- sel_env_[str_detect(sel_env_, pattern = "2023")]
-env_ <- sel_env_[env_num]
+# get phenotype data
+raw_pheno_df <- as.data.frame(fread(paste0(
+  pheno_dir_path, "phenotype_data.csv"
+)))
+
+# get fist environment for selected year
+list_env_sel_year_manage <- raw_pheno_df$Envir[
+  str_detect(raw_pheno_df$Envir, pattern = sel_year_management)
+]
+env_ <- list_env_sel_year_manage[env_num]
 
 # print combination of kernel, trait and analyzed environment
 print(paste0("kernel: ", kernel_))
 print(paste0("trait: ", trait_))
 print(paste0("environment: ", env_))
 
-# get raw phenotype for selected environments and genotype data
-raw_pheno_df <- as.data.frame(fread(paste0(
-  pheno_dir_path, "phenotype_raw_data_no_outliers.csv"
-)))
+# get phenotype for selected environments and genotype data
 raw_pheno_df <- raw_pheno_df[raw_pheno_df$Envir == env_, ]
 raw_pheno_df <- raw_pheno_df[!is.na(raw_pheno_df[, trait_]), ]
 
@@ -227,8 +217,9 @@ omic_df <- merged_df[, -match(
 )]
 
 # assign genotype names to omic_df rows and get number of genotypes
-rownames(omic_df) <- pheno_df$Genotype
-n <- length(pheno_df$Genotype)
+rownames(omic_df) <- merged_df$Genotype
+n <- length(merged_df$Genotype)
+rm(merged_df)
 
 # compute wiser phenotype, corrected for fixed effects which takes into account
 # genetic covariance between genotypes, using a whitening algorithm and
@@ -339,7 +330,7 @@ if (file.exists(paste0(
 merged_df <- merge(ls_means_df, wiser_pheno_df, by = "Genotype")
 ls_means_trait_ <- merged_df[, trait_]
 v_hat <- merged_df[, "v_hat"]
-identical(rownames(omic_df), as.character(merged_df$Genotype))
+omic_df <- omic_df[rownames(omic_df) %in% merged_df$Genotype, ]
 
 # create directory for trait_ graphics if it does not exist
 if (!dir.exists(paste0(output_pred_graphics_path, trait_, "/"))) {
@@ -373,7 +364,7 @@ df_result_ <- foreach(
 ) %dopar% {
   # set seed, define a new set of indices,
   set.seed(shuff_ * mult_seed_by_)
-  idx_ <- sample(1:n, size = n, replace = FALSE)
+  idx_ <- sample(1:n, size = n, replace = F)
   fold_results <- foreach(
     fold_ = 1:k_folds_,
     .packages = pkgs_to_export_,
@@ -430,7 +421,7 @@ df_result_ <- foreach(
     gaussian_svr_model <- ksvm(
       x = as.matrix(omic_df[idx_train, ]),
       y = v_hat[idx_train],
-      scaled = FALSE, type = "eps-svr",
+      scaled = F, type = "eps-svr",
       kernel = "rbfdot",
       kpar = "automatic", C = c_par, epsilon = 0.1
     )
@@ -480,10 +471,10 @@ df_result_ <- foreach(
 
     # train and predict with LASSO
     cv_fit_lasso_model <- cv.glmnet(
-      intercept = TRUE, y = v_hat[idx_train],
+      intercept = T, y = v_hat[idx_train],
       x = as.matrix(omic_df[idx_train, ]),
       type.measure = "mse", alpha = 1.0, nfold = 10,
-      parallel = TRUE
+      parallel = T
     )
     f_hat_val_lasso <- predict(cv_fit_lasso_model,
       newx = as.matrix(omic_df[idx_val, ]),
@@ -524,7 +515,7 @@ df_result_ <- foreach(
     gaussian_svr_model <- ksvm(
       x = as.matrix(omic_df[idx_train, ]),
       y = ls_means_trait_[idx_train],
-      scaled = FALSE, type = "eps-svr",
+      scaled = F, type = "eps-svr",
       kernel = "rbfdot",
       kpar = "automatic", C = c_par, epsilon = 0.1
     )
@@ -574,10 +565,10 @@ df_result_ <- foreach(
 
     # train and predict with LASSO
     cv_fit_lasso_model <- cv.glmnet(
-      intercept = TRUE, y = ls_means_trait_[idx_train],
+      intercept = T, y = ls_means_trait_[idx_train],
       x = as.matrix(omic_df[idx_train, ]),
       type.measure = "mse", alpha = 1.0, nfold = 10,
-      parallel = TRUE
+      parallel = T
     )
     f_hat_val_lasso <- predict(cv_fit_lasso_model,
       newx = as.matrix(omic_df[idx_val, ]),
@@ -624,13 +615,13 @@ for (i in seq_along(method_names)) {
     type = "violin", # specify violin plot
     y = df_pa_[[method_names[i]]],
     name = method_names[i],
-    points = FALSE, # show all points
+    points = F, # show all points
     jitter = 0.3, # add jitter for spread
     pointpos = -1.8, # adjust point position relative to the violin plot
     marker = list(color = pa_colors_[i]),
     fillcolor = pa_colors_[i],
     line = list(color = pa_colors_[i]),
-    meanline = list(visible = FALSE), # do not show mean line
+    meanline = list(visible = F), # do not show mean line
     scalemode = "width", # keep width constant for comparison
     opacity = 0.6 # slight transparency to see the boxplot behind it
   )
@@ -647,7 +638,7 @@ for (i in seq_along(method_names)) {
     fillcolor = "rgba(255,255,255,0)", # transparent fill to see the violin plot underneath
     width = 0.2, # narrower boxplot to fit inside the violin
     notchwidth = 0.4, # add notch for median
-    showlegend = FALSE # hide boxplot from legend
+    showlegend = F # hide boxplot from legend
   )
 }
 
@@ -720,13 +711,13 @@ for (i in seq_along(method_names)) {
     type = "violin", # specify violin plot
     y = df_h2_[[method_names[i]]],
     name = method_names[i],
-    points = FALSE, # remove points
+    points = F, # remove points
     jitter = 0.3, # add jitter for spread (not used since points are removed)
     pointpos = -1.8, # adjust point position relative to the violin plot (not used here)
     marker = list(color = h2_colors_[i]),
     fillcolor = h2_colors_[i],
     line = list(color = h2_colors_[i]),
-    meanline = list(visible = FALSE), # do not show mean line
+    meanline = list(visible = F), # do not show mean line
     scalemode = "width", # keep width constant for comparison
     opacity = 0.6 # slight transparency to see the boxplot behind it
   )
@@ -743,7 +734,7 @@ for (i in seq_along(method_names)) {
     fillcolor = "rgba(255,255,255,0)", # transparent fill to see the violin plot underneath
     width = 0.2, # narrower boxplot to fit inside the violin
     notchwidth = 0.4, # add notch for median
-    showlegend = FALSE # hide boxplot from legend
+    showlegend = F # hide boxplot from legend
   )
 }
 

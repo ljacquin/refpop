@@ -1,4 +1,4 @@
-# script meant to analyse refpop pedigree data
+# script meant to analyse refpop pedigree and phenotye data structure
 # note: text is formatted from Addins using Style active file from styler package
 
 # clear memory and source libraries
@@ -103,7 +103,7 @@ colnames(pedig_df)[
 ] <- "Genotype"
 
 # merge pedig_df with geno_fam_orig_df
-pedig_df <- merge(pedig_df, geno_fam_orig_df, by = "Genotype", all = TRUE)
+pedig_df <- merge(pedig_df, geno_fam_orig_df, by = "Genotype", all = T)
 pedig_df <- drop_na(pedig_df, any_of("Family"))
 pedig_df <- pedig_df[match(unique(pedig_df$Genotype), pedig_df$Genotype), ]
 
@@ -161,7 +161,7 @@ fig_x_y <- fig_x_y %>% layout(
 saveWidget(fig_x_y,
   file = paste0(
     output_pedig_graphics_path,
-    "complete_pedigree_refpop_umap_2d_family_as_label.html"
+    "complete_refpop_pedigree_umap_2d_family_as_label.html"
   )
 )
 
@@ -204,14 +204,14 @@ fig_x_y <- fig_x_y %>% layout(
 saveWidget(fig_x_y,
   file = paste0(
     output_pedig_graphics_path,
-    "complete_pedigree_refpop_umap_2d_origin_as_label.html"
+    "complete_refpop_pedigree_umap_2d_origin_as_label.html"
   )
 )
 
 # apply umap to pedigree and phenotype data
 pheno_df <- as.data.frame(fread(paste0(
   pheno_dir_path,
-  "adjusted_ls_means_phenotypes.csv"
+  "adjusted_ls_mean_phenotypes.csv"
 )))
 
 # center and scale data for umap and replace few na (13 in dataframe)
@@ -277,7 +277,7 @@ fig_x_y <- fig_x_y %>% layout(
 saveWidget(fig_x_y,
   file = paste0(
     output_pheno_graphics_path,
-    "complete_phenotype_refpop_umap_2d_family_as_label.html"
+    "complete_refpop_phenotype_umap_2d_family_as_label.html"
   )
 )
 
@@ -320,7 +320,7 @@ fig_x_y <- fig_x_y %>% layout(
 saveWidget(fig_x_y,
   file = paste0(
     output_pheno_graphics_path,
-    "complete_phenotype_refpop_umap_2d_origin_as_label.html"
+    "complete_refpop_phenotype_umap_2d_origin_as_label.html"
   )
 )
 
@@ -378,7 +378,7 @@ fig_x_y <- fig_x_y %>% layout(
 saveWidget(fig_x_y,
   file = paste0(
     output_pedig_graphics_path,
-    "complete_pedigree_phenotype_refpop_umap_2d_family_as_label.html"
+    "complete_refpop_pedigree_phenotype_umap_2d_family_as_label.html"
   )
 )
 
@@ -421,7 +421,7 @@ fig_x_y <- fig_x_y %>% layout(
 saveWidget(fig_x_y,
   file = paste0(
     output_pedig_graphics_path,
-    "complete_pedigree_phenotype_refpop_umap_2d_origin_as_label.html"
+    "complete_refpop_pedigree_phenotype_umap_2d_origin_as_label.html"
   )
 )
 
@@ -429,7 +429,7 @@ saveWidget(fig_x_y,
 
 # pedig_incid_mat
 pedig_pca_obj_ <- pca(pedig_incid_mat,
-  ncomp = 2, center = TRUE, scale = TRUE
+  ncomp = 2, center = T, scale = T
 )
 pedig_pca_mat_ <- as.data.frame(pedig_pca_obj_$variates$X)
 pedig_pca_exp_var_ <- pedig_pca_obj_$prop_expl_var$X
@@ -479,7 +479,7 @@ fig_x_y <- fig_x_y %>% layout(
 # save graphics
 saveWidget(fig_x_y, file = paste0(
   output_pedig_graphics_path,
-  "complete_pca_pedigree_family_as_label.html"
+  "complete_refpop_pedigree_pca_family_as_label.html"
 ))
 
 # plot for origin
@@ -525,13 +525,13 @@ fig_x_y <- fig_x_y %>% layout(
 # save graphics
 saveWidget(fig_x_y, file = paste0(
   output_pedig_graphics_path,
-  "complete_pca_pedigree_origin_as_label.html"
+  "complete_refpop_pedigree_pca_origin_as_label.html"
 ))
 
 # pheno_df
 pheno_df <- pedig_pheno_df[, selected_traits_]
 pheno_pca_obj_ <- pca(pheno_df,
-  ncomp = 2, center = TRUE, scale = TRUE
+  ncomp = 2, center = T, scale = T
 )
 pheno_pca_mat_ <- as.data.frame(pheno_pca_obj_$variates$X)
 pheno_pca_exp_var_ <- pheno_pca_obj_$prop_expl_var$X
@@ -581,7 +581,7 @@ fig_x_y <- fig_x_y %>% layout(
 # save graphics
 saveWidget(fig_x_y, file = paste0(
   output_pheno_graphics_path,
-  "complete_pca_phenotype_family_as_label.html"
+  "complete_refpop_phenotype_pca_family_as_label.html"
 ))
 
 # plot for origin
@@ -627,13 +627,13 @@ fig_x_y <- fig_x_y %>% layout(
 # save graphics
 saveWidget(fig_x_y, file = paste0(
   output_pheno_graphics_path,
-  "complete_pca_phenotype_origin_as_label.html"
+  "complete_refpop_phenotype_pca_origin_as_label.html"
 ))
 
 # pedig_pheno_df
 pedig_pheno_pca_obj_ <- pca(
   pedig_pheno_df,
-  ncomp = 2, center = TRUE, scale = TRUE
+  ncomp = 2, center = T, scale = T
 )
 pedig_pheno_pca_mat_ <- as.data.frame(pedig_pheno_pca_obj_$variates$X)
 pedig_pheno_pca_exp_var_ <- pedig_pheno_pca_obj_$prop_expl_var$X
@@ -683,7 +683,7 @@ fig_x_y <- fig_x_y %>% layout(
 # save graphics
 saveWidget(fig_x_y, file = paste0(
   output_pedig_graphics_path,
-  "complete_pca_pedigree_phenotype_family_as_label.html"
+  "complete_refpop_pedigree_phenotype_pca_family_as_label.html"
 ))
 
 # plot for origin
@@ -729,5 +729,5 @@ fig_x_y <- fig_x_y %>% layout(
 # save graphics
 saveWidget(fig_x_y, file = paste0(
   output_pedig_graphics_path,
-  "complete_pca_pedigree_phenotype_origin_as_label.html"
+  "complete_refpop_pedigree_phenotype_pca_origin_as_label.html"
 ))

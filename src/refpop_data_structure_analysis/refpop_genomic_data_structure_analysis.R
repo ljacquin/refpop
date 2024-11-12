@@ -1,4 +1,4 @@
-# script meant to analyse refpop genotypic data
+# script meant to analyse refpop genotypic data (i.e. genomic data)
 # note: text is formatted from Addins using Style active file from styler package
 
 # clear memory and source libraries
@@ -60,8 +60,8 @@ bed_file <- paste0(geno_dir_path, "refpop_genotype.bed")
 bim_file <- paste0(geno_dir_path, "refpop_genotype.bim")
 fam_file <- paste0(geno_dir_path, "refpop_genotype.fam")
 
-read_with_bigsnpr <- TRUE
-perform_umap_ <- FALSE
+read_with_bigsnpr <- T
+perform_umap_ <- F
 
 # define umap training and plot parameters
 
@@ -78,7 +78,7 @@ pca_refpop_train_data <- "complete"
 vect_origin_family_or_genotype_as_label_ <- c("origin", "family")
 
 # if umap_refpop_train_data = "accessions", should progenies be projected using umap ?
-predict_umap_progeny_ <- FALSE
+predict_umap_progeny_ <- F
 
 # color function and palettes for genotypes, families and origins
 
@@ -176,7 +176,7 @@ geno_fam_orig_vect_ <- c("Genotype", "Family", "Origin")
 
 # merge geno_df with geno_origin
 geno_df <- merge(geno_df, geno_origin_[, geno_fam_orig_vect_],
-  by = "Genotype", all = TRUE
+  by = "Genotype", all = T
 )
 geno_df <- geno_df %>% dplyr::select(c(Genotype, Family, Origin), everything())
 idx_origin_geno_names <- which(colnames(geno_df) %in% c(
@@ -472,7 +472,7 @@ for (use_origin_family_or_genotype_as_label_ in
   geno_df_ <- geno_df[, -match(c("Family", "Origin"), colnames(geno_df))]
   geno_df_ <- remove_monomorphic_markers(geno_df_)$filtered_df
   geno_pca_obj_ <- pca(geno_df_[, -match("Genotype", colnames(geno_df_))],
-    ncomp = 500, center = TRUE, scale = TRUE
+    ncomp = 500, center = T, scale = T
   )
   geno_pca_mat_ <- as.data.frame(geno_pca_obj_$variates$X)
   geno_pca_exp_var_ <- geno_pca_obj_$prop_expl_var$X

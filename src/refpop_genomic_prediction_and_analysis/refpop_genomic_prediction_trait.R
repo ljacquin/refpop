@@ -1,4 +1,4 @@
-# script meant to perform genomic prediction and analyses for refpop
+# script meant to perform ls-means genomic prediction and analyses for the refpop
 # note: text is formatted from Addins using Style active file from styler package
 
 # clear memory and source libraries
@@ -103,7 +103,7 @@ traits_ <- c(
 )
 
 # get kernel and trait arguments
-args <- commandArgs(trailingOnly = TRUE)
+args <- commandArgs(trailingOnly = T)
 trait_num <- as.integer(args[1])
 
 # define trait_
@@ -123,17 +123,12 @@ n_shuff_ <- 20
 # get phenotype and genotype data, and family and origin info
 pheno_df <- as.data.frame(fread(paste0(
   pheno_dir_path,
-  "adjusted_ls_means_phenotypes.csv"
+  "adjusted_ls_mean_phenotypes.csv"
 )))
 
 geno_df <- as.data.frame(fread(paste0(
   geno_dir_path,
   "genotype_data.csv"
-)))
-
-geno_fam_orig_df <- as.data.frame(fread(paste0(
-  geno_dir_path,
-  "genotype_family_origin_information.csv"
 )))
 
 # remove monomorphic markers
@@ -185,7 +180,7 @@ df_result_ <- foreach(
 ) %dopar% {
   # set seed, define a new set of indices,
   set.seed(shuff_ * mult_seed_by_)
-  idx_ <- sample(1:n, size = n, replace = FALSE)
+  idx_ <- sample(1:n, size = n, replace = F)
 
   fold_results <- foreach(
     fold_ = 1:k_folds_,
@@ -231,7 +226,7 @@ df_result_ <- foreach(
     gaussian_svr_model <- ksvm(
       x = as.matrix(geno_df[idx_train, ]),
       y = pheno_df[idx_train, trait_],
-      scaled = FALSE, type = "eps-svr",
+      scaled = F, type = "eps-svr",
       kernel = "rbfdot",
       kpar = "automatic", C = c_par, epsilon = 0.1
     )
@@ -280,10 +275,10 @@ df_result_ <- foreach(
 
     # train and predict with LASSO
     cv_fit_lasso_model <- cv.glmnet(
-      intercept = TRUE, y = pheno_df[idx_train, trait_],
+      intercept = T, y = pheno_df[idx_train, trait_],
       x = as.matrix(geno_df[idx_train, ]),
       type.measure = "mse", alpha = 1.0, nfold = 10,
-      parallel = TRUE
+      parallel = T
     )
     f_hat_val_lasso <- predict(cv_fit_lasso_model,
       newx = as.matrix(geno_df[idx_val, ]),

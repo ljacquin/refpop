@@ -273,7 +273,7 @@ for (file_ in files_names_spats_adj_pheno) {
             c("country", "year"),
             colnames(df_)
           )], 2, as.numeric),
-          ncomp = 2, center = TRUE, scale = TRUE
+          ncomp = 2, center = T, scale = T
         )
         pca_mat_ <- as.data.frame(pca_obj_$variates$X)
         pca_exp_var_ <- pca_obj_$prop_expl_var$X

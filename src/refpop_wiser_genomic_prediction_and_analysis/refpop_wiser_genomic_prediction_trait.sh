@@ -9,5 +9,5 @@
 #SBATCH --mem-per-cpu=64
 #SBATCH --cpus-per-task=12
 kernel_num_par=$1
-trait_num_par=$2 
-Rscript refpop_wiser_genomic_prediction_trait.R $kernel_num_par $trait_num_par  
+trait_num_par=$2
+Rscript refpop_wiser_genomic_prediction_trait.R $kernel_num_par $trait_num_par
