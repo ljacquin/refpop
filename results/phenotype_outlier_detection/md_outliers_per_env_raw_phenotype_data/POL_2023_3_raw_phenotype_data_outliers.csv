@@ -1,0 +1,7 @@
+Row,Position,Genotype,Management,Checks,Year,Country,Country_Year,Harvest_date,Fruit_weight,Fruit_number,Fruit_weight_single,Color_over,Russet_freq_all,Trunk_diameter,Trunk_increment,Flowering_intensity,Flowering_begin,Flowering_full,Flowering_end,Scab,Powdery_mildew,Scab_fruits,Sample_size,Weight_sample,Country_Management,Envir
+11,35,582,3,"",2023,POL,POL_2023,,,,,,,47.83,2.82,25,118,,,1,9,,,,POL_3,POL_2023_3
+12,65,DLO_12_221,3,"",2023,POL,POL_2023,,,,,,,72.9,14.77,12.5,119,,,1,4,,,,POL_3,POL_2023_3
+12,118,93,3,"",2023,POL,POL_2023,243,1.28,5,256,0,,49.64,10.92,37.5,121,,,1,2,,,,POL_3,POL_2023_3
+14,8,DLO_12_162,3,"",2023,POL,POL_2023,,,,,,,82.21,21.5,75,120,,,1,3,,,,POL_3,POL_2023_3
+14,11,I_W037,3,"",2023,POL,POL_2023,,,,,,,77.77,18.79,12.5,117,,,1,7,,,,POL_3,POL_2023_3
+15,25,143,3,"",2023,POL,POL_2023,,,,,,,41.75,0,12.5,122,,,7,5,,,,POL_3,POL_2023_3

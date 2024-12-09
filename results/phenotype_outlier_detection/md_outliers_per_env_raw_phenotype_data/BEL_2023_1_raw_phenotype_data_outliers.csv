@@ -1,0 +1,13 @@
+Row,Position,Genotype,Management,Checks,Year,Country,Country_Year,Harvest_date,Fruit_weight,Fruit_number,Fruit_weight_single,Color_over,Russet_freq_all,Trunk_diameter,Trunk_increment,Flowering_intensity,Flowering_begin,Flowering_full,Flowering_end,Scab,Powdery_mildew,Scab_fruits,Sample_size,Weight_sample,Country_Management,Envir
+18,19,I_J036,1,"",2023,BEL,BEL_2023,,,,,,,,,,,,,1,8,,,,BEL_1,BEL_2023_1
+18,34,40,1,"",2023,BEL,BEL_2023,242,12.008,152,79,,,,,,,,,4,1,,20,1.58,BEL_1,BEL_2023_1
+18,77,508,1,"",2023,BEL,BEL_2023,257,9.648,72,134,,,,,,,,,3,3,,20,2.68,BEL_1,BEL_2023_1
+18,85,739,1,"",2023,BEL,BEL_2023,242,0.54,6,90,,,,,,,,,4,1,,4,0.36,BEL_1,BEL_2023_1
+19,36,TeBr_027,1,"",2023,BEL,BEL_2023,277,5.445,9,605,,,,,,,,,4,1,,2,1.21,BEL_1,BEL_2023_1
+19,48,1218,1,"",2023,BEL,BEL_2023,256,11.468,122,94,,,,,,,,,8,1,,20,1.88,BEL_1,BEL_2023_1
+20,24,750,1,"",2023,BEL,BEL_2023,284,1.43,9,158.8888889,,,,,,,,,1,1,,9,1.43,BEL_1,BEL_2023_1
+20,61,40,1,"",2023,BEL,BEL_2023,216,23.322,338,69,,,,,,,,,1,1,,20,1.38,BEL_1,BEL_2023_1
+20,101,40,1,"",2023,BEL,BEL_2023,216,15.796,359,44,,,,,,,,,2,1,,20,0.88,BEL_1,BEL_2023_1
+21,41,65,1,Golden_Delicious,2023,BEL,BEL_2023,242,11.336,109,104,,,,,,,,,4,1,,20,2.08,BEL_1,BEL_2023_1
+21,46,40,1,"",2023,BEL,BEL_2023,235,11.088,198,56,,,,,,,,,4,1,,20,1.12,BEL_1,BEL_2023_1
+26,30,TeBr_021,1,"",2023,BEL,BEL_2023,,,,,,,,,,,,,4,2,,,,BEL_1,BEL_2023_1

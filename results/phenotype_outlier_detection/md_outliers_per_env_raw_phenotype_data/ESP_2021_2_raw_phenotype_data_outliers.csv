@@ -1,0 +1,7 @@
+Row,Position,Genotype,Management,Checks,Year,Country,Country_Year,Harvest_date,Fruit_weight,Fruit_number,Fruit_weight_single,Color_over,Russet_freq_all,Trunk_diameter,Trunk_increment,Flowering_intensity,Flowering_begin,Flowering_full,Flowering_end,Scab,Powdery_mildew,Scab_fruits,Sample_size,Weight_sample,Country_Management,Envir
+10,69,786,2,"",2021,ESP,ESP_2021,,,,,,,50.30011762,0.962085265,,,,,,,,,,ESP_2,ESP_2021_2
+11,20,NOVADI_0356,2,"",2021,ESP,ESP_2021,,,,,,,43.37010142,19.49685995,,,,,,,,,,ESP_2,ESP_2021_2
+11,88,I_M014,2,"",2021,ESP,ESP_2021,,,,,,,65.70015364,30.68606615,25,74,89,99,,,,,,ESP_2,ESP_2021_2
+11,97,I_CC059,2,"",2021,ESP,ESP_2021,,,,,,,62.45014604,19.4783114,,,,,,,,,,ESP_2,ESP_2021_2
+13,18,FuGa_016,2,"",2021,ESP,ESP_2021,,,,,,,45.1601056,3.7798204,0,96,102,105,,,,,,ESP_2,ESP_2021_2
+13,24,12_I003,2,"",2021,ESP,ESP_2021,,,,,,,50.60011832,2.853635397,0,91,102,105,,,,,,ESP_2,ESP_2021_2

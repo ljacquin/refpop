@@ -1,0 +1,4 @@
+Row,Position,Genotype,Management,Checks,Year,Country,Country_Year,Harvest_date,Fruit_weight,Fruit_number,Fruit_weight_single,Color_over,Russet_freq_all,Trunk_diameter,Trunk_increment,Flowering_intensity,Flowering_begin,Flowering_full,Flowering_end,Scab,Powdery_mildew,Scab_fruits,Sample_size,Weight_sample,Country_Management,Envir
+19,118,GaCr_056,BUFFER,"",2020,BEL,BEL_2020,,,,,,,37.33,8.46,100,107,,,,,,,,BEL_BUFFER,BEL_2020_BUFFER
+22,118,2848,BUFFER,"",2020,BEL,BEL_2020,,,,,,,37.27,10.67,100,107,,,,,,,,BEL_BUFFER,BEL_2020_BUFFER
+24,118,NOVADI_0356,BUFFER,"",2020,BEL,BEL_2020,,,,,,,36.86,9.07,100,105,,,,,,,,BEL_BUFFER,BEL_2020_BUFFER

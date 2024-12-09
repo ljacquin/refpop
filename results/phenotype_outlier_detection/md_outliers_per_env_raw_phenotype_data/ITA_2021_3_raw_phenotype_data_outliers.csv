@@ -1,0 +1,10 @@
+Row,Position,Genotype,Management,Checks,Year,Country,Country_Year,Harvest_date,Fruit_weight,Fruit_number,Fruit_weight_single,Color_over,Russet_freq_all,Trunk_diameter,Trunk_increment,Flowering_intensity,Flowering_begin,Flowering_full,Flowering_end,Scab,Powdery_mildew,Scab_fruits,Sample_size,Weight_sample,Country_Management,Envir
+11,14,270,3,"",2021,ITA,ITA_2021,207,,1,,,,27.72,0.32,12.5,106,,,,,,,,ITA_3,ITA_2021_3
+11,44,12_I005,3,"",2021,ITA,ITA_2021,235,4.0964,19,215.6,3,30,23.18,2.68,50,98,,,,,,20,4.312,ITA_3,ITA_2021_3
+13,16,1106.1,3,"",2021,ITA,ITA_2021,229,4.750714286,15,316.7142857,3,71.42857143,31.96,0.56,37.5,92,,,,,,14,4.434,ITA_3,ITA_2021_3
+13,18,678,3,"",2021,ITA,ITA_2021,312,1.016,4,254,4,20,33.08,5.23,12.5,94,,,,,,5,1.27,ITA_3,ITA_2021_3
+14,49,6,3,"",2021,ITA,ITA_2021,,,,,,,25.84,5.22,,,,,,,,,,ITA_3,ITA_2021_3
+15,39,FuPi_097,3,"",2021,ITA,ITA_2021,288,2.8728,18,159.6,2,25,35.6,1.15,25,99,,,,,,20,3.192,ITA_3,ITA_2021_3
+15,53,2055,3,"",2021,ITA,ITA_2021,203,1.5525,15,103.5,4,,27.86,2.29,25,94,,,,,,12,1.242,ITA_3,ITA_2021_3
+16,35,68,3,"",2021,ITA,ITA_2021,235,1.8582,19,97.8,2,0,34.43,0.96,25,93,,,,,,20,1.956,ITA_3,ITA_2021_3
+18,28,173,3,"",2021,ITA,ITA_2021,260,14.0728,196,71.8,1,40,43.56,11.26,87.5,99,,,,,,20,1.436,ITA_3,ITA_2021_3

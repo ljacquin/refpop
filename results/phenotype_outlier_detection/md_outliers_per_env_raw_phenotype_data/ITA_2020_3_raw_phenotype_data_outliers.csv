@@ -1,0 +1,6 @@
+Row,Position,Genotype,Management,Checks,Year,Country,Country_Year,Harvest_date,Fruit_weight,Fruit_number,Fruit_weight_single,Color_over,Russet_freq_all,Trunk_diameter,Trunk_increment,Flowering_intensity,Flowering_begin,Flowering_full,Flowering_end,Scab,Powdery_mildew,Scab_fruits,Sample_size,Weight_sample,Country_Management,Envir
+10,4,286,3,"",2020,ITA,ITA_2020,202,1.944,19,102.3157895,3,10.52631579,24.19,1.51,100,96,,,,,,19,1.944,ITA_3,ITA_2020_3
+14,6,301,3,"",2020,ITA,ITA_2020,227,1.506,20,94.125,0,100,23.04,2.39,12.5,125,,,,,,16,1.506,ITA_3,ITA_2020_3
+15,44,82,3,"",2020,ITA,ITA_2020,,,4,,,,28.49,6.85,75,98,,,,,,,,ITA_3,ITA_2020_3
+17,3,676,3,"",2020,ITA,ITA_2020,198,1.7766,21,84.6,2,50,23.89,4.46,87.5,95,,,,,,10,0.846,ITA_3,ITA_2020_3
+18,24,1377,3,"",2020,ITA,ITA_2020,237,9.0432,144,62.8,4,75,25.92,5.39,87.5,97,,,,,,20,1.256,ITA_3,ITA_2020_3
