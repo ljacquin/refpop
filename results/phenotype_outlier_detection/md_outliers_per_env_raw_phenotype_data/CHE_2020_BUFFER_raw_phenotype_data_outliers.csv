@@ -1,0 +1,4 @@
+Row,Position,Genotype,Management,Checks,Year,Country,Country_Year,Harvest_date,Fruit_weight,Fruit_number,Fruit_weight_single,Color_over,Russet_freq_all,Trunk_diameter,Trunk_increment,Flowering_intensity,Flowering_begin,Flowering_full,Flowering_end,Scab,Powdery_mildew,Scab_fruits,Sample_size,Weight_sample,Country_Management,Envir
+18,44,353,BUFFER,"",2020,CHE,CHE_2020,302,0.778,3,259.3333333,,,36.6,3.47,37.5,110,,,,,,,,CHE_BUFFER,CHE_2020_BUFFER
+18,86,NOVADI_0330,BUFFER,"",2020,CHE,CHE_2020,,19.388,91,213.0549451,,,34.1,5.87,100,107,,,,,,,,CHE_BUFFER,CHE_2020_BUFFER
+23,42,89,BUFFER,"",2020,CHE,CHE_2020,,9.934,99,100.3434343,,,29.5,9.94,100,104,,,,,,,,CHE_BUFFER,CHE_2020_BUFFER

@@ -1,0 +1,14 @@
+Row,Position,Genotype,Management,Checks,Year,Country,Country_Year,Harvest_date,Fruit_weight,Fruit_number,Fruit_weight_single,Color_over,Russet_freq_all,Trunk_diameter,Trunk_increment,Flowering_intensity,Flowering_begin,Flowering_full,Flowering_end,Scab,Powdery_mildew,Scab_fruits,Sample_size,Weight_sample,Country_Management,Envir
+2,25,12_B006,1,"",2022,POL,POL_2022,,,,,,,57.18,25.06,100,121,,,2,1,,,,POL_1,POL_2022_1
+2,83,1893,1,"",2022,POL,POL_2022,250,2.04,7,291.4285714,1,,47.85,,50,124,,,1,1,,,,POL_1,POL_2022_1
+3,82,TeBr_248,1,"",2022,POL,POL_2022,,,,,,,49.29,18.18,75,123,,,2,3,,,,POL_1,POL_2022_1
+4,61,167,1,"",2022,POL,POL_2022,215,1.25,9,138.8888889,1,,46.06,,12.5,124,,,2,1,,,,POL_1,POL_2022_1
+4,78,12_N062,1,"",2022,POL,POL_2022,,,,,,,65.44,,100,119,,,1,3,,,,POL_1,POL_2022_1
+5,86,55,1,"",2022,POL,POL_2022,,,,,,,54.03,19.08,75,121,,,1,3,,,,POL_1,POL_2022_1
+6,48,I_CC052,1,"",2022,POL,POL_2022,,,,,,,66.52,12.63,75,117,,,2,2,,,,POL_1,POL_2022_1
+6,52,FuPi_054,1,"",2022,POL,POL_2022,,,,,,,62.84,23.73,100,119,,,1,1,,,,POL_1,POL_2022_1
+6,95,1901,1,"",2022,POL,POL_2022,,,,,,,,,0,,,,,,,,,POL_1,POL_2022_1
+7,65,GaCr_052,1,"",2022,POL,POL_2022,,,,,,,48.09,15.31,75,122,,,1,3,,,,POL_1,POL_2022_1
+8,52,29,1,"",2022,POL,POL_2022,,,,,,,,,0,,,,,,,,,POL_1,POL_2022_1
+8,72,366,1,"",2022,POL,POL_2022,215,1.1,10,110,5,,58.51,,25,124,,,1,3,,,,POL_1,POL_2022_1
+10,15,1893,1,"",2022,POL,POL_2022,250,3.25,11,295.4545455,1,,,,75,124,,,1,1,,,,POL_1,POL_2022_1

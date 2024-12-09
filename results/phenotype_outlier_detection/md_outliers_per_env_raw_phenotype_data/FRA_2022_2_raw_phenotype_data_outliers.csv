@@ -1,0 +1,6 @@
+Row,Position,Genotype,Management,Checks,Year,Country,Country_Year,Harvest_date,Fruit_weight,Fruit_number,Fruit_weight_single,Color_over,Russet_freq_all,Trunk_diameter,Trunk_increment,Flowering_intensity,Flowering_begin,Flowering_full,Flowering_end,Scab,Powdery_mildew,Scab_fruits,Sample_size,Weight_sample,Country_Management,Envir
+17,28,I_BB049,2,"",2022,FRA,FRA_2022,264,154.8,86,,3,20,50,25,87.5,98,,,,,,20,36,FRA_2,FRA_2022_2
+17,69,570,2,"",2022,FRA,FRA_2022,271,,,,,,44,5,0,,,,,,,,,FRA_2,FRA_2022_2
+18,6,NOVADI_0114,2,"",2022,FRA,FRA_2022,,,,,,,42,1,,,,,,,,,,FRA_2,FRA_2022_2
+19,72,I_BB015,2,"",2022,FRA,FRA_2022,265,172.8,108,,1,55,49,,75,98,,,1,2,,20,32,FRA_2,FRA_2022_2
+21,61,2810,2,"",2022,FRA,FRA_2022,,,,,,,33,6,12.5,105,,,,,,,,FRA_2,FRA_2022_2

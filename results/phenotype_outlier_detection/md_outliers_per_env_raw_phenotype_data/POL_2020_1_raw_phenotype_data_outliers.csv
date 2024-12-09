@@ -1,0 +1,14 @@
+Row,Position,Genotype,Management,Checks,Year,Country,Country_Year,Harvest_date,Fruit_weight,Fruit_number,Fruit_weight_single,Color_over,Russet_freq_all,Trunk_diameter,Trunk_increment,Flowering_intensity,Flowering_begin,Flowering_full,Flowering_end,Scab,Powdery_mildew,Scab_fruits,Sample_size,Weight_sample,Country_Management,Envir
+3,63,1015,1,"",2020,POL,POL_2020,,,,,,,28.76,3.79,0,,,,,,,,,POL_1,POL_2020_1
+4,42,324,1,"",2020,POL,POL_2020,,,,,,,19.97,4.72,0,,,,,,,,,POL_1,POL_2020_1
+6,85,639,1,"",2020,POL,POL_2020,,,,,,,22.6,3.6,0,,,,,,,,,POL_1,POL_2020_1
+8,10,I_BB049,1,"",2020,POL,POL_2020,,,,,,,23.44,7.24,0,,,,,,,,,POL_1,POL_2020_1
+8,27,2061,1,"",2020,POL,POL_2020,,,,,,,25.76,5.35,0,,,,,,,,,POL_1,POL_2020_1
+9,7,52,1,"",2020,POL,POL_2020,,,,,,,20.02,5.92,0,,,,,,,,,POL_1,POL_2020_1
+9,10,75,1,"",2020,POL,POL_2020,,,,,,,21.12,5.97,0,,,,,,,,,POL_1,POL_2020_1
+9,101,I_W044,1,"",2020,POL,POL_2020,,,,,,,25.54,4.74,0,,,,,,,,,POL_1,POL_2020_1
+9,102,2794,1,"",2020,POL,POL_2020,,,,,,,28.34,3.59,0,,,,,,,,,POL_1,POL_2020_1
+10,13,68,1,"",2020,POL,POL_2020,,,,,,,23.45,5.24,0,,,,,,,,,POL_1,POL_2020_1
+10,17,2779,1,"",2020,POL,POL_2020,,,,,,,29.01,4.61,0,,,,,,,,,POL_1,POL_2020_1
+10,59,143,1,"",2020,POL,POL_2020,,,,,,,14.08,1.54,0,,,,,,,,,POL_1,POL_2020_1
+10,71,1091,1,"",2020,POL,POL_2020,,,,,,,24.2,3.65,0,,,,,,,,,POL_1,POL_2020_1

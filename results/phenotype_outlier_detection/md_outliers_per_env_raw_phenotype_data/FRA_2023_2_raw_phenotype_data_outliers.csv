@@ -1,0 +1,10 @@
+Row,Position,Genotype,Management,Checks,Year,Country,Country_Year,Harvest_date,Fruit_weight,Fruit_number,Fruit_weight_single,Color_over,Russet_freq_all,Trunk_diameter,Trunk_increment,Flowering_intensity,Flowering_begin,Flowering_full,Flowering_end,Scab,Powdery_mildew,Scab_fruits,Sample_size,Weight_sample,Country_Management,Envir
+17,41,12_F045,2,"",2023,FRA,FRA_2023,,,,,,,57,6,,,,,,,,,,FRA_2,FRA_2023_2
+18,24,12_I005,2,"",2023,FRA,FRA_2023,222,16.8,70,240,2,,38,3,,110,,,3,2,2,20,4.8,FRA_2,FRA_2023_2
+18,32,65,2,Golden_Delicious,2023,FRA,FRA_2023,278,3.15,18,175,0,,40,1,,110,,,2,2,1,20,3.5,FRA_2,FRA_2023_2
+18,49,GaCr_057,2,"",2023,FRA,FRA_2023,,,,,,,37,8,,,,,,,,,,FRA_2,FRA_2023_2
+19,4,GaPi_051,2,"",2023,FRA,FRA_2023,263,2.25,15,150,3,,41,0,,118,,,1,2,1,20,3,FRA_2,FRA_2023_2
+19,21,65,2,Golden_Delicious,2023,FRA,FRA_2023,278,4.23,18,235,0,,40,6,,110,,,3,2,2,20,4.7,FRA_2,FRA_2023_2
+19,31,262,2,"",2023,FRA,FRA_2023,222,1.890909091,16,118.1818182,4,,43,5,,110,,,1,2,3,11,1.3,FRA_2,FRA_2023_2
+19,42,FuGa_352,2,"",2023,FRA,FRA_2023,278,4.465,19,235,0,,48,8,,110,,,1,2,1,20,4.7,FRA_2,FRA_2023_2
+19,43,130,2,"",2023,FRA,FRA_2023,241,4.766666667,11,433.3333333,3,,40,0,,118,,,1,2,1,9,3.9,FRA_2,FRA_2023_2
