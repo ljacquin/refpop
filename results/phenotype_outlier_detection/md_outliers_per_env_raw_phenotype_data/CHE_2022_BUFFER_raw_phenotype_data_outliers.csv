@@ -1,0 +1,5 @@
+Row,Position,Genotype,Management,Checks,Year,Country,Country_Year,Harvest_date,Fruit_weight,Fruit_number,Fruit_weight_single,Color_over,Russet_freq_all,Trunk_diameter,Trunk_increment,Flowering_intensity,Flowering_begin,Flowering_full,Flowering_end,Scab,Powdery_mildew,Scab_fruits,Sample_size,Weight_sample,Country_Management,Envir
+18,42,1448,BUFFER,"",2022,CHE,CHE_2022,230,0.47,2,235,3,100,27.89,3.69,25,108,,,,,,7,,CHE_BUFFER,CHE_2022_BUFFER
+19,88,1872,BUFFER,"",2022,CHE,CHE_2022,230,6.512,51,127.6862745,2,100,35.86,3.46,87.5,101,,,,,,20,,CHE_BUFFER,CHE_2022_BUFFER
+28,42,750,BUFFER,"",2022,CHE,CHE_2022,279,8.574,43,199.3953488,3,90,32.46,12.46,75,105,,,,,,20,,CHE_BUFFER,CHE_2022_BUFFER
+31,85,1125,BUFFER,"",2022,CHE,CHE_2022,307,10.737,82,130.9390244,2,85,37.35,7.45,50,109,,,,,,20,,CHE_BUFFER,CHE_2022_BUFFER

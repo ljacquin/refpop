@@ -1,0 +1,7 @@
+Row,Position,Genotype,Management,Checks,Year,Country,Country_Year,Harvest_date,Fruit_weight,Fruit_number,Fruit_weight_single,Color_over,Russet_freq_all,Trunk_diameter,Trunk_increment,Flowering_intensity,Flowering_begin,Flowering_full,Flowering_end,Scab,Powdery_mildew,Scab_fruits,Sample_size,Weight_sample,Country_Management,Envir
+10,40,51,2,"",2022,ESP,ESP_2022,228,4.24,11,385.4545455,,,47.00010991,1.700003975,,,,,,,,11,4.24,ESP_2,ESP_2022_2
+10,89,2651,2,"",2022,ESP,ESP_2022,194,6.84,72,95,,,36.70008582,2.700006314,,,,,,,,20,1.9,ESP_2,ESP_2022_2
+10,117,1910,2,"",2022,ESP,ESP_2022,277,0.775,13,59.61538462,,,63.80014919,13.80003227,,,,,0,,,13,0.775,ESP_2,ESP_2022_2
+11,2,65,2,Golden_Delicious,2022,ESP,ESP_2022,265,43.285,220,196.75,,,71.5001672,,,,,,0,,,20,3.935,ESP_2,ESP_2022_2
+12,47,567,2,"",2022,ESP,ESP_2022,277,,1,,,,36.40008512,4.700010991,,,,,,,,1,,ESP_2,ESP_2022_2
+13,128,49,2,"",2022,ESP,ESP_2022,277,,4,,,,59.50013914,8.600020111,,,,,,,,4,,ESP_2,ESP_2022_2

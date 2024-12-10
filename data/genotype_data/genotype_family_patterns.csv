@@ -1,0 +1,37 @@
+﻿Family;Pattern;Size;Parent 1;Parent 2;Institute;Original Project
+12_ or 13_;^12_[0-9]{1,};10;X338;Braeburn;BETTER3FRUIT;This study
+12_ or 13_;^13_[0-9]{1,};10;X338;Braeburn;BETTER3FRUIT;This study
+12_B;^12_B[a-zA-Z0-9_]{1,};10;Generos;X6417;INRA;Bianco et al. (2014)
+12_E;^12_E[a-zA-Z0-9_]{1,};10;Generos;X6683;INRA;Bianco et al. (2014)
+12_F;^12_F[a-zA-Z0-9_]{1,};10;X3318;X6564;INRA;Bianco et al. (2014)
+12_I;^12_I[a-zA-Z0-9_]{1,};10;X3263;X3259;INRA;Bianco et al. (2014)
+12_J;^12_J[a-zA-Z0-9_]{1,};10;X3318;Galarina;INRA;Bianco et al. (2014)
+12_K;^12_K[a-zA-Z0-9_]{1,};9;X6679;X6808;INRA;Bianco et al. (2014)
+12_L;^12_L[a-zA-Z0-9_]{1,};6;X6679;X6417;INRA;"PBA, FruitBreedomics (Bink et al. 2014; Laurens et al. 2018)"
+12_N;^12_N[a-zA-Z0-9_]{1,};10;X3305;X3259;INRA;Bianco et al. (2014)
+12_O;^12_O[a-zA-Z0-9_]{1,};10;RedWinterX3177;Galarina;INRA;"PBA, FruitBreedomics (Bink et al. 2014; Laurens et al. 2018)"
+12_P;^12_P[a-zA-Z0-9_]{1,};10;Rubinette;X3305;INRA;Bianco et al. (2014)
+ACW 1;^ACW_253[a-zA-Z0-9_]{1,};10;ACW 11303;ACW 18522;AGROSCOPE;This study
+ACW 1;^ACW_254[a-zA-Z0-9_]{1,};10;ACW 11303;ACW 18522;AGROSCOPE;This study
+ACW 2;^ACW_255[a-zA-Z0-9_]{1,};10;ACW 13652;ACW 11567;AGROSCOPE;This study
+ACW 2;^ACW_256[a-zA-Z0-9_]{1,};10;ACW 13652;ACW 11567;AGROSCOPE;This study
+DLO;^DLO[a-zA-Z0-9_]{1,};10;D1980-15-25;D1973-01-41;WUR (Wageningen University & Research);Bianco et al. (2014)
+FuGa;^FuGa[a-zA-Z0-9_]{1,};10;Fuji;Gala;LAIMBURG (duplicate of Bologna progeny);Bianco et al. (2014)
+FuPi;^FuPi[a-zA-Z0-9_]{1,};10;Fuji;Pinova;LAIMBURG;Bianco et al. (2014, 2016)
+GaCr;^GaCr[a-zA-Z0-9_]{1,};10;Gala;Cripps Pink;LAIMBURG;"PBA, FruitBreedomics (Bink et al. 2014; Laurens et al. 2018)"
+GaPi;^GaPi[a-zA-Z0-9_]{1,};10;Gala;Pinova;LAIMBURG;Bianco et al. (2014)
+I_BB;^I_BB[a-zA-Z0-9_]{1,};10;X6417;X6564;INRA;Bianco et al. (2014)
+I_CC;^I_CC[a-zA-Z0-9_]{1,};10;X6679;Dorianne;INRA;Bianco et al. (2014)
+I_J;^I_J[a-zA-Z0-9_]{1,};10;X3318;X3263;INRA;Bianco et al. (2014)
+I_M;^I_M[a-zA-Z0-9_]{1,};10;X6683;X6681;INRA;Bianco et al. (2014)
+I_W;^I_W[a-zA-Z0-9_]{1,};10;X6398;X6681;INRA;Bianco et al. (2014)
+JoPr;^JoPr[a-zA-Z0-9_]{1,};11;Jonathan;Prima;SLU (WUR population);Bianco et al. (2014)
+NOVADI 1;^NOVADI_02[a-zA-Z0-9_]{1,};9;Dalinette;X6681;NOVADI;This study
+NOVADI 1;^NOVADI_03[a-zA-Z0-9_]{1,};9;Dalinette;X6681;NOVADI;This study
+NOVADI 2;^NOVADI_00[a-zA-Z0-9_]{1,};10;X6398;Pinova;NOVADI;This study
+NOVADI 2;^NOVADI_01[a-zA-Z0-9_]{1,};10;X6398;Pinova;NOVADI;This study
+NOVADI 2;^NOVADI_06[a-zA-Z0-9_]{1,};10;X6398;Pinova;NOVADI;This study
+NOVADI 2;^NOVADI_07[a-zA-Z0-9_]{1,};10;X6398;Pinova;NOVADI;This study
+NOVADI 2;^NOVADI_09[a-zA-Z0-9_]{1,};10;X6398;Pinova;NOVADI;This study
+NOVADI 2;^NOVADI_10[a-zA-Z0-9_]{1,};10;X6398;Pinova;NOVADI;This study
+TeBr;^TeBr[a-zA-Z0-9_]{1,};10;Telamon;Braeburn;BETTER3FRUIT/KUL;Bianco et al. (2014)

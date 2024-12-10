@@ -1,0 +1,5 @@
+Row,Position,Genotype,Management,Checks,Year,Country,Country_Year,Harvest_date,Fruit_weight,Fruit_number,Fruit_weight_single,Color_over,Russet_freq_all,Trunk_diameter,Trunk_increment,Flowering_intensity,Flowering_begin,Flowering_full,Flowering_end,Scab,Powdery_mildew,Scab_fruits,Sample_size,Weight_sample,Country_Management,Envir
+19,9,Modi,2,Modi,2023,CHE,CHE_2023,,,,,,,27.97,0.29,,,,,,3,,,,CHE_2,CHE_2023_2
+19,64,I_CC075,2,"",2023,CHE,CHE_2023,292,27.163,262,103.6755725,1,,48.38,3.89,87.5,118,,,,1,,,,CHE_2,CHE_2023_2
+20,35,12_F046,2,"",2023,CHE,CHE_2023,278,19.231,210,91.57619048,3,,55.14,4.88,100,120,,,,3,,,,CHE_2,CHE_2023_2
+20,57,601,2,"",2023,CHE,CHE_2023,229,4.928,48,102.6666667,3,,27.64,1.38,,,,,,2,,,,CHE_2,CHE_2023_2

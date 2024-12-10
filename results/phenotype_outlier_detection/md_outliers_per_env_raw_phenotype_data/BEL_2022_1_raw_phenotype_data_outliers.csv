@@ -1,0 +1,13 @@
+Row,Position,Genotype,Management,Checks,Year,Country,Country_Year,Harvest_date,Fruit_weight,Fruit_number,Fruit_weight_single,Color_over,Russet_freq_all,Trunk_diameter,Trunk_increment,Flowering_intensity,Flowering_begin,Flowering_full,Flowering_end,Scab,Powdery_mildew,Scab_fruits,Sample_size,Weight_sample,Country_Management,Envir
+17,21,I_BB002,1,"",2022,BEL,BEL_2022,292,0.78,3,260,,,48.46,2.82,0,109,,,,,,,,BEL_1,BEL_2022_1
+17,72,1935,1,"",2022,BEL,BEL_2022,277,0.57,2,285,,,20.24,1.8,25,106,,,,,,,,BEL_1,BEL_2022_1
+17,75,3173,1,"",2022,BEL,BEL_2022,236,1.66,4,415,,,28.56,3.79,50,,,,,,,,,BEL_1,BEL_2022_1
+19,11,12_L018,1,"",2022,BEL,BEL_2022,264,0.25,1,250,,,24.45,0,25,109,,,,,,,,BEL_1,BEL_2022_1
+19,20,58,1,"",2022,BEL,BEL_2022,271,0.23,1,230,,,28.67,2.16,0,106,,,,,,,,BEL_1,BEL_2022_1
+19,37,NOVADI_0268,1,"",2022,BEL,BEL_2022,285,3.504,77,45.50649351,,,26.4,4.51,100,112,,,,,,,,BEL_1,BEL_2022_1
+20,53,2762,1,"",2022,BEL,BEL_2022,277,0.32,1,320,,,23.5,0.47,0,,,,,,,,,BEL_1,BEL_2022_1
+20,85,462,1,"",2022,BEL,BEL_2022,277,0.57,2,285,,,24.89,0.49,0,103,,,,,,,,BEL_1,BEL_2022_1
+22,42,2971,1,"",2022,BEL,BEL_2022,264,0.5,2,250,,,30.71,0.46,0,106,,,,,,,,BEL_1,BEL_2022_1
+23,91,NOVADI_0023,1,"",2022,BEL,BEL_2022,271,1.72,5,344,,,28.77,4.3,0,103,,,,,,,,BEL_1,BEL_2022_1
+26,6,2046,1,"",2022,BEL,BEL_2022,292,2.58,6,430,,,33.75,0,25,103,,,,,,,,BEL_1,BEL_2022_1
+26,53,12_B006,1,"",2022,BEL,BEL_2022,236,0.22,1,220,,,17.49,1.49,0,,,,,,,,,BEL_1,BEL_2022_1

@@ -1,7 +1,3 @@
-references/'~BROMIUM'/
-src/refpop_data_structure_analysis/.Rhistory
-src/refpop_data_treatment_and_analysis/.Rhistory
-src/refpop_data_treatment_and_analysis/refpop_manage_type_raw_adj_pheno_simple_analysis.R
-src/refpop_gem_interaction_analysis/.Rhistory
-src/refpop_predictive_modeling_and_analysis/.Rhistory
-src/refpop_wiser_genomic_prediction_and_analysis/.Rhistory
+data/genotype_data/phased_data/phased_genotypes.RDS
+data/genotype_data/genotype_data.csv
+data/genotype_data/refpop_genotype.bk

@@ -1,0 +1,13 @@
+Row,Position,Genotype,Management,Checks,Year,Country,Country_Year,Harvest_date,Fruit_weight,Fruit_number,Fruit_weight_single,Color_over,Russet_freq_all,Trunk_diameter,Trunk_increment,Flowering_intensity,Flowering_begin,Flowering_full,Flowering_end,Scab,Powdery_mildew,Scab_fruits,Sample_size,Weight_sample,Country_Management,Envir
+23,51,2670,1,"",2021,CHE,CHE_2021,,,,,,,32,3.8,,,,,,,,,,CHE_1,CHE_2021_1
+24,2,25,1,"",2021,CHE,CHE_2021,245,0.23,1,230,0,100,,,,,,,,,,,,CHE_1,CHE_2021_1
+24,57,691,1,"",2021,CHE,CHE_2021,,,,,,,39.4,3.5,,,,,,,,,,CHE_1,CHE_2021_1
+24,58,786,1,"",2021,CHE,CHE_2021,,,,,,,36.5,2.2,,,,,,,,,,CHE_1,CHE_2021_1
+25,66,267,1,"",2021,CHE,CHE_2021,,,,,,,36.8,2.9,,,,,,,,,,CHE_1,CHE_2021_1
+27,39,25,1,"",2021,CHE,CHE_2021,231,0.313,1,313,0,0,23.4,2.8,100,120,,,,,,,,CHE_1,CHE_2021_1
+27,64,2810,1,"",2021,CHE,CHE_2021,,,,,,,26.9,3,,,,,,,,,,CHE_1,CHE_2021_1
+27,67,639,1,"",2021,CHE,CHE_2021,259,0.775,2,387.5,1,,22.1,0,0,116,,,,,,,,CHE_1,CHE_2021_1
+28,28,12_B006,1,"",2021,CHE,CHE_2021,,,,,,,19.5,0,,,,,,,,,,CHE_1,CHE_2021_1
+33,25,43,1,"",2021,CHE,CHE_2021,,,,,,,24.4,7.3,,,,,,,,,,CHE_1,CHE_2021_1
+34,50,1893,1,"",2021,CHE,CHE_2021,259,0.447,1,447,1,,33.9,2.8,0,116,,,,,,,,CHE_1,CHE_2021_1
+35,80,JoPr_1990_102_108,1,"",2021,CHE,CHE_2021,266,1.669,8,208.625,2,87.5,27.9,1.9,25,109,,,,,,,,CHE_1,CHE_2021_1

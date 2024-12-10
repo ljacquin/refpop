@@ -1,0 +1,1090 @@
+Harvest_date: h2_raw outlier detected for POL_2019_1: 0.835019868531038
+Harvest_date: h2_raw outlier detected for FRA_2023_2: 0.315220208337284
+Harvest_date: h2_raw outlier detected for FRA_2023_1: 0.200811879224499
+Harvest_date: h2_raw outlier detected for FRA_2022_2: 0.80776545848984
+Harvest_date: h2_raw outlier detected for CHE_2019_1: 0.821107263129109
+Harvest_date: h2_raw management type 2 outlier detected for FRA_2023_2: 0.315220208337284
+Harvest_date: h2_raw management type 1 outlier detected for POL_2019_1: 0.835019868531038
+Harvest_date: h2_raw management type 1 outlier detected for FRA_2023_1: 0.200811879224499
+Harvest_date: h2_raw management type 1 outlier detected for CHE_2019_1: 0.821107263129109
+Harvest_date: h2_adj outlier detected for FRA_2023_2: 0.387036440457069
+Harvest_date: h2_adj outlier detected for FRA_2023_1: 0.219026032421202
+Harvest_date: h2_adj outlier detected for FRA_2022_2: 0.866828466004923
+Harvest_date: h2_adj outlier detected for CHE_2022_2: 0.867159312212401
+Harvest_date: h2_adj outlier detected for CHE_2022_1: 0.860046677230486
+Harvest_date: h2_adj outlier detected for CHE_2019_1: 0.82571109911247
+Harvest_date: h2_adj management type 2 outlier detected for FRA_2023_2: 0.387036440457069
+Harvest_date: h2_adj management type 1 outlier detected for FRA_2023_1: 0.219026032421202
+Harvest_date: h2_adj management type 1 outlier detected for CHE_2022_1: 0.860046677230486
+Harvest_date: h2_adj management type 1 outlier detected for CHE_2019_1: 0.82571109911247
+Harvest_date: Error for POL_2019_3 during SpATs: Error with spat_hetero_env_correct_trait, here is the possible issue with data or computation : The design matrix associated to the fixed part of the model is not of full rank. Please check that there are no redundant components in the fixed part of the model.
+Harvest_date: Error for FRA_2020_2: no data for trait in environment 
+Harvest_date: Error for FRA_2020_2 during SpATs: no data available for this environment
+Harvest_date: Error for ESP_2021_2: no data for trait in environment 
+Harvest_date: Error for ESP_2021_2 during SpATs: no data available for this environment
+Harvest_date: Error for ESP_2020_2: no data for trait in environment 
+Harvest_date: Error for ESP_2020_2 during SpATs: no data available for this environment
+Harvest_date: Error for BEL_2020_2: no data for trait in environment 
+Harvest_date: Error for BEL_2020_2 during SpATs: no data available for this environment
+Fruit_weight: h2_raw outlier detected for POL_2023_3: 0.378389572772735
+Fruit_weight: h2_raw outlier detected for POL_2023_1: 0.306112683737909
+Fruit_weight: h2_raw outlier detected for POL_2022_1: 0.138842356240018
+Fruit_weight: h2_raw outlier detected for POL_2021_1: 0.370058349188983
+Fruit_weight: h2_raw outlier detected for ITA_2022_1: 0.364266217908642
+Fruit_weight: h2_raw outlier detected for FRA_2023_2: 0.190999173081296
+Fruit_weight: h2_raw outlier detected for FRA_2023_1: 0.216289219907772
+Fruit_weight: h2_raw management type 3 outlier detected for POL_2023_3: 0.378389572772735
+Fruit_weight: h2_raw management type 2 outlier detected for FRA_2023_2: 0.190999173081296
+Fruit_weight: h2_raw management type 1 outlier detected for POL_2023_1: 0.306112683737909
+Fruit_weight: h2_raw management type 1 outlier detected for POL_2022_1: 0.138842356240018
+Fruit_weight: h2_raw management type 1 outlier detected for POL_2021_1: 0.370058349188983
+Fruit_weight: h2_raw management type 1 outlier detected for ITA_2022_1: 0.364266217908642
+Fruit_weight: h2_raw management type 1 outlier detected for FRA_2023_1: 0.216289219907772
+Fruit_weight: h2_adj outlier detected for POL_2023_1: 0.295884428379117
+Fruit_weight: h2_adj outlier detected for POL_2022_1: 0.151124634665394
+Fruit_weight: h2_adj outlier detected for POL_2021_1: 0.368854898551161
+Fruit_weight: h2_adj outlier detected for ITA_2022_1: 0.366051169501056
+Fruit_weight: h2_adj outlier detected for FRA_2023_2: 0.29167306940359
+Fruit_weight: h2_adj outlier detected for FRA_2023_1: 0.195290116304432
+Fruit_weight: h2_adj management type 3 outlier detected for POL_2023_3: 0.408969810668393
+Fruit_weight: h2_adj management type 2 outlier detected for FRA_2023_2: 0.29167306940359
+Fruit_weight: h2_adj management type 1 outlier detected for POL_2023_1: 0.295884428379117
+Fruit_weight: h2_adj management type 1 outlier detected for POL_2022_1: 0.151124634665394
+Fruit_weight: h2_adj management type 1 outlier detected for POL_2021_1: 0.368854898551161
+Fruit_weight: h2_adj management type 1 outlier detected for ITA_2022_1: 0.366051169501056
+Fruit_weight: h2_adj management type 1 outlier detected for FRA_2023_1: 0.195290116304432
+Fruit_weight: Error for FRA_2020_2: no data for trait in environment 
+Fruit_weight: Error for FRA_2020_2 during SpATs: no data available for this environment
+Fruit_weight: Error for ESP_2021_2: no data for trait in environment 
+Fruit_weight: Error for ESP_2021_2 during SpATs: no data available for this environment
+Fruit_weight: Error for ESP_2020_2: no data for trait in environment 
+Fruit_weight: Error for ESP_2020_2 during SpATs: no data available for this environment
+Fruit_weight: Error for BEL_2020_2: no data for trait in environment 
+Fruit_weight: Error for BEL_2020_2 during SpATs: no data available for this environment
+Fruit_number: h2_raw outlier detected for POL_2023_1: 0.392590629446991
+Fruit_number: h2_raw outlier detected for POL_2022_1: 0.0906472104763567
+Fruit_number: h2_raw outlier detected for POL_2019_1: 0.183508681533669
+Fruit_number: h2_raw outlier detected for FRA_2023_2: 0.345676078800486
+Fruit_number: h2_raw outlier detected for FRA_2023_1: 0.245429178090337
+Fruit_number: h2_raw management type 2 outlier detected for FRA_2023_2: 0.345676078800486
+Fruit_number: h2_raw management type 1 outlier detected for POL_2023_1: 0.392590629446991
+Fruit_number: h2_raw management type 1 outlier detected for POL_2022_1: 0.0906472104763567
+Fruit_number: h2_raw management type 1 outlier detected for POL_2021_1: 0.421330309809585
+Fruit_number: h2_raw management type 1 outlier detected for POL_2019_1: 0.183508681533669
+Fruit_number: h2_raw management type 1 outlier detected for FRA_2023_1: 0.245429178090337
+Fruit_number: h2_raw management type 1 outlier detected for BEL_2023_1: 0.438228172783299
+Fruit_number: h2_adj outlier detected for POL_2023_1: 0.408280288591119
+Fruit_number: h2_adj outlier detected for POL_2022_1: 0.0921706965322707
+Fruit_number: h2_adj outlier detected for FRA_2023_2: 0.41881561607084
+Fruit_number: h2_adj outlier detected for FRA_2023_1: 0.24978132186539
+Fruit_number: h2_adj management type 1 outlier detected for POL_2023_1: 0.408280288591119
+Fruit_number: h2_adj management type 1 outlier detected for POL_2022_1: 0.0921706965322707
+Fruit_number: h2_adj management type 1 outlier detected for POL_2021_1: 0.423130469570511
+Fruit_number: h2_adj management type 1 outlier detected for FRA_2023_1: 0.24978132186539
+Fruit_number: h2_adj management type 1 outlier detected for BEL_2023_1: 0.463857044632848
+Fruit_number: Error for FRA_2020_2: no data for trait in environment 
+Fruit_number: Error for FRA_2020_2 during SpATs: no data available for this environment
+Fruit_number: Error for ESP_2023_2: no data for trait in environment 
+Fruit_number: Error for ESP_2023_2 during SpATs: no data available for this environment
+Fruit_number: Error for ESP_2023_1: no data for trait in environment 
+Fruit_number: Error for ESP_2023_1 during SpATs: no data available for this environment
+Fruit_number: Error for ESP_2021_2: no data for trait in environment 
+Fruit_number: Error for ESP_2021_2 during SpATs: no data available for this environment
+Fruit_number: Error for ESP_2020_2: no data for trait in environment 
+Fruit_number: Error for ESP_2020_2 during SpATs: no data available for this environment
+Fruit_number: Error for BEL_2020_2: no data for trait in environment 
+Fruit_number: Error for BEL_2020_2 during SpATs: no data available for this environment
+Fruit_weight_single: h2_raw outlier detected for POL_2023_1: 0.614418453633019
+Fruit_weight_single: h2_raw outlier detected for ITA_2022_3: 0.669019457341451
+Fruit_weight_single: h2_raw outlier detected for ITA_2022_1: 0.143683184944109
+Fruit_weight_single: h2_raw outlier detected for FRA_2023_2: 0.456155954477533
+Fruit_weight_single: h2_raw outlier detected for FRA_2023_1: 0.1931575001399
+Fruit_weight_single: h2_raw outlier detected for ESP_2021_1: 0.545976051195232
+Fruit_weight_single: h2_raw outlier detected for ESP_2019_1: 0.681206680974542
+Fruit_weight_single: h2_raw outlier detected for BEL_2022_2: 0.672875202221352
+Fruit_weight_single: h2_raw outlier detected for BEL_2020_1: 0.691487372855408
+Fruit_weight_single: h2_raw management type 3 outlier detected for ITA_2022_3: 0.669019457341451
+Fruit_weight_single: h2_raw management type 2 outlier detected for FRA_2023_2: 0.456155954477533
+Fruit_weight_single: h2_raw management type 1 outlier detected for POL_2023_1: 0.614418453633019
+Fruit_weight_single: h2_raw management type 1 outlier detected for ITA_2022_1: 0.143683184944109
+Fruit_weight_single: h2_raw management type 1 outlier detected for FRA_2023_1: 0.1931575001399
+Fruit_weight_single: h2_raw management type 1 outlier detected for ESP_2021_1: 0.545976051195232
+Fruit_weight_single: h2_raw management type 1 outlier detected for ESP_2019_1: 0.681206680974542
+Fruit_weight_single: h2_raw management type 1 outlier detected for BEL_2020_1: 0.691487372855408
+Fruit_weight_single: h2_adj outlier detected for POL_2023_1: 0.697968205868249
+Fruit_weight_single: h2_adj outlier detected for ITA_2022_1: 0.182101406499741
+Fruit_weight_single: h2_adj outlier detected for FRA_2023_2: 0.550465197742028
+Fruit_weight_single: h2_adj outlier detected for FRA_2023_1: 0.197521913251966
+Fruit_weight_single: h2_adj outlier detected for ESP_2021_1: 0.574831383605791
+Fruit_weight_single: h2_adj outlier detected for ESP_2019_1: 0.688846839824603
+Fruit_weight_single: h2_adj outlier detected for BEL_2020_1: 0.698281225692909
+Fruit_weight_single: h2_adj management type 3 outlier detected for POL_2023_3: 0.748852217480402
+Fruit_weight_single: h2_adj management type 3 outlier detected for ITA_2022_3: 0.719261098431137
+Fruit_weight_single: h2_adj management type 2 outlier detected for FRA_2023_2: 0.550465197742028
+Fruit_weight_single: h2_adj management type 1 outlier detected for POL_2023_1: 0.697968205868249
+Fruit_weight_single: h2_adj management type 1 outlier detected for ITA_2022_1: 0.182101406499741
+Fruit_weight_single: h2_adj management type 1 outlier detected for FRA_2023_1: 0.197521913251966
+Fruit_weight_single: h2_adj management type 1 outlier detected for ESP_2021_1: 0.574831383605791
+Fruit_weight_single: h2_adj management type 1 outlier detected for ESP_2019_1: 0.688846839824603
+Fruit_weight_single: h2_adj management type 1 outlier detected for BEL_2020_1: 0.698281225692909
+Fruit_weight_single: Error for POL_2019_3, for management type 3, during individual clonal mean h2 raw computation: [1] "number of levels of each grouping factor must be < number of observations (problems: Genotype)"
+Fruit_weight_single: Error for POL_2019_3 during individual clonal mean h2 raw computation: [1] "number of levels of each grouping factor must be < number of observations (problems: Genotype)"
+Fruit_weight_single: Error for POL_2019_3 after SpATs, for management type 3, during individual clonal mean h2 adj computation: [1] "number of levels of each grouping factor must be < number of observations (problems: Genotype)"
+Fruit_weight_single: Error for POL_2019_3 after SpATs during individual clonal mean h2 adj computation: [1] "number of levels of each grouping factor must be < number of observations (problems: Genotype)"
+Fruit_weight_single: Error for POL_2019_1, for management type 1, during individual clonal mean h2 raw computation: [1] "number of levels of each grouping factor must be < number of observations (problems: Genotype)"
+Fruit_weight_single: Error for POL_2019_1 during individual clonal mean h2 raw computation: [1] "number of levels of each grouping factor must be < number of observations (problems: Genotype)"
+Fruit_weight_single: Error for POL_2019_1 after SpATs, for management type 1, during individual clonal mean h2 adj computation: [1] "number of levels of each grouping factor must be < number of observations (problems: Genotype)"
+Fruit_weight_single: Error for POL_2019_1 after SpATs during individual clonal mean h2 adj computation: [1] "number of levels of each grouping factor must be < number of observations (problems: Genotype)"
+Fruit_weight_single: Error for FRA_2020_2: no data for trait in environment 
+Fruit_weight_single: Error for FRA_2020_2 during SpATs: no data available for this environment
+Fruit_weight_single: Error for ESP_2023_2: no data for trait in environment 
+Fruit_weight_single: Error for ESP_2023_2 during SpATs: no data available for this environment
+Fruit_weight_single: Error for ESP_2023_1: no data for trait in environment 
+Fruit_weight_single: Error for ESP_2023_1 during SpATs: no data available for this environment
+Fruit_weight_single: Error for ESP_2021_2: no data for trait in environment 
+Fruit_weight_single: Error for ESP_2021_2 during SpATs: no data available for this environment
+Fruit_weight_single: Error for ESP_2020_2: no data for trait in environment 
+Fruit_weight_single: Error for ESP_2020_2 during SpATs: no data available for this environment
+Fruit_weight_single: Error for BEL_2020_2: no data for trait in environment 
+Fruit_weight_single: Error for BEL_2020_2 during SpATs: no data available for this environment
+Color_over: h2_raw outlier detected for FRA_2023_2: 0.244777731207798
+Color_over: h2_raw management type 2 outlier detected for FRA_2023_2: 0.244777731207798
+Color_over: h2_adj outlier detected for FRA_2023_2: 0.269381905637519
+Color_over: h2_adj outlier detected for CHE_2022_1: 0.789667160302593
+Color_over: h2_adj outlier detected for CHE_2019_1: 0.789733048134014
+Color_over: h2_adj management type 2 outlier detected for FRA_2023_2: 0.269381905637519
+Color_over: h2_adj management type 1 outlier detected for CHE_2022_1: 0.789667160302593
+Color_over: h2_adj management type 1 outlier detected for CHE_2019_1: 0.789733048134014
+Color_over: Error for POL_2019_3 during SpATs: Error with spat_hetero_env_correct_trait, here is the possible issue with data or computation : The design matrix associated to the fixed part of the model is not of full rank. Please check that there are no redundant components in the fixed part of the model.
+Color_over: Error for FRA_2020_2: no data for trait in environment 
+Color_over: Error for FRA_2020_2 during SpATs: no data available for this environment
+Color_over: Error for ESP_2023_2: no data for trait in environment 
+Color_over: Error for ESP_2023_2 during SpATs: no data available for this environment
+Color_over: Error for ESP_2023_1: no data for trait in environment 
+Color_over: Error for ESP_2023_1 during SpATs: no data available for this environment
+Color_over: Error for ESP_2022_2: no data for trait in environment 
+Color_over: Error for ESP_2022_2 during SpATs: no data available for this environment
+Color_over: Error for ESP_2022_1: no data for trait in environment 
+Color_over: Error for ESP_2022_1 during SpATs: no data available for this environment
+Color_over: Error for ESP_2021_2: no data for trait in environment 
+Color_over: Error for ESP_2021_2 during SpATs: no data available for this environment
+Color_over: Error for ESP_2021_1: no data for trait in environment 
+Color_over: Error for ESP_2021_1 during SpATs: no data available for this environment
+Color_over: Error for ESP_2020_2: no data for trait in environment 
+Color_over: Error for ESP_2020_2 during SpATs: no data available for this environment
+Color_over: Error for BEL_2023_2: no data for trait in environment 
+Color_over: Error for BEL_2023_2 during SpATs: no data available for this environment
+Color_over: Error for BEL_2023_1: no data for trait in environment 
+Color_over: Error for BEL_2023_1 during SpATs: no data available for this environment
+Color_over: Error for BEL_2022_2: no data for trait in environment 
+Color_over: Error for BEL_2022_2 during SpATs: no data available for this environment
+Color_over: Error for BEL_2022_1: no data for trait in environment 
+Color_over: Error for BEL_2022_1 during SpATs: no data available for this environment
+Color_over: Error for BEL_2021_2: no data for trait in environment 
+Color_over: Error for BEL_2021_2 during SpATs: no data available for this environment
+Color_over: Error for BEL_2021_1: no data for trait in environment 
+Color_over: Error for BEL_2021_1 during SpATs: no data available for this environment
+Color_over: Error for BEL_2020_2: no data for trait in environment 
+Color_over: Error for BEL_2020_2 during SpATs: no data available for this environment
+Russet_freq_all: h2_raw outlier detected for ESP_2020_1: 0.460564654191673
+Russet_freq_all: h2_raw management type 1 outlier detected for ESP_2020_1: 0.460564654191673
+Russet_freq_all: h2_adj outlier detected for ESP_2020_1: 0.477120399992633
+Russet_freq_all: h2_adj management type 1 outlier detected for ESP_2020_1: 0.477120399992633
+Russet_freq_all: Error for POL_2023_3: no data for trait in environment 
+Russet_freq_all: Error for POL_2023_3 during SpATs: no data available for this environment
+Russet_freq_all: Error for POL_2023_1: no data for trait in environment 
+Russet_freq_all: Error for POL_2023_1 during SpATs: no data available for this environment
+Russet_freq_all: Error for POL_2022_3: no data for trait in environment 
+Russet_freq_all: Error for POL_2022_3 during SpATs: no data available for this environment
+Russet_freq_all: Error for POL_2022_1: no data for trait in environment 
+Russet_freq_all: Error for POL_2022_1 during SpATs: no data available for this environment
+Russet_freq_all: Error for POL_2021_3: no data for trait in environment 
+Russet_freq_all: Error for POL_2021_3 during SpATs: no data available for this environment
+Russet_freq_all: Error for POL_2021_1: no data for trait in environment 
+Russet_freq_all: Error for POL_2021_1 during SpATs: no data available for this environment
+Russet_freq_all: Error for POL_2020_3: no data for trait in environment 
+Russet_freq_all: Error for POL_2020_3 during SpATs: no data available for this environment
+Russet_freq_all: Error for POL_2020_1: no data for trait in environment 
+Russet_freq_all: Error for POL_2020_1 during SpATs: no data available for this environment
+Russet_freq_all: Error for POL_2019_3: no data for trait in environment 
+Russet_freq_all: Error for POL_2019_3 during SpATs: no data available for this environment
+Russet_freq_all: Error for POL_2019_1: no data for trait in environment 
+Russet_freq_all: Error for POL_2019_1 during SpATs: no data available for this environment
+Russet_freq_all: Error for POL_2018_1: no data for trait in environment 
+Russet_freq_all: Error for POL_2018_1 during SpATs: no data available for this environment
+Russet_freq_all: Error for FRA_2023_2: no data for trait in environment 
+Russet_freq_all: Error for FRA_2023_2 during SpATs: no data available for this environment
+Russet_freq_all: Error for FRA_2023_1: no data for trait in environment 
+Russet_freq_all: Error for FRA_2023_1 during SpATs: no data available for this environment
+Russet_freq_all: Error for FRA_2020_2: no data for trait in environment 
+Russet_freq_all: Error for FRA_2020_2 during SpATs: no data available for this environment
+Russet_freq_all: Error for ESP_2023_2: no data for trait in environment 
+Russet_freq_all: Error for ESP_2023_2 during SpATs: no data available for this environment
+Russet_freq_all: Error for ESP_2023_1: no data for trait in environment 
+Russet_freq_all: Error for ESP_2023_1 during SpATs: no data available for this environment
+Russet_freq_all: Error for ESP_2022_2: no data for trait in environment 
+Russet_freq_all: Error for ESP_2022_2 during SpATs: no data available for this environment
+Russet_freq_all: Error for ESP_2022_1: no data for trait in environment 
+Russet_freq_all: Error for ESP_2022_1 during SpATs: no data available for this environment
+Russet_freq_all: Error for ESP_2021_2: no data for trait in environment 
+Russet_freq_all: Error for ESP_2021_2 during SpATs: no data available for this environment
+Russet_freq_all: Error for ESP_2021_1: no data for trait in environment 
+Russet_freq_all: Error for ESP_2021_1 during SpATs: no data available for this environment
+Russet_freq_all: Error for ESP_2020_2: no data for trait in environment 
+Russet_freq_all: Error for ESP_2020_2 during SpATs: no data available for this environment
+Russet_freq_all: Error for ESP_2018_1: no data for trait in environment 
+Russet_freq_all: Error for ESP_2018_1 during SpATs: no data available for this environment
+Russet_freq_all: Error for CHE_2023_2: no data for trait in environment 
+Russet_freq_all: Error for CHE_2023_2 during SpATs: no data available for this environment
+Russet_freq_all: Error for CHE_2023_1: no data for trait in environment 
+Russet_freq_all: Error for CHE_2023_1 during SpATs: no data available for this environment
+Russet_freq_all: Error for BEL_2023_2: no data for trait in environment 
+Russet_freq_all: Error for BEL_2023_2 during SpATs: no data available for this environment
+Russet_freq_all: Error for BEL_2023_1: no data for trait in environment 
+Russet_freq_all: Error for BEL_2023_1 during SpATs: no data available for this environment
+Russet_freq_all: Error for BEL_2022_2: no data for trait in environment 
+Russet_freq_all: Error for BEL_2022_2 during SpATs: no data available for this environment
+Russet_freq_all: Error for BEL_2022_1: no data for trait in environment 
+Russet_freq_all: Error for BEL_2022_1 during SpATs: no data available for this environment
+Russet_freq_all: Error for BEL_2021_2: no data for trait in environment 
+Russet_freq_all: Error for BEL_2021_2 during SpATs: no data available for this environment
+Russet_freq_all: Error for BEL_2021_1: no data for trait in environment 
+Russet_freq_all: Error for BEL_2021_1 during SpATs: no data available for this environment
+Russet_freq_all: Error for BEL_2020_2: no data for trait in environment 
+Russet_freq_all: Error for BEL_2020_2 during SpATs: no data available for this environment
+Trunk_diameter: h2_raw outlier detected for POL_2022_1: 0.169654992677877
+Trunk_diameter: h2_raw outlier detected for POL_2021_1: 0.0771212739558689
+Trunk_diameter: h2_raw outlier detected for POL_2019_1: 0.269046355102707
+Trunk_diameter: h2_raw outlier detected for POL_2018_1: 0.400518454648526
+Trunk_diameter: h2_raw outlier detected for ITA_2022_3: 0.315254273839667
+Trunk_diameter: h2_raw outlier detected for ITA_2021_3: 0.385097669589302
+Trunk_diameter: h2_raw outlier detected for ITA_2020_3: 0.375957738936236
+Trunk_diameter: h2_raw outlier detected for ITA_2019_3: 0.257805692159396
+Trunk_diameter: h2_raw outlier detected for BEL_2021_2: 0.356188935685413
+Trunk_diameter: h2_raw management type 2 outlier detected for BEL_2021_2: 0.356188935685413
+Trunk_diameter: h2_raw management type 2 outlier detected for BEL_2020_2: 0.457768667364179
+Trunk_diameter: h2_raw management type 1 outlier detected for POL_2023_1: 0.441924595317692
+Trunk_diameter: h2_raw management type 1 outlier detected for POL_2022_1: 0.169654992677877
+Trunk_diameter: h2_raw management type 1 outlier detected for POL_2021_1: 0.0771212739558689
+Trunk_diameter: h2_raw management type 1 outlier detected for POL_2019_1: 0.269046355102707
+Trunk_diameter: h2_raw management type 1 outlier detected for POL_2018_1: 0.400518454648526
+Trunk_diameter: h2_adj outlier detected for POL_2022_1: 0.353921065293193
+Trunk_diameter: h2_adj outlier detected for POL_2021_1: 0.223451153447274
+Trunk_diameter: h2_adj outlier detected for POL_2020_1: 0.159519211284766
+Trunk_diameter: h2_adj outlier detected for POL_2019_1: 0.523428216166648
+Trunk_diameter: h2_adj outlier detected for POL_2018_1: 0.517454128889637
+Trunk_diameter: h2_adj management type 2 outlier detected for ESP_2020_2: 0.573927408010708
+Trunk_diameter: h2_adj management type 2 outlier detected for CHE_2023_2: 0.640436113282939
+Trunk_diameter: h2_adj management type 2 outlier detected for BEL_2021_2: 0.629223042399449
+Trunk_diameter: h2_adj management type 1 outlier detected for POL_2022_1: 0.353921065293193
+Trunk_diameter: h2_adj management type 1 outlier detected for POL_2021_1: 0.223451153447274
+Trunk_diameter: h2_adj management type 1 outlier detected for POL_2020_1: 0.159519211284766
+Trunk_diameter: h2_adj management type 1 outlier detected for POL_2019_1: 0.523428216166648
+Trunk_diameter: h2_adj management type 1 outlier detected for POL_2018_1: 0.517454128889637
+Trunk_diameter: Error for BEL_2023_2: no data for trait in environment 
+Trunk_diameter: Error for BEL_2023_2 during SpATs: no data available for this environment
+Trunk_diameter: Error for BEL_2023_1: no data for trait in environment 
+Trunk_diameter: Error for BEL_2023_1 during SpATs: no data available for this environment
+Trunk_diameter: Error for BEL_2022_2: no data for trait in environment 
+Trunk_diameter: Error for BEL_2022_2 during SpATs: no data available for this environment
+Trunk_increment: h2_raw outlier detected for ESP_2020_2: 0.00467217836623795
+Trunk_increment: h2_raw management type 2 outlier detected for ESP_2020_2: 0.00467217836623795
+Trunk_increment: h2_raw management type 1 outlier detected for POL_2019_1: 0.103047295094359
+Trunk_increment: h2_adj outlier detected for ITA_2022_3: 0.012246271734154
+Trunk_increment: h2_adj outlier detected for BEL_2021_2: 0.0297033382144848
+Trunk_increment: h2_adj management type 1 outlier detected for POL_2021_1: 0.0746667460833748
+Trunk_increment: h2_adj management type 1 outlier detected for POL_2019_1: 0.130792442293005
+Trunk_increment: h2_adj management type 1 outlier detected for ESP_2023_1: 0.16467683204898
+Trunk_increment: Error for POL_2018_1: no data for trait in environment 
+Trunk_increment: Error for POL_2018_1 during SpATs: no data available for this environment
+Trunk_increment: Error for FRA_2018_1: no data for trait in environment 
+Trunk_increment: Error for FRA_2018_1 during SpATs: no data available for this environment
+Trunk_increment: Error for ESP_2018_1: no data for trait in environment 
+Trunk_increment: Error for ESP_2018_1 during SpATs: no data available for this environment
+Trunk_increment: Error for BEL_2023_2: no data for trait in environment 
+Trunk_increment: Error for BEL_2023_2 during SpATs: no data available for this environment
+Trunk_increment: Error for BEL_2023_1: no data for trait in environment 
+Trunk_increment: Error for BEL_2023_1 during SpATs: no data available for this environment
+Trunk_increment: Error for BEL_2022_2: no data for trait in environment 
+Trunk_increment: Error for BEL_2022_2 during SpATs: no data available for this environment
+Flowering_intensity: h2_raw outlier detected for FRA_2021_1: 0.00257314447050587
+Flowering_intensity: h2_raw outlier detected for BEL_2021_1: 0.309389990983039
+Flowering_intensity: h2_raw management type 3 outlier detected for ITA_2023_3: 0.42070015871832
+Flowering_intensity: h2_raw management type 1 outlier detected for FRA_2021_1: 0.00257314447050587
+Flowering_intensity: h2_raw management type 1 outlier detected for BEL_2021_1: 0.309389990983039
+Flowering_intensity: h2_raw management type 1 outlier detected for BEL_2020_1: 0.364683560294825
+Flowering_intensity: h2_adj outlier detected for FRA_2021_1: 0.00457572352508437
+Flowering_intensity: h2_adj outlier detected for BEL_2021_1: 0.307779639854808
+Flowering_intensity: h2_adj outlier detected for BEL_2020_1: 0.372923730895677
+Flowering_intensity: h2_adj management type 3 outlier detected for ITA_2023_3: 0.430448593518474
+Flowering_intensity: h2_adj management type 1 outlier detected for FRA_2021_1: 0.00457572352508437
+Flowering_intensity: h2_adj management type 1 outlier detected for BEL_2021_1: 0.307779639854808
+Flowering_intensity: h2_adj management type 1 outlier detected for BEL_2020_1: 0.372923730895677
+Flowering_intensity: Error for FRA_2023_2: no data for trait in environment 
+Flowering_intensity: Error for FRA_2023_2 during SpATs: no data available for this environment
+Flowering_intensity: Error for FRA_2023_1: no data for trait in environment 
+Flowering_intensity: Error for FRA_2023_1 during SpATs: no data available for this environment
+Flowering_intensity: Error for ESP_2022_2: no data for trait in environment 
+Flowering_intensity: Error for ESP_2022_2 during SpATs: no data available for this environment
+Flowering_intensity: Error for ESP_2022_1: no data for trait in environment 
+Flowering_intensity: Error for ESP_2022_1 during SpATs: no data available for this environment
+Flowering_intensity: Error for ESP_2020_2: no data for trait in environment 
+Flowering_intensity: Error for ESP_2020_2 during SpATs: no data available for this environment
+Flowering_intensity: Error for BEL_2023_2: no data for trait in environment 
+Flowering_intensity: Error for BEL_2023_2 during SpATs: no data available for this environment
+Flowering_intensity: Error for BEL_2023_1: no data for trait in environment 
+Flowering_intensity: Error for BEL_2023_1 during SpATs: no data available for this environment
+Flowering_intensity: Error for BEL_2022_2: no data for trait in environment 
+Flowering_intensity: Error for BEL_2022_2 during SpATs: no data available for this environment
+Flowering_intensity: Error for BEL_2021_2: no data for trait in environment 
+Flowering_intensity: Error for BEL_2021_2 during SpATs: no data available for this environment
+Flowering_intensity: Error for BEL_2020_2: no data for trait in environment 
+Flowering_intensity: Error for BEL_2020_2 during SpATs: no data available for this environment
+Flowering_begin: h2_raw outlier detected for POL_2021_3: 0.297740923733812
+Flowering_begin: h2_raw outlier detected for POL_2020_3: 0.171187322649998
+Flowering_begin: h2_raw outlier detected for POL_2019_3: 0.0372146935951849
+Flowering_begin: h2_raw outlier detected for POL_2018_1: 0.0634616101924129
+Flowering_begin: h2_raw outlier detected for FRA_2023_1: 0.128850511179721
+Flowering_begin: h2_raw outlier detected for ESP_2020_1: 0.0350191032288901
+Flowering_begin: h2_raw outlier detected for CHE_2018_1: 0.560671607123183
+Flowering_begin: h2_raw management type 3 outlier detected for POL_2021_3: 0.297740923733812
+Flowering_begin: h2_raw management type 3 outlier detected for POL_2020_3: 0.171187322649998
+Flowering_begin: h2_raw management type 3 outlier detected for POL_2019_3: 0.0372146935951849
+Flowering_begin: h2_raw management type 1 outlier detected for POL_2018_1: 0.0634616101924129
+Flowering_begin: h2_raw management type 1 outlier detected for FRA_2023_1: 0.128850511179721
+Flowering_begin: h2_raw management type 1 outlier detected for ESP_2020_1: 0.0350191032288901
+Flowering_begin: h2_raw management type 1 outlier detected for CHE_2018_1: 0.560671607123183
+Flowering_begin: h2_raw management type 1 outlier detected for BEL_2018_1: 0.641543173508835
+Flowering_begin: h2_adj outlier detected for POL_2021_3: 0.306940551636761
+Flowering_begin: h2_adj outlier detected for POL_2020_3: 0.184585055430231
+Flowering_begin: h2_adj outlier detected for POL_2019_3: 0.0411704690648636
+Flowering_begin: h2_adj outlier detected for POL_2018_1: 0.067510413942818
+Flowering_begin: h2_adj outlier detected for FRA_2023_1: 0.140214276211836
+Flowering_begin: h2_adj outlier detected for ESP_2020_1: 0.0517407151915472
+Flowering_begin: h2_adj outlier detected for CHE_2018_1: 0.588567713271964
+Flowering_begin: h2_adj management type 3 outlier detected for POL_2021_3: 0.306940551636761
+Flowering_begin: h2_adj management type 3 outlier detected for POL_2020_3: 0.184585055430231
+Flowering_begin: h2_adj management type 3 outlier detected for POL_2019_3: 0.0411704690648636
+Flowering_begin: h2_adj management type 1 outlier detected for POL_2018_1: 0.067510413942818
+Flowering_begin: h2_adj management type 1 outlier detected for FRA_2023_1: 0.140214276211836
+Flowering_begin: h2_adj management type 1 outlier detected for ESP_2020_1: 0.0517407151915472
+Flowering_begin: h2_adj management type 1 outlier detected for CHE_2018_1: 0.588567713271964
+Flowering_begin: h2_adj management type 1 outlier detected for BEL_2018_1: 0.655993888672509
+Flowering_begin: Error for ESP_2022_2: no data for trait in environment 
+Flowering_begin: Error for ESP_2022_2 during SpATs: no data available for this environment
+Flowering_begin: Error for ESP_2022_1: no data for trait in environment 
+Flowering_begin: Error for ESP_2022_1 during SpATs: no data available for this environment
+Flowering_begin: Error for ESP_2020_2: no data for trait in environment 
+Flowering_begin: Error for ESP_2020_2 during SpATs: no data available for this environment
+Flowering_begin: Error for BEL_2023_2: no data for trait in environment 
+Flowering_begin: Error for BEL_2023_2 during SpATs: no data available for this environment
+Flowering_begin: Error for BEL_2023_1: no data for trait in environment 
+Flowering_begin: Error for BEL_2023_1 during SpATs: no data available for this environment
+Flowering_begin: Error for BEL_2022_2: no data for trait in environment 
+Flowering_begin: Error for BEL_2022_2 during SpATs: no data available for this environment
+Flowering_begin: Error for BEL_2021_2: no data for trait in environment 
+Flowering_begin: Error for BEL_2021_2 during SpATs: no data available for this environment
+Flowering_begin: Error for BEL_2020_2: no data for trait in environment 
+Flowering_begin: Error for BEL_2020_2 during SpATs: no data available for this environment
+Flowering_full: Error for POL_2023_3: no data for trait in environment 
+Flowering_full: Error for POL_2023_3 during SpATs: no data available for this environment
+Flowering_full: Error for POL_2023_1: no data for trait in environment 
+Flowering_full: Error for POL_2023_1 during SpATs: no data available for this environment
+Flowering_full: Error for POL_2022_3: no data for trait in environment 
+Flowering_full: Error for POL_2022_3 during SpATs: no data available for this environment
+Flowering_full: Error for POL_2022_1: no data for trait in environment 
+Flowering_full: Error for POL_2022_1 during SpATs: no data available for this environment
+Flowering_full: Error for POL_2021_3: no data for trait in environment 
+Flowering_full: Error for POL_2021_3 during SpATs: no data available for this environment
+Flowering_full: Error for POL_2021_1: no data for trait in environment 
+Flowering_full: Error for POL_2021_1 during SpATs: no data available for this environment
+Flowering_full: Error for POL_2020_3: no data for trait in environment 
+Flowering_full: Error for POL_2020_3 during SpATs: no data available for this environment
+Flowering_full: Error for POL_2020_1: no data for trait in environment 
+Flowering_full: Error for POL_2020_1 during SpATs: no data available for this environment
+Flowering_full: Error for POL_2019_3: no data for trait in environment 
+Flowering_full: Error for POL_2019_3 during SpATs: no data available for this environment
+Flowering_full: Error for POL_2019_1: no data for trait in environment 
+Flowering_full: Error for POL_2019_1 during SpATs: no data available for this environment
+Flowering_full: Error for POL_2018_1: no data for trait in environment 
+Flowering_full: Error for POL_2018_1 during SpATs: no data available for this environment
+Flowering_full: Error for ITA_2023_3: no data for trait in environment 
+Flowering_full: Error for ITA_2023_3 during SpATs: no data available for this environment
+Flowering_full: Error for ITA_2023_1: no data for trait in environment 
+Flowering_full: Error for ITA_2023_1 during SpATs: no data available for this environment
+Flowering_full: Error for ITA_2022_3: no data for trait in environment 
+Flowering_full: Error for ITA_2022_3 during SpATs: no data available for this environment
+Flowering_full: Error for ITA_2022_1: no data for trait in environment 
+Flowering_full: Error for ITA_2022_1 during SpATs: no data available for this environment
+Flowering_full: Error for ITA_2021_3: no data for trait in environment 
+Flowering_full: Error for ITA_2021_3 during SpATs: no data available for this environment
+Flowering_full: Error for ITA_2021_1: no data for trait in environment 
+Flowering_full: Error for ITA_2021_1 during SpATs: no data available for this environment
+Flowering_full: Error for ITA_2020_3: no data for trait in environment 
+Flowering_full: Error for ITA_2020_3 during SpATs: no data available for this environment
+Flowering_full: Error for ITA_2020_1: no data for trait in environment 
+Flowering_full: Error for ITA_2020_1 during SpATs: no data available for this environment
+Flowering_full: Error for ITA_2019_3: no data for trait in environment 
+Flowering_full: Error for ITA_2019_3 during SpATs: no data available for this environment
+Flowering_full: Error for ITA_2019_1: no data for trait in environment 
+Flowering_full: Error for ITA_2019_1 during SpATs: no data available for this environment
+Flowering_full: Error for ITA_2018_1: no data for trait in environment 
+Flowering_full: Error for ITA_2018_1 during SpATs: no data available for this environment
+Flowering_full: Error for FRA_2023_2: no data for trait in environment 
+Flowering_full: Error for FRA_2023_2 during SpATs: no data available for this environment
+Flowering_full: Error for FRA_2023_1: no data for trait in environment 
+Flowering_full: Error for FRA_2023_1 during SpATs: no data available for this environment
+Flowering_full: Error for FRA_2022_2: no data for trait in environment 
+Flowering_full: Error for FRA_2022_2 during SpATs: no data available for this environment
+Flowering_full: Error for FRA_2022_1: no data for trait in environment 
+Flowering_full: Error for FRA_2022_1 during SpATs: no data available for this environment
+Flowering_full: Error for FRA_2021_2: no data for trait in environment 
+Flowering_full: Error for FRA_2021_2 during SpATs: no data available for this environment
+Flowering_full: Error for FRA_2021_1: no data for trait in environment 
+Flowering_full: Error for FRA_2021_1 during SpATs: no data available for this environment
+Flowering_full: Error for FRA_2020_2: no data for trait in environment 
+Flowering_full: Error for FRA_2020_2 during SpATs: no data available for this environment
+Flowering_full: Error for FRA_2020_1: no data for trait in environment 
+Flowering_full: Error for FRA_2020_1 during SpATs: no data available for this environment
+Flowering_full: Error for FRA_2019_1: no data for trait in environment 
+Flowering_full: Error for FRA_2019_1 during SpATs: no data available for this environment
+Flowering_full: Error for FRA_2018_1: no data for trait in environment 
+Flowering_full: Error for FRA_2018_1 during SpATs: no data available for this environment
+Flowering_full: Error for ESP_2023_2: no data for trait in environment 
+Flowering_full: Error for ESP_2023_2 during SpATs: no data available for this environment
+Flowering_full: Error for ESP_2023_1: no data for trait in environment 
+Flowering_full: Error for ESP_2023_1 during SpATs: no data available for this environment
+Flowering_full: Error for ESP_2022_2: no data for trait in environment 
+Flowering_full: Error for ESP_2022_2 during SpATs: no data available for this environment
+Flowering_full: Error for ESP_2022_1: no data for trait in environment 
+Flowering_full: Error for ESP_2022_1 during SpATs: no data available for this environment
+Flowering_full: Error for ESP_2020_2: no data for trait in environment 
+Flowering_full: Error for ESP_2020_2 during SpATs: no data available for this environment
+Flowering_full: Error for ESP_2018_1: no data for trait in environment 
+Flowering_full: Error for ESP_2018_1 during SpATs: no data available for this environment
+Flowering_full: Error for CHE_2023_2: no data for trait in environment 
+Flowering_full: Error for CHE_2023_2 during SpATs: no data available for this environment
+Flowering_full: Error for CHE_2023_1: no data for trait in environment 
+Flowering_full: Error for CHE_2023_1 during SpATs: no data available for this environment
+Flowering_full: Error for CHE_2022_2: no data for trait in environment 
+Flowering_full: Error for CHE_2022_2 during SpATs: no data available for this environment
+Flowering_full: Error for CHE_2022_1: no data for trait in environment 
+Flowering_full: Error for CHE_2022_1 during SpATs: no data available for this environment
+Flowering_full: Error for CHE_2021_2: no data for trait in environment 
+Flowering_full: Error for CHE_2021_2 during SpATs: no data available for this environment
+Flowering_full: Error for CHE_2021_1: no data for trait in environment 
+Flowering_full: Error for CHE_2021_1 during SpATs: no data available for this environment
+Flowering_full: Error for CHE_2020_2: no data for trait in environment 
+Flowering_full: Error for CHE_2020_2 during SpATs: no data available for this environment
+Flowering_full: Error for CHE_2020_1: no data for trait in environment 
+Flowering_full: Error for CHE_2020_1 during SpATs: no data available for this environment
+Flowering_full: Error for CHE_2019_1: no data for trait in environment 
+Flowering_full: Error for CHE_2019_1 during SpATs: no data available for this environment
+Flowering_full: Error for CHE_2018_1: no data for trait in environment 
+Flowering_full: Error for CHE_2018_1 during SpATs: no data available for this environment
+Flowering_full: Error for BEL_2023_2: no data for trait in environment 
+Flowering_full: Error for BEL_2023_2 during SpATs: no data available for this environment
+Flowering_full: Error for BEL_2023_1: no data for trait in environment 
+Flowering_full: Error for BEL_2023_1 during SpATs: no data available for this environment
+Flowering_full: Error for BEL_2022_2: no data for trait in environment 
+Flowering_full: Error for BEL_2022_2 during SpATs: no data available for this environment
+Flowering_full: Error for BEL_2022_1: no data for trait in environment 
+Flowering_full: Error for BEL_2022_1 during SpATs: no data available for this environment
+Flowering_full: Error for BEL_2021_2: no data for trait in environment 
+Flowering_full: Error for BEL_2021_2 during SpATs: no data available for this environment
+Flowering_full: Error for BEL_2021_1: no data for trait in environment 
+Flowering_full: Error for BEL_2021_1 during SpATs: no data available for this environment
+Flowering_full: Error for BEL_2020_2: no data for trait in environment 
+Flowering_full: Error for BEL_2020_2 during SpATs: no data available for this environment
+Flowering_full: Error for BEL_2020_1: no data for trait in environment 
+Flowering_full: Error for BEL_2020_1 during SpATs: no data available for this environment
+Flowering_full: Error for BEL_2019_1: no data for trait in environment 
+Flowering_full: Error for BEL_2019_1 during SpATs: no data available for this environment
+Flowering_full: Error for BEL_2018_1: no data for trait in environment 
+Flowering_full: Error for BEL_2018_1 during SpATs: no data available for this environment
+Flowering_end: h2_raw outlier detected for ESP_2021_1: 0.28774638363237
+Flowering_end: h2_raw management type 1 outlier detected for ESP_2021_1: 0.28774638363237
+Flowering_end: h2_adj outlier detected for ESP_2021_1: 0.426286792740671
+Flowering_end: h2_adj management type 1 outlier detected for ESP_2021_1: 0.426286792740671
+Flowering_end: Error for POL_2023_3: no data for trait in environment 
+Flowering_end: Error for POL_2023_3 during SpATs: no data available for this environment
+Flowering_end: Error for POL_2023_1: no data for trait in environment 
+Flowering_end: Error for POL_2023_1 during SpATs: no data available for this environment
+Flowering_end: Error for POL_2022_3: no data for trait in environment 
+Flowering_end: Error for POL_2022_3 during SpATs: no data available for this environment
+Flowering_end: Error for POL_2022_1: no data for trait in environment 
+Flowering_end: Error for POL_2022_1 during SpATs: no data available for this environment
+Flowering_end: Error for POL_2021_3: no data for trait in environment 
+Flowering_end: Error for POL_2021_3 during SpATs: no data available for this environment
+Flowering_end: Error for POL_2021_1: no data for trait in environment 
+Flowering_end: Error for POL_2021_1 during SpATs: no data available for this environment
+Flowering_end: Error for POL_2020_3: no data for trait in environment 
+Flowering_end: Error for POL_2020_3 during SpATs: no data available for this environment
+Flowering_end: Error for POL_2020_1: no data for trait in environment 
+Flowering_end: Error for POL_2020_1 during SpATs: no data available for this environment
+Flowering_end: Error for POL_2019_3: no data for trait in environment 
+Flowering_end: Error for POL_2019_3 during SpATs: no data available for this environment
+Flowering_end: Error for POL_2019_1: no data for trait in environment 
+Flowering_end: Error for POL_2019_1 during SpATs: no data available for this environment
+Flowering_end: Error for POL_2018_1: no data for trait in environment 
+Flowering_end: Error for POL_2018_1 during SpATs: no data available for this environment
+Flowering_end: Error for ITA_2023_3: no data for trait in environment 
+Flowering_end: Error for ITA_2023_3 during SpATs: no data available for this environment
+Flowering_end: Error for ITA_2023_1: no data for trait in environment 
+Flowering_end: Error for ITA_2023_1 during SpATs: no data available for this environment
+Flowering_end: Error for ITA_2022_3: no data for trait in environment 
+Flowering_end: Error for ITA_2022_3 during SpATs: no data available for this environment
+Flowering_end: Error for ITA_2022_1: no data for trait in environment 
+Flowering_end: Error for ITA_2022_1 during SpATs: no data available for this environment
+Flowering_end: Error for ITA_2021_3: no data for trait in environment 
+Flowering_end: Error for ITA_2021_3 during SpATs: no data available for this environment
+Flowering_end: Error for ITA_2021_1: no data for trait in environment 
+Flowering_end: Error for ITA_2021_1 during SpATs: no data available for this environment
+Flowering_end: Error for ITA_2020_3: no data for trait in environment 
+Flowering_end: Error for ITA_2020_3 during SpATs: no data available for this environment
+Flowering_end: Error for ITA_2020_1: no data for trait in environment 
+Flowering_end: Error for ITA_2020_1 during SpATs: no data available for this environment
+Flowering_end: Error for ITA_2019_3: no data for trait in environment 
+Flowering_end: Error for ITA_2019_3 during SpATs: no data available for this environment
+Flowering_end: Error for ITA_2019_1: no data for trait in environment 
+Flowering_end: Error for ITA_2019_1 during SpATs: no data available for this environment
+Flowering_end: Error for ITA_2018_1: no data for trait in environment 
+Flowering_end: Error for ITA_2018_1 during SpATs: no data available for this environment
+Flowering_end: Error for FRA_2023_2: no data for trait in environment 
+Flowering_end: Error for FRA_2023_2 during SpATs: no data available for this environment
+Flowering_end: Error for FRA_2023_1: no data for trait in environment 
+Flowering_end: Error for FRA_2023_1 during SpATs: no data available for this environment
+Flowering_end: Error for FRA_2022_2: no data for trait in environment 
+Flowering_end: Error for FRA_2022_2 during SpATs: no data available for this environment
+Flowering_end: Error for FRA_2022_1: no data for trait in environment 
+Flowering_end: Error for FRA_2022_1 during SpATs: no data available for this environment
+Flowering_end: Error for FRA_2021_2: no data for trait in environment 
+Flowering_end: Error for FRA_2021_2 during SpATs: no data available for this environment
+Flowering_end: Error for FRA_2021_1: no data for trait in environment 
+Flowering_end: Error for FRA_2021_1 during SpATs: no data available for this environment
+Flowering_end: Error for FRA_2020_2: no data for trait in environment 
+Flowering_end: Error for FRA_2020_2 during SpATs: no data available for this environment
+Flowering_end: Error for FRA_2020_1: no data for trait in environment 
+Flowering_end: Error for FRA_2020_1 during SpATs: no data available for this environment
+Flowering_end: Error for FRA_2019_1: no data for trait in environment 
+Flowering_end: Error for FRA_2019_1 during SpATs: no data available for this environment
+Flowering_end: Error for FRA_2018_1: no data for trait in environment 
+Flowering_end: Error for FRA_2018_1 during SpATs: no data available for this environment
+Flowering_end: Error for ESP_2022_2: no data for trait in environment 
+Flowering_end: Error for ESP_2022_2 during SpATs: no data available for this environment
+Flowering_end: Error for ESP_2022_1: no data for trait in environment 
+Flowering_end: Error for ESP_2022_1 during SpATs: no data available for this environment
+Flowering_end: Error for ESP_2020_2: no data for trait in environment 
+Flowering_end: Error for ESP_2020_2 during SpATs: no data available for this environment
+Flowering_end: Error for ESP_2018_1: no data for trait in environment 
+Flowering_end: Error for ESP_2018_1 during SpATs: no data available for this environment
+Flowering_end: Error for CHE_2023_2: no data for trait in environment 
+Flowering_end: Error for CHE_2023_2 during SpATs: no data available for this environment
+Flowering_end: Error for CHE_2023_1: no data for trait in environment 
+Flowering_end: Error for CHE_2023_1 during SpATs: no data available for this environment
+Flowering_end: Error for CHE_2022_2: no data for trait in environment 
+Flowering_end: Error for CHE_2022_2 during SpATs: no data available for this environment
+Flowering_end: Error for CHE_2022_1: no data for trait in environment 
+Flowering_end: Error for CHE_2022_1 during SpATs: no data available for this environment
+Flowering_end: Error for CHE_2021_2: no data for trait in environment 
+Flowering_end: Error for CHE_2021_2 during SpATs: no data available for this environment
+Flowering_end: Error for CHE_2021_1: no data for trait in environment 
+Flowering_end: Error for CHE_2021_1 during SpATs: no data available for this environment
+Flowering_end: Error for CHE_2020_2: no data for trait in environment 
+Flowering_end: Error for CHE_2020_2 during SpATs: no data available for this environment
+Flowering_end: Error for CHE_2020_1: no data for trait in environment 
+Flowering_end: Error for CHE_2020_1 during SpATs: no data available for this environment
+Flowering_end: Error for CHE_2019_1: no data for trait in environment 
+Flowering_end: Error for CHE_2019_1 during SpATs: no data available for this environment
+Flowering_end: Error for CHE_2018_1: no data for trait in environment 
+Flowering_end: Error for CHE_2018_1 during SpATs: no data available for this environment
+Flowering_end: Error for BEL_2023_2: no data for trait in environment 
+Flowering_end: Error for BEL_2023_2 during SpATs: no data available for this environment
+Flowering_end: Error for BEL_2023_1: no data for trait in environment 
+Flowering_end: Error for BEL_2023_1 during SpATs: no data available for this environment
+Flowering_end: Error for BEL_2022_2: no data for trait in environment 
+Flowering_end: Error for BEL_2022_2 during SpATs: no data available for this environment
+Flowering_end: Error for BEL_2022_1: no data for trait in environment 
+Flowering_end: Error for BEL_2022_1 during SpATs: no data available for this environment
+Flowering_end: Error for BEL_2021_2: no data for trait in environment 
+Flowering_end: Error for BEL_2021_2 during SpATs: no data available for this environment
+Flowering_end: Error for BEL_2021_1: no data for trait in environment 
+Flowering_end: Error for BEL_2021_1 during SpATs: no data available for this environment
+Flowering_end: Error for BEL_2020_2: no data for trait in environment 
+Flowering_end: Error for BEL_2020_2 during SpATs: no data available for this environment
+Flowering_end: Error for BEL_2020_1: no data for trait in environment 
+Flowering_end: Error for BEL_2020_1 during SpATs: no data available for this environment
+Flowering_end: Error for BEL_2019_1: no data for trait in environment 
+Flowering_end: Error for BEL_2019_1 during SpATs: no data available for this environment
+Flowering_end: Error for BEL_2018_1: no data for trait in environment 
+Flowering_end: Error for BEL_2018_1 during SpATs: no data available for this environment
+Scab: h2_adj outlier detected for BEL_2021_1: 9.38939593414227e-05
+Scab: h2_adj management type 2 outlier detected for FRA_2023_2: 0.466897846061203
+Scab: h2_adj management type 1 outlier detected for BEL_2021_1: 9.38939593414227e-05
+Scab: Error for POL_2020_3: no data for trait in environment 
+Scab: Error for POL_2020_3 during SpATs: no data available for this environment
+Scab: Error for POL_2020_1: no data for trait in environment 
+Scab: Error for POL_2020_1 during SpATs: no data available for this environment
+Scab: Error for POL_2019_3: no data for trait in environment 
+Scab: Error for POL_2019_3 during SpATs: no data available for this environment
+Scab: Error for POL_2019_1: no data for trait in environment 
+Scab: Error for POL_2019_1 during SpATs: no data available for this environment
+Scab: Error for POL_2018_1: no data for trait in environment 
+Scab: Error for POL_2018_1 during SpATs: no data available for this environment
+Scab: Error for ITA_2023_3: no data for trait in environment 
+Scab: Error for ITA_2023_3 during SpATs: no data available for this environment
+Scab: Error for ITA_2023_1: no data for trait in environment 
+Scab: Error for ITA_2023_1 during SpATs: no data available for this environment
+Scab: Error for ITA_2022_3: no data for trait in environment 
+Scab: Error for ITA_2022_3 during SpATs: no data available for this environment
+Scab: Error for ITA_2022_1: no data for trait in environment 
+Scab: Error for ITA_2022_1 during SpATs: no data available for this environment
+Scab: Error for ITA_2021_3: no data for trait in environment 
+Scab: Error for ITA_2021_3 during SpATs: no data available for this environment
+Scab: Error for ITA_2021_1: no data for trait in environment 
+Scab: Error for ITA_2021_1 during SpATs: no data available for this environment
+Scab: Error for ITA_2020_3: no data for trait in environment 
+Scab: Error for ITA_2020_3 during SpATs: no data available for this environment
+Scab: Error for ITA_2020_1: no data for trait in environment 
+Scab: Error for ITA_2020_1 during SpATs: no data available for this environment
+Scab: Error for ITA_2019_3: no data for trait in environment 
+Scab: Error for ITA_2019_3 during SpATs: no data available for this environment
+Scab: Error for ITA_2019_1: no data for trait in environment 
+Scab: Error for ITA_2019_1 during SpATs: no data available for this environment
+Scab: Error for ITA_2018_1: no data for trait in environment 
+Scab: Error for ITA_2018_1 during SpATs: no data available for this environment
+Scab: Error for FRA_2023_1 after SpATs, for management type 1, during individual clonal mean h2 adj computation: [1] "Downdated VtV is not positive definite"
+Scab: Error for FRA_2023_1 after SpATs during individual clonal mean h2 adj computation: [1] "Downdated VtV is not positive definite"
+Scab: Error for FRA_2022_2 during SpATs: Error with spat_hetero_env_correct_trait, here is the possible issue with data or computation : The design matrix associated to the fixed part of the model is not of full rank. Please check that there are no redundant components in the fixed part of the model.
+Scab: Error for FRA_2022_1, for management type 1, during individual clonal mean h2 raw computation: [1] "number of levels of each grouping factor must be < number of observations (problems: Genotype)"
+Scab: Error for FRA_2022_1 during individual clonal mean h2 raw computation: [1] "number of levels of each grouping factor must be < number of observations (problems: Genotype)"
+Scab: Error for FRA_2022_1 after SpATs, for management type 1, during individual clonal mean h2 adj computation: [1] "number of levels of each grouping factor must be < number of observations (problems: Genotype)"
+Scab: Error for FRA_2022_1 after SpATs during individual clonal mean h2 adj computation: [1] "number of levels of each grouping factor must be < number of observations (problems: Genotype)"
+Scab: Error for FRA_2020_2: no data for trait in environment 
+Scab: Error for FRA_2020_2 during SpATs: no data available for this environment
+Scab: Error for FRA_2020_1: no data for trait in environment 
+Scab: Error for FRA_2020_1 during SpATs: no data available for this environment
+Scab: Error for FRA_2019_1: no data for trait in environment 
+Scab: Error for FRA_2019_1 during SpATs: no data available for this environment
+Scab: Error for FRA_2018_1: no data for trait in environment 
+Scab: Error for FRA_2018_1 during SpATs: no data available for this environment
+Scab: Error for ESP_2023_2: no data for trait in environment 
+Scab: Error for ESP_2023_2 during SpATs: no data available for this environment
+Scab: Error for ESP_2023_1: no data for trait in environment 
+Scab: Error for ESP_2023_1 during SpATs: no data available for this environment
+Scab: Error for ESP_2022_2 during SpATs: Error with spat_hetero_env_correct_trait, here is the possible issue with data or computation : NAs in argument 3 and 'NAOK = FALSE' (dotCall64)
+Scab: Error for ESP_2021_2: no data for trait in environment 
+Scab: Error for ESP_2021_2 during SpATs: no data available for this environment
+Scab: Error for ESP_2021_1: no data for trait in environment 
+Scab: Error for ESP_2021_1 during SpATs: no data available for this environment
+Scab: Error for ESP_2020_2: no data for trait in environment 
+Scab: Error for ESP_2020_2 during SpATs: no data available for this environment
+Scab: Error for ESP_2020_1: no data for trait in environment 
+Scab: Error for ESP_2020_1 during SpATs: no data available for this environment
+Scab: Error for ESP_2019_1: no data for trait in environment 
+Scab: Error for ESP_2019_1 during SpATs: no data available for this environment
+Scab: Error for ESP_2018_1: no data for trait in environment 
+Scab: Error for ESP_2018_1 during SpATs: no data available for this environment
+Scab: Error for CHE_2023_2: no data for trait in environment 
+Scab: Error for CHE_2023_2 during SpATs: no data available for this environment
+Scab: Error for CHE_2023_1: no data for trait in environment 
+Scab: Error for CHE_2023_1 during SpATs: no data available for this environment
+Scab: Error for CHE_2022_2: no data for trait in environment 
+Scab: Error for CHE_2022_2 during SpATs: no data available for this environment
+Scab: Error for CHE_2022_1: no data for trait in environment 
+Scab: Error for CHE_2022_1 during SpATs: no data available for this environment
+Scab: Error for CHE_2021_2: no data for trait in environment 
+Scab: Error for CHE_2021_2 during SpATs: no data available for this environment
+Scab: Error for CHE_2021_1: no data for trait in environment 
+Scab: Error for CHE_2021_1 during SpATs: no data available for this environment
+Scab: Error for CHE_2020_2: no data for trait in environment 
+Scab: Error for CHE_2020_2 during SpATs: no data available for this environment
+Scab: Error for CHE_2020_1: no data for trait in environment 
+Scab: Error for CHE_2020_1 during SpATs: no data available for this environment
+Scab: Error for CHE_2019_1: no data for trait in environment 
+Scab: Error for CHE_2019_1 during SpATs: no data available for this environment
+Scab: Error for CHE_2018_1: no data for trait in environment 
+Scab: Error for CHE_2018_1 during SpATs: no data available for this environment
+Scab: Error for BEL_2022_2: no data for trait in environment 
+Scab: Error for BEL_2022_2 during SpATs: no data available for this environment
+Scab: Error for BEL_2022_1: no data for trait in environment 
+Scab: Error for BEL_2022_1 during SpATs: no data available for this environment
+Scab: Error for BEL_2020_2: no data for trait in environment 
+Scab: Error for BEL_2020_2 during SpATs: no data available for this environment
+Scab: Error for BEL_2020_1: no data for trait in environment 
+Scab: Error for BEL_2020_1 during SpATs: no data available for this environment
+Scab: Error for BEL_2019_1: no data for trait in environment 
+Scab: Error for BEL_2019_1 during SpATs: no data available for this environment
+Scab: Error for BEL_2018_1: no data for trait in environment 
+Scab: Error for BEL_2018_1 during SpATs: no data available for this environment
+Powdery_mildew: h2_raw outlier detected for POL_2021_1: 0.228866496457912
+Powdery_mildew: h2_raw outlier detected for BEL_2021_1: 0.0538427570777318
+Powdery_mildew: h2_adj outlier detected for POL_2021_1: 0.199043175222599
+Powdery_mildew: h2_adj outlier detected for BEL_2021_1: 0.0552929876934456
+Powdery_mildew: Error for POL_2020_3: no data for trait in environment 
+Powdery_mildew: Error for POL_2020_3 during SpATs: no data available for this environment
+Powdery_mildew: Error for POL_2020_1: no data for trait in environment 
+Powdery_mildew: Error for POL_2020_1 during SpATs: no data available for this environment
+Powdery_mildew: Error for POL_2019_3: no data for trait in environment 
+Powdery_mildew: Error for POL_2019_3 during SpATs: no data available for this environment
+Powdery_mildew: Error for POL_2019_1: no data for trait in environment 
+Powdery_mildew: Error for POL_2019_1 during SpATs: no data available for this environment
+Powdery_mildew: Error for POL_2018_1: no data for trait in environment 
+Powdery_mildew: Error for POL_2018_1 during SpATs: no data available for this environment
+Powdery_mildew: Error for ITA_2023_3: no data for trait in environment 
+Powdery_mildew: Error for ITA_2023_3 during SpATs: no data available for this environment
+Powdery_mildew: Error for ITA_2023_1: no data for trait in environment 
+Powdery_mildew: Error for ITA_2023_1 during SpATs: no data available for this environment
+Powdery_mildew: Error for ITA_2022_3: no data for trait in environment 
+Powdery_mildew: Error for ITA_2022_3 during SpATs: no data available for this environment
+Powdery_mildew: Error for ITA_2022_1: no data for trait in environment 
+Powdery_mildew: Error for ITA_2022_1 during SpATs: no data available for this environment
+Powdery_mildew: Error for ITA_2021_3: no data for trait in environment 
+Powdery_mildew: Error for ITA_2021_3 during SpATs: no data available for this environment
+Powdery_mildew: Error for ITA_2021_1: no data for trait in environment 
+Powdery_mildew: Error for ITA_2021_1 during SpATs: no data available for this environment
+Powdery_mildew: Error for ITA_2020_3: no data for trait in environment 
+Powdery_mildew: Error for ITA_2020_3 during SpATs: no data available for this environment
+Powdery_mildew: Error for ITA_2020_1: no data for trait in environment 
+Powdery_mildew: Error for ITA_2020_1 during SpATs: no data available for this environment
+Powdery_mildew: Error for ITA_2019_3: no data for trait in environment 
+Powdery_mildew: Error for ITA_2019_3 during SpATs: no data available for this environment
+Powdery_mildew: Error for ITA_2019_1: no data for trait in environment 
+Powdery_mildew: Error for ITA_2019_1 during SpATs: no data available for this environment
+Powdery_mildew: Error for ITA_2018_1: no data for trait in environment 
+Powdery_mildew: Error for ITA_2018_1 during SpATs: no data available for this environment
+Powdery_mildew: Error for FRA_2022_2 during SpATs: Error with spat_hetero_env_correct_trait, here is the possible issue with data or computation : The design matrix associated to the fixed part of the model is not of full rank. Please check that there are no redundant components in the fixed part of the model.
+Powdery_mildew: Error for FRA_2022_1, for management type 1, during individual clonal mean h2 raw computation: [1] "number of levels of each grouping factor must be < number of observations (problems: Genotype)"
+Powdery_mildew: Error for FRA_2022_1 during individual clonal mean h2 raw computation: [1] "number of levels of each grouping factor must be < number of observations (problems: Genotype)"
+Powdery_mildew: Error for FRA_2022_1 after SpATs, for management type 1, during individual clonal mean h2 adj computation: [1] "number of levels of each grouping factor must be < number of observations (problems: Genotype)"
+Powdery_mildew: Error for FRA_2022_1 after SpATs during individual clonal mean h2 adj computation: [1] "number of levels of each grouping factor must be < number of observations (problems: Genotype)"
+Powdery_mildew: Error for FRA_2021_2: no data for trait in environment 
+Powdery_mildew: Error for FRA_2021_2 during SpATs: no data available for this environment
+Powdery_mildew: Error for FRA_2021_1: no data for trait in environment 
+Powdery_mildew: Error for FRA_2021_1 during SpATs: no data available for this environment
+Powdery_mildew: Error for FRA_2020_2: no data for trait in environment 
+Powdery_mildew: Error for FRA_2020_2 during SpATs: no data available for this environment
+Powdery_mildew: Error for FRA_2020_1: no data for trait in environment 
+Powdery_mildew: Error for FRA_2020_1 during SpATs: no data available for this environment
+Powdery_mildew: Error for FRA_2019_1: no data for trait in environment 
+Powdery_mildew: Error for FRA_2019_1 during SpATs: no data available for this environment
+Powdery_mildew: Error for FRA_2018_1: no data for trait in environment 
+Powdery_mildew: Error for FRA_2018_1 during SpATs: no data available for this environment
+Powdery_mildew: Error for ESP_2022_2: no data for trait in environment 
+Powdery_mildew: Error for ESP_2022_2 during SpATs: no data available for this environment
+Powdery_mildew: Error for ESP_2022_1: no data for trait in environment 
+Powdery_mildew: Error for ESP_2022_1 during SpATs: no data available for this environment
+Powdery_mildew: Error for ESP_2021_2: no data for trait in environment 
+Powdery_mildew: Error for ESP_2021_2 during SpATs: no data available for this environment
+Powdery_mildew: Error for ESP_2021_1: no data for trait in environment 
+Powdery_mildew: Error for ESP_2021_1 during SpATs: no data available for this environment
+Powdery_mildew: Error for ESP_2020_2: no data for trait in environment 
+Powdery_mildew: Error for ESP_2020_2 during SpATs: no data available for this environment
+Powdery_mildew: Error for ESP_2020_1: no data for trait in environment 
+Powdery_mildew: Error for ESP_2020_1 during SpATs: no data available for this environment
+Powdery_mildew: Error for ESP_2019_1: no data for trait in environment 
+Powdery_mildew: Error for ESP_2019_1 during SpATs: no data available for this environment
+Powdery_mildew: Error for ESP_2018_1: no data for trait in environment 
+Powdery_mildew: Error for ESP_2018_1 during SpATs: no data available for this environment
+Powdery_mildew: Error for CHE_2022_2: no data for trait in environment 
+Powdery_mildew: Error for CHE_2022_2 during SpATs: no data available for this environment
+Powdery_mildew: Error for CHE_2022_1: no data for trait in environment 
+Powdery_mildew: Error for CHE_2022_1 during SpATs: no data available for this environment
+Powdery_mildew: Error for CHE_2021_2: no data for trait in environment 
+Powdery_mildew: Error for CHE_2021_2 during SpATs: no data available for this environment
+Powdery_mildew: Error for CHE_2021_1: no data for trait in environment 
+Powdery_mildew: Error for CHE_2021_1 during SpATs: no data available for this environment
+Powdery_mildew: Error for CHE_2020_2: no data for trait in environment 
+Powdery_mildew: Error for CHE_2020_2 during SpATs: no data available for this environment
+Powdery_mildew: Error for CHE_2020_1: no data for trait in environment 
+Powdery_mildew: Error for CHE_2020_1 during SpATs: no data available for this environment
+Powdery_mildew: Error for CHE_2019_1: no data for trait in environment 
+Powdery_mildew: Error for CHE_2019_1 during SpATs: no data available for this environment
+Powdery_mildew: Error for CHE_2018_1: no data for trait in environment 
+Powdery_mildew: Error for CHE_2018_1 during SpATs: no data available for this environment
+Powdery_mildew: Error for BEL_2022_2: no data for trait in environment 
+Powdery_mildew: Error for BEL_2022_2 during SpATs: no data available for this environment
+Powdery_mildew: Error for BEL_2022_1: no data for trait in environment 
+Powdery_mildew: Error for BEL_2022_1 during SpATs: no data available for this environment
+Powdery_mildew: Error for BEL_2020_2: no data for trait in environment 
+Powdery_mildew: Error for BEL_2020_2 during SpATs: no data available for this environment
+Powdery_mildew: Error for BEL_2020_1: no data for trait in environment 
+Powdery_mildew: Error for BEL_2020_1 during SpATs: no data available for this environment
+Powdery_mildew: Error for BEL_2019_1: no data for trait in environment 
+Powdery_mildew: Error for BEL_2019_1 during SpATs: no data available for this environment
+Powdery_mildew: Error for BEL_2018_1: no data for trait in environment 
+Powdery_mildew: Error for BEL_2018_1 during SpATs: no data available for this environment
+Scab_fruits: Error for POL_2023_3: no data for trait in environment 
+Scab_fruits: Error for POL_2023_3 during SpATs: no data available for this environment
+Scab_fruits: Error for POL_2023_1: no data for trait in environment 
+Scab_fruits: Error for POL_2023_1 during SpATs: no data available for this environment
+Scab_fruits: Error for POL_2022_3: no data for trait in environment 
+Scab_fruits: Error for POL_2022_3 during SpATs: no data available for this environment
+Scab_fruits: Error for POL_2022_1: no data for trait in environment 
+Scab_fruits: Error for POL_2022_1 during SpATs: no data available for this environment
+Scab_fruits: Error for POL_2021_3: no data for trait in environment 
+Scab_fruits: Error for POL_2021_3 during SpATs: no data available for this environment
+Scab_fruits: Error for POL_2021_1: no data for trait in environment 
+Scab_fruits: Error for POL_2021_1 during SpATs: no data available for this environment
+Scab_fruits: Error for POL_2020_3: no data for trait in environment 
+Scab_fruits: Error for POL_2020_3 during SpATs: no data available for this environment
+Scab_fruits: Error for POL_2020_1: no data for trait in environment 
+Scab_fruits: Error for POL_2020_1 during SpATs: no data available for this environment
+Scab_fruits: Error for POL_2019_3: no data for trait in environment 
+Scab_fruits: Error for POL_2019_3 during SpATs: no data available for this environment
+Scab_fruits: Error for POL_2019_1: no data for trait in environment 
+Scab_fruits: Error for POL_2019_1 during SpATs: no data available for this environment
+Scab_fruits: Error for POL_2018_1: no data for trait in environment 
+Scab_fruits: Error for POL_2018_1 during SpATs: no data available for this environment
+Scab_fruits: Error for ITA_2023_3: no data for trait in environment 
+Scab_fruits: Error for ITA_2023_3 during SpATs: no data available for this environment
+Scab_fruits: Error for ITA_2023_1: no data for trait in environment 
+Scab_fruits: Error for ITA_2023_1 during SpATs: no data available for this environment
+Scab_fruits: Error for ITA_2022_3: no data for trait in environment 
+Scab_fruits: Error for ITA_2022_3 during SpATs: no data available for this environment
+Scab_fruits: Error for ITA_2022_1: no data for trait in environment 
+Scab_fruits: Error for ITA_2022_1 during SpATs: no data available for this environment
+Scab_fruits: Error for ITA_2021_3: no data for trait in environment 
+Scab_fruits: Error for ITA_2021_3 during SpATs: no data available for this environment
+Scab_fruits: Error for ITA_2021_1: no data for trait in environment 
+Scab_fruits: Error for ITA_2021_1 during SpATs: no data available for this environment
+Scab_fruits: Error for ITA_2020_3: no data for trait in environment 
+Scab_fruits: Error for ITA_2020_3 during SpATs: no data available for this environment
+Scab_fruits: Error for ITA_2020_1: no data for trait in environment 
+Scab_fruits: Error for ITA_2020_1 during SpATs: no data available for this environment
+Scab_fruits: Error for ITA_2019_3: no data for trait in environment 
+Scab_fruits: Error for ITA_2019_3 during SpATs: no data available for this environment
+Scab_fruits: Error for ITA_2019_1: no data for trait in environment 
+Scab_fruits: Error for ITA_2019_1 during SpATs: no data available for this environment
+Scab_fruits: Error for ITA_2018_1: no data for trait in environment 
+Scab_fruits: Error for ITA_2018_1 during SpATs: no data available for this environment
+Scab_fruits: Error for FRA_2022_2: no data for trait in environment 
+Scab_fruits: Error for FRA_2022_2 during SpATs: no data available for this environment
+Scab_fruits: Error for FRA_2022_1: no data for trait in environment 
+Scab_fruits: Error for FRA_2022_1 during SpATs: no data available for this environment
+Scab_fruits: Error for FRA_2021_2: no data for trait in environment 
+Scab_fruits: Error for FRA_2021_2 during SpATs: no data available for this environment
+Scab_fruits: Error for FRA_2021_1: no data for trait in environment 
+Scab_fruits: Error for FRA_2021_1 during SpATs: no data available for this environment
+Scab_fruits: Error for FRA_2020_2: no data for trait in environment 
+Scab_fruits: Error for FRA_2020_2 during SpATs: no data available for this environment
+Scab_fruits: Error for FRA_2020_1: no data for trait in environment 
+Scab_fruits: Error for FRA_2020_1 during SpATs: no data available for this environment
+Scab_fruits: Error for FRA_2019_1: no data for trait in environment 
+Scab_fruits: Error for FRA_2019_1 during SpATs: no data available for this environment
+Scab_fruits: Error for FRA_2018_1: no data for trait in environment 
+Scab_fruits: Error for FRA_2018_1 during SpATs: no data available for this environment
+Scab_fruits: Error for ESP_2023_2: no data for trait in environment 
+Scab_fruits: Error for ESP_2023_2 during SpATs: no data available for this environment
+Scab_fruits: Error for ESP_2023_1: no data for trait in environment 
+Scab_fruits: Error for ESP_2023_1 during SpATs: no data available for this environment
+Scab_fruits: Error for ESP_2022_2: no data for trait in environment 
+Scab_fruits: Error for ESP_2022_2 during SpATs: no data available for this environment
+Scab_fruits: Error for ESP_2022_1: no data for trait in environment 
+Scab_fruits: Error for ESP_2022_1 during SpATs: no data available for this environment
+Scab_fruits: Error for ESP_2021_2: no data for trait in environment 
+Scab_fruits: Error for ESP_2021_2 during SpATs: no data available for this environment
+Scab_fruits: Error for ESP_2021_1: no data for trait in environment 
+Scab_fruits: Error for ESP_2021_1 during SpATs: no data available for this environment
+Scab_fruits: Error for ESP_2020_2: no data for trait in environment 
+Scab_fruits: Error for ESP_2020_2 during SpATs: no data available for this environment
+Scab_fruits: Error for ESP_2020_1: no data for trait in environment 
+Scab_fruits: Error for ESP_2020_1 during SpATs: no data available for this environment
+Scab_fruits: Error for ESP_2019_1: no data for trait in environment 
+Scab_fruits: Error for ESP_2019_1 during SpATs: no data available for this environment
+Scab_fruits: Error for ESP_2018_1: no data for trait in environment 
+Scab_fruits: Error for ESP_2018_1 during SpATs: no data available for this environment
+Scab_fruits: Error for CHE_2023_2: no data for trait in environment 
+Scab_fruits: Error for CHE_2023_2 during SpATs: no data available for this environment
+Scab_fruits: Error for CHE_2023_1: no data for trait in environment 
+Scab_fruits: Error for CHE_2023_1 during SpATs: no data available for this environment
+Scab_fruits: Error for CHE_2022_2: no data for trait in environment 
+Scab_fruits: Error for CHE_2022_2 during SpATs: no data available for this environment
+Scab_fruits: Error for CHE_2022_1: no data for trait in environment 
+Scab_fruits: Error for CHE_2022_1 during SpATs: no data available for this environment
+Scab_fruits: Error for CHE_2021_2: no data for trait in environment 
+Scab_fruits: Error for CHE_2021_2 during SpATs: no data available for this environment
+Scab_fruits: Error for CHE_2021_1: no data for trait in environment 
+Scab_fruits: Error for CHE_2021_1 during SpATs: no data available for this environment
+Scab_fruits: Error for CHE_2020_2: no data for trait in environment 
+Scab_fruits: Error for CHE_2020_2 during SpATs: no data available for this environment
+Scab_fruits: Error for CHE_2020_1: no data for trait in environment 
+Scab_fruits: Error for CHE_2020_1 during SpATs: no data available for this environment
+Scab_fruits: Error for CHE_2019_1: no data for trait in environment 
+Scab_fruits: Error for CHE_2019_1 during SpATs: no data available for this environment
+Scab_fruits: Error for CHE_2018_1: no data for trait in environment 
+Scab_fruits: Error for CHE_2018_1 during SpATs: no data available for this environment
+Scab_fruits: Error for BEL_2023_2: no data for trait in environment 
+Scab_fruits: Error for BEL_2023_2 during SpATs: no data available for this environment
+Scab_fruits: Error for BEL_2023_1: no data for trait in environment 
+Scab_fruits: Error for BEL_2023_1 during SpATs: no data available for this environment
+Scab_fruits: Error for BEL_2022_2: no data for trait in environment 
+Scab_fruits: Error for BEL_2022_2 during SpATs: no data available for this environment
+Scab_fruits: Error for BEL_2022_1: no data for trait in environment 
+Scab_fruits: Error for BEL_2022_1 during SpATs: no data available for this environment
+Scab_fruits: Error for BEL_2021_2: no data for trait in environment 
+Scab_fruits: Error for BEL_2021_2 during SpATs: no data available for this environment
+Scab_fruits: Error for BEL_2021_1: no data for trait in environment 
+Scab_fruits: Error for BEL_2021_1 during SpATs: no data available for this environment
+Scab_fruits: Error for BEL_2020_2: no data for trait in environment 
+Scab_fruits: Error for BEL_2020_2 during SpATs: no data available for this environment
+Scab_fruits: Error for BEL_2020_1: no data for trait in environment 
+Scab_fruits: Error for BEL_2020_1 during SpATs: no data available for this environment
+Scab_fruits: Error for BEL_2019_1: no data for trait in environment 
+Scab_fruits: Error for BEL_2019_1 during SpATs: no data available for this environment
+Scab_fruits: Error for BEL_2018_1: no data for trait in environment 
+Scab_fruits: Error for BEL_2018_1 during SpATs: no data available for this environment
+Weight_sample: h2_raw outlier detected for ITA_2022_3: 0.548141420409613
+Weight_sample: h2_raw outlier detected for FRA_2023_2: 0.387493400978689
+Weight_sample: h2_raw outlier detected for FRA_2023_1: 0.187443073365457
+Weight_sample: h2_raw management type 3 outlier detected for ITA_2022_3: 0.548141420409613
+Weight_sample: h2_raw management type 2 outlier detected for FRA_2023_2: 0.387493400978689
+Weight_sample: h2_raw management type 1 outlier detected for FRA_2023_1: 0.187443073365457
+Weight_sample: h2_adj outlier detected for FRA_2023_2: 0.410080682589223
+Weight_sample: h2_adj outlier detected for FRA_2023_1: 0.176475941672346
+Weight_sample: h2_adj outlier detected for BEL_2021_2: 0.581169667968185
+Weight_sample: h2_adj management type 3 outlier detected for ITA_2022_3: 0.614061029731166
+Weight_sample: h2_adj management type 2 outlier detected for FRA_2023_2: 0.410080682589223
+Weight_sample: h2_adj management type 1 outlier detected for FRA_2023_1: 0.176475941672346
+Weight_sample: Error for POL_2023_3: no data for trait in environment 
+Weight_sample: Error for POL_2023_3 during SpATs: no data available for this environment
+Weight_sample: Error for POL_2023_1: no data for trait in environment 
+Weight_sample: Error for POL_2023_1 during SpATs: no data available for this environment
+Weight_sample: Error for POL_2022_3: no data for trait in environment 
+Weight_sample: Error for POL_2022_3 during SpATs: no data available for this environment
+Weight_sample: Error for POL_2022_1: no data for trait in environment 
+Weight_sample: Error for POL_2022_1 during SpATs: no data available for this environment
+Weight_sample: Error for POL_2021_3: no data for trait in environment 
+Weight_sample: Error for POL_2021_3 during SpATs: no data available for this environment
+Weight_sample: Error for POL_2021_1: no data for trait in environment 
+Weight_sample: Error for POL_2021_1 during SpATs: no data available for this environment
+Weight_sample: Error for POL_2020_3: no data for trait in environment 
+Weight_sample: Error for POL_2020_3 during SpATs: no data available for this environment
+Weight_sample: Error for POL_2020_1: no data for trait in environment 
+Weight_sample: Error for POL_2020_1 during SpATs: no data available for this environment
+Weight_sample: Error for POL_2019_3: no data for trait in environment 
+Weight_sample: Error for POL_2019_3 during SpATs: no data available for this environment
+Weight_sample: Error for POL_2019_1: no data for trait in environment 
+Weight_sample: Error for POL_2019_1 during SpATs: no data available for this environment
+Weight_sample: Error for POL_2018_1: no data for trait in environment 
+Weight_sample: Error for POL_2018_1 during SpATs: no data available for this environment
+Weight_sample: Error for ITA_2018_1: no data for trait in environment 
+Weight_sample: Error for ITA_2018_1 during SpATs: no data available for this environment
+Weight_sample: Error for FRA_2020_2: no data for trait in environment 
+Weight_sample: Error for FRA_2020_2 during SpATs: no data available for this environment
+Weight_sample: Error for FRA_2018_1: no data for trait in environment 
+Weight_sample: Error for FRA_2018_1 during SpATs: no data available for this environment
+Weight_sample: Error for ESP_2023_2: no data for trait in environment 
+Weight_sample: Error for ESP_2023_2 during SpATs: no data available for this environment
+Weight_sample: Error for ESP_2023_1: no data for trait in environment 
+Weight_sample: Error for ESP_2023_1 during SpATs: no data available for this environment
+Weight_sample: Error for ESP_2021_2: no data for trait in environment 
+Weight_sample: Error for ESP_2021_2 during SpATs: no data available for this environment
+Weight_sample: Error for ESP_2020_2: no data for trait in environment 
+Weight_sample: Error for ESP_2020_2 during SpATs: no data available for this environment
+Weight_sample: Error for ESP_2018_1: no data for trait in environment 
+Weight_sample: Error for ESP_2018_1 during SpATs: no data available for this environment
+Weight_sample: Error for CHE_2023_2: no data for trait in environment 
+Weight_sample: Error for CHE_2023_2 during SpATs: no data available for this environment
+Weight_sample: Error for CHE_2023_1: no data for trait in environment 
+Weight_sample: Error for CHE_2023_1 during SpATs: no data available for this environment
+Weight_sample: Error for CHE_2022_2: no data for trait in environment 
+Weight_sample: Error for CHE_2022_2 during SpATs: no data available for this environment
+Weight_sample: Error for CHE_2022_1: no data for trait in environment 
+Weight_sample: Error for CHE_2022_1 during SpATs: no data available for this environment
+Weight_sample: Error for CHE_2021_2: no data for trait in environment 
+Weight_sample: Error for CHE_2021_2 during SpATs: no data available for this environment
+Weight_sample: Error for CHE_2021_1: no data for trait in environment 
+Weight_sample: Error for CHE_2021_1 during SpATs: no data available for this environment
+Weight_sample: Error for CHE_2020_2: no data for trait in environment 
+Weight_sample: Error for CHE_2020_2 during SpATs: no data available for this environment
+Weight_sample: Error for CHE_2020_1: no data for trait in environment 
+Weight_sample: Error for CHE_2020_1 during SpATs: no data available for this environment
+Weight_sample: Error for CHE_2019_1: no data for trait in environment 
+Weight_sample: Error for CHE_2019_1 during SpATs: no data available for this environment
+Weight_sample: Error for CHE_2018_1: no data for trait in environment 
+Weight_sample: Error for CHE_2018_1 during SpATs: no data available for this environment
+Weight_sample: Error for BEL_2022_2: no data for trait in environment 
+Weight_sample: Error for BEL_2022_2 during SpATs: no data available for this environment
+Weight_sample: Error for BEL_2022_1: no data for trait in environment 
+Weight_sample: Error for BEL_2022_1 during SpATs: no data available for this environment
+Weight_sample: Error for BEL_2020_2: no data for trait in environment 
+Weight_sample: Error for BEL_2020_2 during SpATs: no data available for this environment
+Weight_sample: Error for BEL_2018_1: no data for trait in environment 
+Weight_sample: Error for BEL_2018_1 during SpATs: no data available for this environment
+Sample_size: h2_raw outlier detected for FRA_2023_2: 0.127493497926275
+Sample_size: h2_raw outlier detected for FRA_2023_1: 0.113479538997754
+Sample_size: h2_raw outlier detected for ESP_2021_1: 0.082282145856377
+Sample_size: h2_raw management type 3 outlier detected for ITA_2023_3: 0.189798358779923
+Sample_size: h2_raw management type 3 outlier detected for ITA_2022_3: 0.218582448726731
+Sample_size: h2_raw management type 1 outlier detected for FRA_2023_1: 0.113479538997754
+Sample_size: h2_raw management type 1 outlier detected for ESP_2021_1: 0.082282145856377
+Sample_size: h2_adj outlier detected for FRA_2023_2: 0.173027759008256
+Sample_size: h2_adj outlier detected for FRA_2023_1: 0.124621114327821
+Sample_size: h2_adj outlier detected for ESP_2021_1: 0.0729959100061425
+Sample_size: h2_adj management type 3 outlier detected for ITA_2023_3: 0.223840178504566
+Sample_size: h2_adj management type 3 outlier detected for ITA_2022_3: 0.256514847068597
+Sample_size: h2_adj management type 1 outlier detected for FRA_2023_1: 0.124621114327821
+Sample_size: h2_adj management type 1 outlier detected for ESP_2021_1: 0.0729959100061425
+Sample_size: Error for POL_2023_3: no data for trait in environment 
+Sample_size: Error for POL_2023_3 during SpATs: no data available for this environment
+Sample_size: Error for POL_2023_1: no data for trait in environment 
+Sample_size: Error for POL_2023_1 during SpATs: no data available for this environment
+Sample_size: Error for POL_2022_3: no data for trait in environment 
+Sample_size: Error for POL_2022_3 during SpATs: no data available for this environment
+Sample_size: Error for POL_2022_1: no data for trait in environment 
+Sample_size: Error for POL_2022_1 during SpATs: no data available for this environment
+Sample_size: Error for POL_2021_3: no data for trait in environment 
+Sample_size: Error for POL_2021_3 during SpATs: no data available for this environment
+Sample_size: Error for POL_2021_1: no data for trait in environment 
+Sample_size: Error for POL_2021_1 during SpATs: no data available for this environment
+Sample_size: Error for POL_2020_3: no data for trait in environment 
+Sample_size: Error for POL_2020_3 during SpATs: no data available for this environment
+Sample_size: Error for POL_2020_1: no data for trait in environment 
+Sample_size: Error for POL_2020_1 during SpATs: no data available for this environment
+Sample_size: Error for POL_2019_3: no data for trait in environment 
+Sample_size: Error for POL_2019_3 during SpATs: no data available for this environment
+Sample_size: Error for POL_2019_1: no data for trait in environment 
+Sample_size: Error for POL_2019_1 during SpATs: no data available for this environment
+Sample_size: Error for POL_2018_1: no data for trait in environment 
+Sample_size: Error for POL_2018_1 during SpATs: no data available for this environment
+Sample_size: Error for ITA_2018_1: no data for trait in environment 
+Sample_size: Error for ITA_2018_1 during SpATs: no data available for this environment
+Sample_size: Error for FRA_2020_2: no data for trait in environment 
+Sample_size: Error for FRA_2020_2 during SpATs: no data available for this environment
+Sample_size: Error for FRA_2018_1: no data for trait in environment 
+Sample_size: Error for FRA_2018_1 during SpATs: no data available for this environment
+Sample_size: Error for ESP_2023_2: no data for trait in environment 
+Sample_size: Error for ESP_2023_2 during SpATs: no data available for this environment
+Sample_size: Error for ESP_2023_1: no data for trait in environment 
+Sample_size: Error for ESP_2023_1 during SpATs: no data available for this environment
+Sample_size: Error for ESP_2021_2: no data for trait in environment 
+Sample_size: Error for ESP_2021_2 during SpATs: no data available for this environment
+Sample_size: Error for ESP_2020_2: no data for trait in environment 
+Sample_size: Error for ESP_2020_2 during SpATs: no data available for this environment
+Sample_size: Error for ESP_2018_1: no data for trait in environment 
+Sample_size: Error for ESP_2018_1 during SpATs: no data available for this environment
+Sample_size: Error for CHE_2023_2: no data for trait in environment 
+Sample_size: Error for CHE_2023_2 during SpATs: no data available for this environment
+Sample_size: Error for CHE_2023_1: no data for trait in environment 
+Sample_size: Error for CHE_2023_1 during SpATs: no data available for this environment
+Sample_size: Error for CHE_2021_2: no data for trait in environment 
+Sample_size: Error for CHE_2021_2 during SpATs: no data available for this environment
+Sample_size: Error for CHE_2021_1: no data for trait in environment 
+Sample_size: Error for CHE_2021_1 during SpATs: no data available for this environment
+Sample_size: Error for CHE_2020_2: no data for trait in environment 
+Sample_size: Error for CHE_2020_2 during SpATs: no data available for this environment
+Sample_size: Error for CHE_2020_1: no data for trait in environment 
+Sample_size: Error for CHE_2020_1 during SpATs: no data available for this environment
+Sample_size: Error for CHE_2019_1: no data for trait in environment 
+Sample_size: Error for CHE_2019_1 during SpATs: no data available for this environment
+Sample_size: Error for CHE_2018_1: no data for trait in environment 
+Sample_size: Error for CHE_2018_1 during SpATs: no data available for this environment
+Sample_size: Error for BEL_2022_2: no data for trait in environment 
+Sample_size: Error for BEL_2022_2 during SpATs: no data available for this environment
+Sample_size: Error for BEL_2022_1: no data for trait in environment 
+Sample_size: Error for BEL_2022_1 during SpATs: no data available for this environment
+Sample_size: Error for BEL_2020_2: no data for trait in environment 
+Sample_size: Error for BEL_2020_2 during SpATs: no data available for this environment
+Sample_size: Error for BEL_2018_1: no data for trait in environment 
+Sample_size: Error for BEL_2018_1 during SpATs: no data available for this environment

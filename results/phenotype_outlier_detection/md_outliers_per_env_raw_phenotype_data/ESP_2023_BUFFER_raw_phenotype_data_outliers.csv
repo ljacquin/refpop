@@ -1,0 +1,3 @@
+Row,Position,Genotype,Management,Checks,Year,Country,Country_Year,Harvest_date,Fruit_weight,Fruit_number,Fruit_weight_single,Color_over,Russet_freq_all,Trunk_diameter,Trunk_increment,Flowering_intensity,Flowering_begin,Flowering_full,Flowering_end,Scab,Powdery_mildew,Scab_fruits,Sample_size,Weight_sample,Country_Management,Envir
+10,78,2653,BUFFER,"",2023,ESP,ESP_2023,,,,,,,44.30010359,2.800006548,,,,,,,,,,ESP_BUFFER,ESP_2023_BUFFER
+10,121,673,BUFFER,"",2023,ESP,ESP_2023,,,,,,,33.4000781,1.600003741,,,,,,,,,,ESP_BUFFER,ESP_2023_BUFFER
