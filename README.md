@@ -134,8 +134,6 @@ Download the ```refpop``` repository in the current user's directory on a comput
   *  ```chmod u+rwx src/refpop_genomic_prediction_and_analysis/*.sh```
   <p> </p>
 
-* Replace the ```data/``` folder with the directory found at https://data :  
-
 * Finally, execute one of the following commands for executing the refpop tasks and analyses :
 
   *  ```sbatch execute_refpop_tasks_and_analyses.sh```<p> </p>
