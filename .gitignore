@@ -1,3 +1,4 @@
 data/genotype_data/phased_data/phased_genotypes.RDS
 data/genotype_data/genotype_data.csv
 data/genotype_data/refpop_genotype.bk
+src/refpop_data_treatment_and_analysis/refpop_manage_type_raw_adj_pheno_simple_analysis.R
