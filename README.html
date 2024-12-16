@@ -412,13 +412,13 @@ treated as fixed-effect covariates.</p></li>
 <li><p><strong>Data structure inference</strong>: Focuses on inferring
 the genomic, phenotypic, and pedigree data structures of the refpop
 population.</p></li>
-<li><p><strong>Genomic prediction accuracy evaluation</strong>: Seeks to
-evaluate, for each trait, the distributions of genomic prediction
-accuracies associated to several prediction methods, for the adjusted
+<li><p><strong>Genomic predictive ability evaluation</strong>: Seeks to
+evaluate, for each trait, the distributions of genomic predictive
+abilities associated to several prediction methods, for the adjusted
 phenotypic LS-means.</p></li>
-<li><p><strong>Wiser genomic prediction accuracy evaluation</strong>:
+<li><p><strong>Wiser genomic predictive ability evaluation</strong>:
 Seeks to evaluate, for each trait, the distributions of genomic
-prediction accuracies associated to several prediction methods, for the
+predictive abilities associated to several prediction methods, for the
 wiser estimated phenotypes.</p></li>
 <li><p><strong>G x E x M evaluation</strong>: Directed towards
 evaluating, for each trait, the interactions between genotypes, their
@@ -546,28 +546,27 @@ workflow, see <code>execute_refpop_tasks_and_analyses.sh</code> in the
 main <code>refpop/</code> repository)</p>
 <ul>
 <li><code>refpop_genomic_prediction_trait.R</code>: This script
-evaluates, for a defined trait, the distributions of genomic prediction
-accuracies associated to several prediction methods, for the adjusted
+evaluates, for a defined trait, the distributions of genomic predictive
+abilities associated to several prediction methods, for the adjusted
 phenotypic LS-means. These distributions are evaluated using K-folds
 cross-validation, for n shuffling scenarios of the refpop population,
-and using the pearson correlation as a measure of accuracy (predictive
-ability) between the predicted and adjusted phenotypic LS-means. The
-implemented prediction methods are random forest (RF), support vector
-regression (SVR), reproducing kernel hilbert space regression (RKHS),
-genomic blup (GBLUP) and least absolute shrinkage and selection operator
-(LASSO).
+and using the pearson correlation as a measure of predictive ability
+between the predicted and adjusted phenotypic LS-means. The implemented
+prediction methods are random forest (RF), support vector regression
+(SVR), reproducing kernel hilbert space regression (RKHS), genomic blup
+(GBLUP) and least absolute shrinkage and selection operator (LASSO).
 <p>
 </p></li>
 </ul></li>
 <li><p><code>refpop_wiser_genomic_prediction_and_analysis/</code></p>
 <ul>
 <li><code>refpop_wiser_genomic_prediction_trait.R</code>: This script
-evaluates, for a defined trait, the distributions of genomic prediction
-accuracies associated to several prediction methods for wiser estimated
+evaluates, for a defined trait, the distributions of genomic predictive
+abilities associated to several prediction methods for wiser estimated
 phenotypes, the adjusted phenotypic LS-means and BLUPs. These
 distributions are evaluated using K-folds cross-validation, for n
 shuffling scenarios of the refpop population, and using the pearson
-correlation as a measure of accuracy (predictive ability) between :
+correlation as a measure of predictive ability between :
 <ul>
 <li><ol style="list-style-type: decimal">
 <li>predicted and wiser estimated phenotypes.</li>
