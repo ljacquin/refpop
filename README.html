@@ -400,17 +400,22 @@ analysis. For each trait, heritability distributions across all
 environments are computed before and after spatial heterogeneity
 correction; these distributions are also computed by management
 type.</p></li>
-<li><p><strong>Adjusted ls-means computation</strong>: Focuses on
-computing adjusted phenotypic ls-means for each genotype across
+<li><p><strong>Adjusted LS-means computation</strong>: Focuses on
+computing adjusted phenotypic LS-means for each genotype across
 environments, using the adjusted phenotypes obtained from spatial
 heterogeneity correction in each environment.</p></li>
+<li><p><strong>Adjusted BLUP computation</strong>: Computes the adjusted
+phenotypic BLUP for each genotype across environments, using the
+adjusted phenotypes corrected for spatial heterogeneity, and principal
+component coordinates of genotypes derived from genomic data which are
+treated as fixed-effect covariates.</p></li>
 <li><p><strong>Data structure inference</strong>: Focuses on inferring
 the genomic, phenotypic, and pedigree data structures of the refpop
 population.</p></li>
 <li><p><strong>Genomic prediction accuracy evaluation</strong>: Seeks to
 evaluate, for each trait, the distributions of genomic prediction
 accuracies associated to several prediction methods, for the adjusted
-phenotypic ls-means.</p></li>
+phenotypic LS-means.</p></li>
 <li><p><strong>Wiser genomic prediction accuracy evaluation</strong>:
 Seeks to evaluate, for each trait, the distributions of genomic
 prediction accuracies associated to several prediction methods, for the
@@ -442,7 +447,7 @@ distributed accross several subfolders:
 folders are organized according to the specific tasks and analyses
 performed by the user, such as general data treatment and analyses like
 outlier identification and removal, spatial heterogeneity correction,
-and adjusted ls-means, as well as more specialized tasks like genomic
+and adjusted LS-means, as well as more specialized tasks like genomic
 prediction modeling and analysis, etc.</p></li>
 <li><h4 id="interdependencies-of-scripts-for-analyses">🧩
 Interdependencies of scripts for analyses</h4>
@@ -493,22 +498,29 @@ using the spatial analysis of field trials with splines (SpATS).
 Additionally, this script identifies environments with low heritability
 using the median absolute deviation (MAD) as a unilateral test and
 excludes them for further analysis and computations, such as adjusted
-least squares means (ls-means) of phenotypes or the computed
+least squares means (LS-means) of phenotypes or the computed
 heritability using pooled data from all environments.</p></li>
-<li><p><code>refpop_3_adjusted_ls_mean_phenotypes.R</code>: This script
-computes the adjusted phenotypic ls-means for each genotype across
-environments, using the adjusted phenotypes obtained from spatial
+<li><p><code>refpop_3_adjusted_blups_lsmeans_phenotypes_computation.R</code>:
+This script computes the adjusted phenotypic LS-means for each genotype
+across environments, using the adjusted phenotypes obtained from spatial
 heterogeneity correction in each environment. The least-squares means
-(ls-means) are computed after fitting a multiple linear regression model
+(LS-means) are computed after fitting a multiple linear regression model
 that includes genotype and environment effects as covariates, along with
-the overall mean.</p>
+the overall mean. From the adjusted phenotypes obtained from spatial
+heterogeneity correction in each environment, this script also computes
+the BLUP for each genotype based on a linear mixed model. In this model,
+genotype effects are treated as random and assumed to be independent and
+identically distributed (IID), while environmental effects are treated
+as fixed. The model also includes an overall mean and principal
+component coordinates for each genotype, derived from genomic data,
+which are incorporated as fixed effects.</p>
 <p>
-</p>
+</p></li>
+</ul>
 <p>Note that the <code>R</code> script in this subfolder are prefixed
-with <code>refpop_0</code>, <code>refpop_1</code>, and
-<code>refpop_2</code>, indicating their sequential execution
-order.</p></li>
-</ul></li>
+with <code>refpop_0</code>, <code>refpop_1</code>,
+<code>refpop_2</code>, and <code>refpop_3</code>, indicating their
+sequential execution order.</p></li>
 <li><p><code>refpop_data_structure_analysis/</code></p>
 <ul>
 <li><code>refpop_genomic_data_structure_analysis.R</code>: This script
@@ -527,18 +539,19 @@ recommended for this (future work).
 <p>
 </p></li>
 </ul></li>
-<li><p><code>refpop_genomic_prediction_and_analysis/</code> (superseded
-by <code>refpop_wiser_genomic_prediction_and_analysis/</code> in the
+<li><p><code>refpop_genomic_prediction_and_analysis/</code>
+(<strong>superseded</strong> by
+<code>refpop_wiser_genomic_prediction_and_analysis/</code> in the
 workflow, see <code>execute_refpop_tasks_and_analyses.sh</code> in the
 main <code>refpop/</code> repository)</p>
 <ul>
 <li><code>refpop_genomic_prediction_trait.R</code>: This script
 evaluates, for a defined trait, the distributions of genomic prediction
 accuracies associated to several prediction methods, for the adjusted
-phenotypic ls-means. These distributions are evaluated using K-folds
+phenotypic LS-means. These distributions are evaluated using K-folds
 cross-validation, for n shuffling scenarios of the refpop population,
 and using the pearson correlation as a measure of accuracy (predictive
-ability) between the predicted and adjusted phenotypic ls-means. The
+ability) between the predicted and adjusted phenotypic LS-means. The
 implemented prediction methods are random forest (RF), support vector
 regression (SVR), reproducing kernel hilbert space regression (RKHS),
 genomic blup (GBLUP) and least absolute shrinkage and selection operator
@@ -550,17 +563,20 @@ genomic blup (GBLUP) and least absolute shrinkage and selection operator
 <ul>
 <li><code>refpop_wiser_genomic_prediction_trait.R</code>: This script
 evaluates, for a defined trait, the distributions of genomic prediction
-accuracies associated to several prediction methods, for wiser estimated
-phenotypes and the adjusted phenotypic ls-means. These distributions are
-evaluated using K-folds cross-validation, for n shuffling scenarios of
-the refpop population, and using the pearson correlation as a measure of
-accuracy (predictive ability) between :
+accuracies associated to several prediction methods for wiser estimated
+phenotypes, the adjusted phenotypic LS-means and BLUPs. These
+distributions are evaluated using K-folds cross-validation, for n
+shuffling scenarios of the refpop population, and using the pearson
+correlation as a measure of accuracy (predictive ability) between :
 <ul>
 <li><ol style="list-style-type: decimal">
 <li>predicted and wiser estimated phenotypes.</li>
 </ol></li>
 <li><ol start="2" style="list-style-type: decimal">
-<li>predicted and adjusted phenotypic ls-means.
+<li>predicted and adjusted phenotypic LS-means.</li>
+</ol></li>
+<li><ol start="3" style="list-style-type: decimal">
+<li>predicted and adjusted phenotypic BLUPs.
 <p>
 </p></li>
 </ol></li>
@@ -568,7 +584,9 @@ accuracy (predictive ability) between :
 The implemented prediction methods are random forest (RF), support
 vector regression (SVR), reproducing kernel hilbert space regression
 (RKHS), genomic blup (GBLUP), and least absolute shrinkage and selection
-operator (LASSO).</li>
+operator (LASSO). This script also evaluates the distributions of
+genomic heritabilities associated to the phenotypes estimated using
+WISER, LS-means, and BLUP, using the GBLUP approach.</li>
 </ul></li>
 </ul></li>
 </ul>
