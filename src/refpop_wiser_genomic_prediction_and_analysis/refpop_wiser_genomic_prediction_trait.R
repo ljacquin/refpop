@@ -264,8 +264,8 @@ if (file.exists(paste0(
     fixed_effects_vars_computed_as_factor = c(
       "Envir", "Row", "Position"
     ),
-    site_var = "Envir",
-    fixed_effects_vars_computed_as_factor_by_site = c("Row", "Position"),
+    envir_var = "Envir",
+    fixed_effects_vars_computed_as_factor_by_envir = c("Row", "Position"),
     random_effects_vars = "Genotype",
     whitening_method_grid = c("ZCA-cor", "PCA-cor", "Cholesky"),
     alpha_grid = c(0.01, 0.1),
@@ -285,8 +285,8 @@ if (file.exists(paste0(
     fixed_effects_vars_computed_as_factor = c(
       "Envir", "Row", "Position"
     ),
-    site_var = "Envir",
-    fixed_effects_vars_computed_as_factor_by_site = c("Row", "Position"),
+    envir_var = "Envir",
+    fixed_effects_vars_computed_as_factor_by_envir = c("Row", "Position"),
     random_effects_vars = "Genotype",
     kernel_type = kernel_,
     whitening_method = opt_whitening_method_,

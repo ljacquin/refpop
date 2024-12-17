@@ -1,4 +1,4 @@
-# functions which corrects for trait spatial heterogeneity for a site
+# function which corrects for trait spatial heterogeneity for an envir
 spat_hetero_env_correct_trait <- function(trait_, envir_, df_,
                                           min_obs_ = 5) {
   tryCatch(
@@ -807,8 +807,8 @@ compute_fixed_effect_vars_declared_as_factors <- function(
     raw_pheno_df,
     fixed_effects_vars,
     fixed_effects_vars_computed_as_factor,
-    site_var,
-    fixed_effects_vars_computed_as_factor_by_site) {
+    envir_var,
+    fixed_effects_vars_computed_as_factor_by_envir) {
   # convert fixed effects variables to factors for those declared
   for (fix_eff_var_ in fixed_effects_vars) {
     if ((length(fixed_effects_vars_computed_as_factor) > 0) &&
@@ -820,17 +820,17 @@ compute_fixed_effect_vars_declared_as_factors <- function(
           tolower(raw_pheno_df[, fix_eff_var_]) != "buffer",
         ]
       }
-      # compute fix_eff_var_ as factor by site, for those declared as,
+      # compute fix_eff_var_ as factor by envir, for those declared as,
       # otherwise compute fix_eff_var_ as a factor only
-      if ((length(site_var) > 0 &&
-        length(fixed_effects_vars_computed_as_factor_by_site) > 0) &&
-        (fix_eff_var_ %in% fixed_effects_vars_computed_as_factor_by_site)
+      if ((length(envir_var) > 0 &&
+        length(fixed_effects_vars_computed_as_factor_by_envir) > 0) &&
+        (fix_eff_var_ %in% fixed_effects_vars_computed_as_factor_by_envir)
       ) {
-        site_var_fix_eff_var_ <- paste0(
-          raw_pheno_df[, site_var], "_", fix_eff_var_, "_",
+        envir_var_fix_eff_var_ <- paste0(
+          raw_pheno_df[, envir_var], "_", fix_eff_var_, "_",
           raw_pheno_df[, fix_eff_var_]
         )
-        raw_pheno_df[, fix_eff_var_] <- as.factor(site_var_fix_eff_var_)
+        raw_pheno_df[, fix_eff_var_] <- as.factor(envir_var_fix_eff_var_)
       } else {
         raw_pheno_df[, fix_eff_var_] <- as.factor(
           raw_pheno_df[, fix_eff_var_]
@@ -1199,8 +1199,8 @@ compute_transformed_vars_and_ols_estimates <- function(
     omic_df, raw_pheno_df, trait_,
     fixed_effects_vars,
     fixed_effects_vars_computed_as_factor,
-    site_var,
-    fixed_effects_vars_computed_as_factor_by_site,
+    envir_var,
+    fixed_effects_vars_computed_as_factor_by_envir,
     random_effects_vars,
     sigma2_u, sigma2_e, kernel_type,
     whitening_method,
@@ -1249,8 +1249,8 @@ compute_transformed_vars_and_ols_estimates <- function(
         raw_pheno_df,
         fixed_effects_vars,
         fixed_effects_vars_computed_as_factor,
-        site_var,
-        fixed_effects_vars_computed_as_factor_by_site
+        envir_var,
+        fixed_effects_vars_computed_as_factor_by_envir
       )
 
       # get omic data associated to common genotypes
@@ -1366,8 +1366,8 @@ estimate_wiser_phenotype <- function(omic_df, raw_pheno_df, trait_,
                                        "Envir", "Country", "Year",
                                        "Row", "Position", "Management"
                                      ),
-                                     site_var = "Country",
-                                     fixed_effects_vars_computed_as_factor_by_site = c("Row", "Position"),
+                                     envir_var = "Country",
+                                     fixed_effects_vars_computed_as_factor_by_envir = c("Row", "Position"),
                                      random_effects_vars = "Genotype",
                                      init_sigma2_u = 1,
                                      init_sigma2_e = 1,
@@ -1393,8 +1393,8 @@ estimate_wiser_phenotype <- function(omic_df, raw_pheno_df, trait_,
         omic_df, raw_pheno_df, trait_,
         fixed_effects_vars,
         fixed_effects_vars_computed_as_factor,
-        site_var,
-        fixed_effects_vars_computed_as_factor_by_site,
+        envir_var,
+        fixed_effects_vars_computed_as_factor_by_envir,
         random_effects_vars,
         sigma2_u = init_sigma2_u,
         sigma2_e = init_sigma2_e,
@@ -1438,8 +1438,8 @@ estimate_wiser_phenotype <- function(omic_df, raw_pheno_df, trait_,
           omic_df, raw_pheno_df, trait_,
           fixed_effects_vars,
           fixed_effects_vars_computed_as_factor,
-          site_var,
-          fixed_effects_vars_computed_as_factor_by_site,
+          envir_var,
+          fixed_effects_vars_computed_as_factor_by_envir,
           random_effects_vars,
           sigma2_u = var_comp_abc_obj$sigma2_u_hat_mean,
           sigma2_e = var_comp_abc_obj$sigma2_e_hat_mean,
@@ -1511,8 +1511,8 @@ estimate_wiser_phenotype <- function(omic_df, raw_pheno_df, trait_,
 perform_kfold_cv_wiser <- function(omic_df, raw_pheno_df, trait_,
                                    fixed_effects_vars,
                                    fixed_effects_vars_computed_as_factor,
-                                   site_var,
-                                   fixed_effects_vars_computed_as_factor_by_site,
+                                   envir_var,
+                                   fixed_effects_vars_computed_as_factor_by_envir,
                                    random_effects_vars,
                                    whitening_method,
                                    reg_method, alpha_,
@@ -1645,8 +1645,8 @@ optimize_whitening_and_regularization <- function(
       "Envir", "Country", "Year",
       "Row", "Position", "Management"
     ),
-    site_var = "Country",
-    fixed_effects_vars_computed_as_factor_by_site = c("Row", "Position"),
+    envir_var = "Country",
+    fixed_effects_vars_computed_as_factor_by_envir = c("Row", "Position"),
     random_effects_vars = "Genotype",
     prediction_method = c("rf", "svr", "gblup", "rkhs", "lasso"),
     whitening_method_grid = c("ZCA-cor", "PCA-cor", "Cholesky"),
@@ -1703,8 +1703,8 @@ optimize_whitening_and_regularization <- function(
       omic_df, raw_pheno_df, trait_,
       fixed_effects_vars,
       fixed_effects_vars_computed_as_factor,
-      site_var,
-      fixed_effects_vars_computed_as_factor_by_site,
+      envir_var,
+      fixed_effects_vars_computed_as_factor_by_envir,
       random_effects_vars,
       whitening_method = method,
       regularization_method = regularization_method_,
@@ -1733,8 +1733,8 @@ optimize_whitening_and_regularization <- function(
             omic_df, raw_pheno_df, trait_,
             fixed_effects_vars,
             fixed_effects_vars_computed_as_factor,
-            site_var,
-            fixed_effects_vars_computed_as_factor_by_site,
+            envir_var,
+            fixed_effects_vars_computed_as_factor_by_envir,
             random_effects_vars,
             whitening_method = grid_$whitening_method[i],
             reg_method = regularization_method_,
