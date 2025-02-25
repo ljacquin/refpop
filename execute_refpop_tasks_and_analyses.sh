@@ -16,6 +16,10 @@ R -q --vanilla < refpop_genomic_data_structure_analysis.R
 R -q --vanilla < refpop_pedigree_and_phenotype_data_structure_analysis.R
 R -q --vanilla < refpop_gem_data_structure_analysis.R
 
+# refpop_gem_analysis tasks and analyses
+cd ../refpop_gem_analysis/
+R -q --vanilla < refpop_gem_analysis.R
+
 # refpop_wiser_genomic_prediction_and_analysis tasks and analyses
 cd ../refpop_wiser_genomic_prediction_and_analysis/
 sbatch execute_refpop_wiser_genomic_prediction_all_traits.sh

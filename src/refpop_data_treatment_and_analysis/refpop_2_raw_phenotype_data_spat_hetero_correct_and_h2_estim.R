@@ -1036,7 +1036,7 @@ p <- ggplot(melt_tab_, aes(x = variable, y = Trait, fill = value)) +
 ggsave(
   paste0(
     output_pheno_graphics_path,
-    "number_of_phenotyped_trees_per_environment.png"
+    "number_of_phenotyped_trees_per_site_and_year.png"
   ),
   plot = p, width = 16, height = 6, dpi = 300
 )
