@@ -1878,3 +1878,1909 @@ create_scatter_plot_with_linear_fit <- function(df_, trait_, env_) {
     )
   return(fig_x_y)
 }
+
+# function which compute h2 means per managment type across all environments
+create_mean_h2_graphic_per_manage_and_all_env_gh <- function(h2_file_path,
+                                                             selected_traits_,
+                                                             excluded_pseudo_trait_for_save_,
+                                                             vect_alpha_mean_h2,
+                                                             output_gem_graphics_path) {
+  for (alpha_mean_h2 in vect_alpha_mean_h2) {
+    # initialize empty data frame for binding results for all traits
+    result_h2_raw_df_ <- data.frame()
+    result_counts_h2_raw_df_ <- data.frame()
+
+    vect_traits_ <- setdiff(selected_traits_, excluded_pseudo_trait_for_save_)
+    for (trait_ in vect_traits_) {
+      # print(paste0("trait_: ", trait_))
+      tryCatch(
+        {
+          # get trait h2_df
+          h2_df_ <- as.data.frame(fread(paste0(
+            h2_file_path, trait_,
+            "_h2_per_env_and_management.csv"
+          )))
+
+          # remove buffers if any
+          if (sum(str_detect(h2_df_$Environment, "_BUFFER")) > 0) {
+            h2_df_ <- h2_df_[!str_detect(h2_df_$Environment, "_BUFFER"), ]
+          }
+
+          # get h2 computed from raw data
+          h2_raw_df_ <- h2_df_[, c("Environment", colnames(h2_df_)[
+            str_detect(colnames(h2_df_), "raw")
+          ])]
+
+          # get counts for the h2 per management type
+          count_h2_raw_df_ <- data.frame(
+            "Trait" = trait_,
+            "count_h2_raw_manage_type_1" =
+              sum(!is.na(h2_raw_df_$h2_raw_manage_type_1)),
+            "count_h2_raw_manage_type_2" =
+              sum(!is.na(h2_raw_df_$h2_raw_manage_type_2)),
+            "count_h2_raw_manage_type_3" =
+              sum(!is.na(h2_raw_df_$h2_raw_manage_type_3))
+          )
+          result_counts_h2_raw_df_ <- rbind(
+            result_counts_h2_raw_df_,
+            count_h2_raw_df_
+          )
+
+          # get h2_raw_df_ in long format
+          h2_raw_df_long <- h2_raw_df_ %>%
+            pivot_longer(
+              cols = starts_with("h2_raw_manage_type_"),
+              names_to = "Management_type",
+              values_to = "h2_value"
+            ) %>%
+            filter(!is.na(h2_value)) %>% # Retirer les lignes NA
+            mutate(Management_type = factor(Management_type,
+              labels = paste0("Type_", 1:length(unique(Management_type)))
+            ))
+
+          # test homogeneity of variances
+          Levene_test <- leveneTest(h2_value ~ Management_type, data = h2_raw_df_long)
+          signif_ <- ""
+          if (is.numeric(Levene_test$`Pr(>F)`[1]) && Levene_test$`Pr(>F)`[1] <= 1e-3) {
+            signif_ <- "***"
+          } else if (is.numeric(Levene_test$`Pr(>F)`[1]) && Levene_test$`Pr(>F)`[1] <= 1e-2) {
+            signif_ <- "**"
+          } else if (is.numeric(Levene_test$`Pr(>F)`[1]) && Levene_test$`Pr(>F)`[1] <= 5e-2) {
+            signif_ <- "*"
+          } else {
+            signif_ <- "ns"
+          }
+          Levene_test <- paste0(
+            format(Levene_test$`Pr(>F)`[1], digits = 5, nsmall = 5), " (", signif_,
+            ")"
+          )
+
+          # apply games howell test to identify which management type means are potentially
+          # significantly different, this approach is robust no unequal variances, unequal
+          # group sizes and normality violation (since it is not a required hypothesis)
+          gh_h2_raw_ <- as.data.frame(
+            games_howell_test(h2_value ~ Management_type,
+              data = h2_raw_df_long, conf.level = 1 - alpha_mean_h2
+            )
+          )
+
+          gh_h2_raw_$p.adj.signif <- ifelse(
+            gh_h2_raw_$p.adj <= alpha_mean_h2,
+            gh_h2_raw_$p.adj.signif, "ns"
+          )
+
+          gh_h2_formatted <- data.frame(
+            "G-H-test-1" = paste0(
+              format(gh_h2_raw_$p.adj[1], digits = 5, nsmall = 5),
+              " (", gh_h2_raw_$p.adj.signif[1], ")"
+            ),
+            "G-H-test-2" = paste0(
+              format(gh_h2_raw_$p.adj[2], , digits = 5, nsmall = 5),
+              " (", gh_h2_raw_$p.adj.signif[2], ")"
+            ),
+            "G-H-test-3" = paste0(
+              format(gh_h2_raw_$p.adj[3], digits = 5, nsmall = 5),
+              " (", gh_h2_raw_$p.adj.signif[3], ")"
+            )
+          )
+          if (sum(str_detect(gh_h2_formatted, pattern = "NA|NaN")) > 0) {
+            gh_h2_formatted[which(str_detect(gh_h2_formatted,
+              pattern = "NA|NaN"
+            ))] <- "No data or sample too small"
+          }
+          if (any(is.na(gh_h2_formatted))) {
+            gh_h2_formatted[which(is.na(gh_h2_formatted))] <-
+              "No data or sample too small"
+          }
+
+          # compute mean heritabilities per management type
+          mean_df_ <- data.frame(format(t(apply(
+            h2_raw_df_[, which(str_detect(
+              colnames(h2_raw_df_), "type"
+            ))],
+            2, mean,
+            na.rm = T
+          )), digits = 3, nsmall = 3))
+          if (sum(str_detect(mean_df_, pattern = "NA|NaN")) > 0) {
+            mean_df_[which(str_detect(mean_df_,
+              pattern = "NA|NaN"
+            ))] <- "No data"
+          }
+          if (any(is.na(mean_df_))) {
+            mean_df_[which(is.na(mean_df_))] <- "No data"
+          }
+
+          # combine stats for trait
+          trait_stats_h2_raw_df_ <- cbind(
+            trait_, mean_df_,
+            Levene_test, gh_h2_formatted
+          )
+
+          colnames(trait_stats_h2_raw_df_) <- c(
+            "Trait",
+            "Mean h2 in management type 1",
+            "Mean h2 in management type 2",
+            "Mean h2 in management type 3",
+            "Levene variance homogeneity test's p-value",
+            "G-H mean equality test's p-value: manage. type 1 vs 2",
+            "G-H mean equality test's p-value: manage. type 1 vs 3",
+            "G-H mean equality test's p-value: manage. type 2 vs 3"
+          )
+
+          result_h2_raw_df_ <- rbind(result_h2_raw_df_, trait_stats_h2_raw_df_)
+        },
+        error = function(e) {
+          # get counts for the h2 per management type
+          count_h2_raw_df_ <- data.frame(
+            "Trait" = trait_,
+            "count_h2_raw_manage_type_1" =
+              sum(!is.na(h2_raw_df_$h2_raw_manage_type_1)),
+            "count_h2_raw_manage_type_2" =
+              sum(!is.na(h2_raw_df_$h2_raw_manage_type_2)),
+            "count_h2_raw_manage_type_3" =
+              sum(!is.na(h2_raw_df_$h2_raw_manage_type_3))
+          )
+          result_counts_h2_raw_df_ <- rbind(
+            result_counts_h2_raw_df_,
+            count_h2_raw_df_
+          )
+
+          # compute mean heritabilities per management type
+          mean_df_ <- data.frame(format(t(apply(
+            h2_raw_df_[, which(str_detect(
+              colnames(h2_raw_df_), "type"
+            ))],
+            2, mean,
+            na.rm = T
+          )), digits = 3, nsmall = 3))
+
+          if (sum(str_detect(mean_df_, pattern = "NA|NaN")) > 0) {
+            mean_df_[which(str_detect(mean_df_,
+              pattern = "NA|NaN"
+            ))] <- "No data"
+          }
+          if (any(is.na(mean_df_))) {
+            mean_df_[which(is.na(mean_df_))] <- "No data"
+          }
+
+          trait_stats_h2_raw_df_ <- c(
+            "Trait" = trait_,
+            "Mean h2 in management type 1" =
+              ifelse(!is.character(mean_df_[[1]]),
+                as.numeric(mean_df_[1]), mean_df_[[1]]
+              ),
+            "Mean h2 in management type 2" =
+              ifelse(!is.character(mean_df_[[2]]),
+                as.numeric(mean_df_[2]), mean_df_[[2]]
+              ),
+            "Mean h2 in management type 3" =
+              ifelse(!is.character(mean_df_[[3]]),
+                as.numeric(mean_df_[3]), mean_df_[[3]]
+              ),
+            "Levene variance homogeneity test's p-value" =
+              "No data or sample too small",
+            "G-H mean equality test's p-value: manage. type 1 vs 2" =
+              "No data or sample too small",
+            "G-H mean equality test's p-value: manage. type 1 vs 3" =
+              "No data or sample too small",
+            "G-H mean equality test's p-value: manage. type 2 vs 3" =
+              "No data or sample too small"
+          )
+          result_h2_raw_df_ <<- rbind(result_h2_raw_df_, trait_stats_h2_raw_df_)
+        }
+      )
+    }
+
+    # convert to long format for ggplot
+    melted_df <- melt(result_h2_raw_df_,
+      id.vars = "Trait",
+      variable.name = "variable", value.name = "value"
+    )
+
+    # identify cells containing asterisks (*)
+    melted_df <- melted_df %>%
+      mutate(
+        is_numeric = !is.na(as.numeric(as.character(value))),
+        has_star = grepl("\\*", value),
+        label_color = case_when(
+          has_star ~ "red",
+          TRUE ~ "black"
+        )
+      )
+
+    # reshape result_counts_h2_raw_df_ to long format
+    counts_long <- result_counts_h2_raw_df_ %>%
+      pivot_longer(
+        cols = starts_with("count_h2_raw_manage_type"),
+        names_to = "variable",
+        values_to = "counts"
+      ) %>%
+      mutate(
+        variable = case_when(
+          variable == "count_h2_raw_manage_type_1" ~ "Mean h2 in management type 1",
+          variable == "count_h2_raw_manage_type_2" ~ "Mean h2 in management type 2",
+          variable == "count_h2_raw_manage_type_3" ~ "Mean h2 in management type 3",
+          TRUE ~ variable
+        )
+      )
+
+    # join counts to melted_df
+    melted_df <- melted_df %>%
+      left_join(counts_long, by = c("Trait", "variable"))
+
+    # update combined label to include counts for numeric cells
+    melted_df <- melted_df %>%
+      mutate(
+        combined_label = ifelse(
+          is_numeric,
+          paste0(round(as.numeric(value), 2), " [", counts, "]"),
+          value # keep original labels for non-numeric cells
+        )
+      )
+
+    # create a color vector for labels associated to x-axis
+    colors <- c(
+      "blue4", "blue3", "blue2",
+      "darkgoldenrod4",
+      "darkorchid4", "darkorchid3", "darkorchid2"
+    )
+
+    # create the plot
+    p <- ggplot(melted_df, aes(x = variable, y = Trait, fill = as.numeric(value))) +
+      geom_tile(color = "white") +
+      scale_fill_gradient(
+        low = "#FADADD", high = "red",
+        na.value = "gray90", name = "h2"
+      ) +
+      geom_text(aes(label = combined_label, color = label_color), size = 3) +
+      scale_color_identity() +
+      labs(
+        title = paste0("Mean of estimated heritabilities h2 for traits using raw phenotypes (without outliers), per management type across all environments in REFPOP,
+                       and mean difference tests performed using the Games-Howell non-parametric test at a ", alpha_mean_h2, " significance level."),
+        x = NULL,
+        y = NULL
+      ) +
+      theme_minimal() +
+      theme(
+        axis.text.x = element_text(angle = 45, hjust = 1),
+        panel.grid = element_blank()
+      )
+
+    # modify the X-axis colors based on the groups
+    p <- p + scale_x_discrete(
+      breaks = unique(melted_df$variable),
+      labels = unique(melted_df$variable),
+      limits = unique(melted_df$variable)
+    ) +
+      # modify the colors of the X-axis text
+      theme(
+        axis.text.x = element_text(
+          color = colors, # apply the colors for each year
+          angle = 45,
+          hjust = 1
+        )
+      )
+    p <- grid.arrange(
+      p,
+      top = NULL,
+      bottom = textGrob("[.]: number of environments with an estimable h2 (inlier), an environment is defined as the combination of site, year and management
+      G-H: Games-Howell non parametric test (robust to unequal variances and unequal sample sizes, and no distributional assumptions)
+      Management type 1: normal irrigation and normal pesticide
+      Management type 2: normal irrigation and reduced pesticide
+      Management type 3: reduced irrigation and normal pesticide",
+        gp = gpar(fontsize = 10, fontface = "italic")
+      )
+    )
+
+    # save plot
+    ggsave(
+      paste0(
+        output_gem_graphics_path,
+        "mean_estimated_h2_traits_raw_pheno_per_management_refpop_",
+        alpha_mean_h2, "_significance_level.png"
+      ),
+      plot = p, width = 16, height = 8, dpi = 300
+    )
+  }
+  return(TRUE)
+}
+
+# function which compute h2 means per managment type across environments for a specific
+# site
+create_mean_h2_graphic_per_manage_and_site_gh <- function(site_,
+                                                          h2_file_path,
+                                                          selected_traits_,
+                                                          excluded_pseudo_trait_for_save_,
+                                                          vect_alpha_mean_h2,
+                                                          output_gem_graphics_path) {
+  for (alpha_mean_h2 in vect_alpha_mean_h2) {
+    # initialize empty data frame for binding results for all traits
+    result_h2_raw_df_ <- data.frame()
+    result_counts_h2_raw_df_ <- data.frame()
+
+    vect_traits_ <- setdiff(selected_traits_, excluded_pseudo_trait_for_save_)
+    for (trait_ in vect_traits_) {
+      # print(paste0("trait_: ", trait_))
+      tryCatch(
+        {
+          # get trait h2_df
+          h2_df_ <- as.data.frame(fread(paste0(
+            h2_file_path, trait_,
+            "_h2_per_env_and_management.csv"
+          )))
+          h2_df_ <- h2_df_[str_detect(h2_df_$Environment, paste0(site_, "_")), ]
+
+          if (nrow(h2_df_) > 0) {
+            # remove buffers if any
+            if (sum(str_detect(h2_df_$Environment, "_BUFFER")) > 0) {
+              h2_df_ <- h2_df_[!str_detect(h2_df_$Environment, "_BUFFER"), ]
+            }
+
+            # get h2 computed from raw data
+            h2_raw_df_ <- h2_df_[, c("Environment", colnames(h2_df_)[
+              str_detect(colnames(h2_df_), "raw")
+            ])]
+
+            # get counts for the h2 per management type
+            count_h2_raw_df_ <- data.frame(
+              "Trait" = trait_,
+              "count_h2_raw_manage_type_1" =
+                sum(!is.na(h2_raw_df_$h2_raw_manage_type_1)),
+              "count_h2_raw_manage_type_2" =
+                sum(!is.na(h2_raw_df_$h2_raw_manage_type_2)),
+              "count_h2_raw_manage_type_3" =
+                sum(!is.na(h2_raw_df_$h2_raw_manage_type_3))
+            )
+            result_counts_h2_raw_df_ <- rbind(
+              result_counts_h2_raw_df_,
+              count_h2_raw_df_
+            )
+
+            # get h2_raw_df_ in long format
+            h2_raw_df_long <- h2_raw_df_ %>%
+              pivot_longer(
+                cols = starts_with("h2_raw_manage_type_"),
+                names_to = "Management_type",
+                values_to = "h2_value"
+              ) %>%
+              filter(!is.na(h2_value)) %>% # Retirer les lignes NA
+              mutate(Management_type = factor(Management_type,
+                labels = paste0("Type_", 1:length(unique(Management_type)))
+              ))
+
+            # test homogeneity of variances
+            Levene_test <- leveneTest(h2_value ~ Management_type, data = h2_raw_df_long)
+            signif_ <- ""
+            if (is.numeric(Levene_test$`Pr(>F)`[1]) && Levene_test$`Pr(>F)`[1] <= 1e-3) {
+              signif_ <- "***"
+            } else if (is.numeric(Levene_test$`Pr(>F)`[1]) && Levene_test$`Pr(>F)`[1] <= 1e-2) {
+              signif_ <- "**"
+            } else if (is.numeric(Levene_test$`Pr(>F)`[1]) && Levene_test$`Pr(>F)`[1] <= 5e-2) {
+              signif_ <- "*"
+            } else {
+              signif_ <- "ns"
+            }
+            Levene_test <- paste0(
+              format(Levene_test$`Pr(>F)`[1], digits = 5, nsmall = 5), " (", signif_,
+              ")"
+            )
+
+            # apply games howell test to identify which management type means are potentially
+            # significantly different, this approach is robust no unequal variances, unequal
+            # group sizes and normality violation (since it is not a required hypothesis)
+            gh_h2_raw_ <- as.data.frame(
+              games_howell_test(h2_value ~ Management_type,
+                data = h2_raw_df_long, conf.level = 1 - alpha_mean_h2
+              )
+            )
+
+            gh_h2_raw_$p.adj.signif <- ifelse(
+              gh_h2_raw_$p.adj <= alpha_mean_h2,
+              gh_h2_raw_$p.adj.signif, "ns"
+            )
+
+            gh_h2_formatted <- data.frame(
+              "G-H-test-1" = paste0(
+                format(gh_h2_raw_$p.adj[1], digits = 5, nsmall = 5),
+                " (", gh_h2_raw_$p.adj.signif[1], ")"
+              ),
+              "G-H-test-2" = paste0(
+                format(gh_h2_raw_$p.adj[2], , digits = 5, nsmall = 5),
+                " (", gh_h2_raw_$p.adj.signif[2], ")"
+              ),
+              "G-H-test-3" = paste0(
+                format(gh_h2_raw_$p.adj[3], digits = 5, nsmall = 5),
+                " (", gh_h2_raw_$p.adj.signif[3], ")"
+              )
+            )
+            if (sum(str_detect(gh_h2_formatted, pattern = "NA|NaN")) > 0) {
+              gh_h2_formatted[which(str_detect(gh_h2_formatted,
+                pattern = "NA|NaN"
+              ))] <- "No data or sample too small"
+            }
+            if (any(is.na(gh_h2_formatted))) {
+              gh_h2_formatted[which(is.na(gh_h2_formatted))] <-
+                "No data or sample too small"
+            }
+
+            # compute mean heritabilities per management type
+            mean_df_ <- data.frame(format(t(apply(
+              h2_raw_df_[, which(str_detect(
+                colnames(h2_raw_df_), "type"
+              ))],
+              2, mean,
+              na.rm = T
+            )), digits = 3, nsmall = 3))
+            if (sum(str_detect(mean_df_, pattern = "NA|NaN")) > 0) {
+              mean_df_[which(str_detect(mean_df_,
+                pattern = "NA|NaN"
+              ))] <- "No data"
+            }
+            if (any(is.na(mean_df_))) {
+              mean_df_[which(is.na(mean_df_))] <- "No data"
+            }
+
+            # combine stats for trait
+            trait_stats_h2_raw_df_ <- cbind(
+              trait_, mean_df_,
+              Levene_test, gh_h2_formatted
+            )
+
+            colnames(trait_stats_h2_raw_df_) <- c(
+              "Trait",
+              "Mean h2 in management type 1",
+              "Mean h2 in management type 2",
+              "Mean h2 in management type 3",
+              "Levene variance homogeneity test's p-value",
+              "G-H mean equality test's p-value: manage. type 1 vs 2",
+              "G-H mean equality test's p-value: manage. type 1 vs 3",
+              "G-H mean equality test's p-value: manage. type 2 vs 3"
+            )
+
+            result_h2_raw_df_ <- rbind(result_h2_raw_df_, trait_stats_h2_raw_df_)
+          }
+        },
+        error = function(e) {
+          # get counts for the h2 per management type
+          count_h2_raw_df_ <- data.frame(
+            "Trait" = trait_,
+            "count_h2_raw_manage_type_1" =
+              sum(!is.na(h2_raw_df_$h2_raw_manage_type_1)),
+            "count_h2_raw_manage_type_2" =
+              sum(!is.na(h2_raw_df_$h2_raw_manage_type_2)),
+            "count_h2_raw_manage_type_3" =
+              sum(!is.na(h2_raw_df_$h2_raw_manage_type_3))
+          )
+          result_counts_h2_raw_df_ <- rbind(
+            result_counts_h2_raw_df_,
+            count_h2_raw_df_
+          )
+
+          # compute mean heritabilities per management type
+          mean_df_ <- data.frame(format(t(apply(
+            h2_raw_df_[, which(str_detect(
+              colnames(h2_raw_df_), "type"
+            ))],
+            2, mean,
+            na.rm = T
+          )), digits = 3, nsmall = 3))
+
+          if (sum(str_detect(mean_df_, pattern = "NA|NaN")) > 0) {
+            mean_df_[which(str_detect(mean_df_,
+              pattern = "NA|NaN"
+            ))] <- "No data"
+          }
+          if (any(is.na(mean_df_))) {
+            mean_df_[which(is.na(mean_df_))] <- "No data"
+          }
+
+          trait_stats_h2_raw_df_ <- c(
+            "Trait" = trait_,
+            "Mean h2 in management type 1" =
+              ifelse(!is.character(mean_df_[[1]]),
+                as.numeric(mean_df_[1]), mean_df_[[1]]
+              ),
+            "Mean h2 in management type 2" =
+              ifelse(!is.character(mean_df_[[2]]),
+                as.numeric(mean_df_[2]), mean_df_[[2]]
+              ),
+            "Mean h2 in management type 3" =
+              ifelse(!is.character(mean_df_[[3]]),
+                as.numeric(mean_df_[3]), mean_df_[[3]]
+              ),
+            "Levene variance homogeneity test's p-value" =
+              "No data or sample too small",
+            "G-H mean equality test's p-value: manage. type 1 vs 2" =
+              "No data or sample too small",
+            "G-H mean equality test's p-value: manage. type 1 vs 3" =
+              "No data or sample too small",
+            "G-H mean equality test's p-value: manage. type 2 vs 3" =
+              "No data or sample too small"
+          )
+          result_h2_raw_df_ <<- rbind(result_h2_raw_df_, trait_stats_h2_raw_df_)
+        }
+      )
+    }
+
+    # convert to long format for ggplot
+    melted_df <- melt(result_h2_raw_df_,
+      id.vars = "Trait",
+      variable.name = "variable", value.name = "value"
+    )
+
+    # identify cells containing asterisks (*)
+    melted_df <- melted_df %>%
+      mutate(
+        is_numeric = !is.na(as.numeric(as.character(value))),
+        has_star = grepl("\\*", value),
+        label_color = case_when(
+          has_star ~ "red",
+          TRUE ~ "black"
+        )
+      )
+
+    # reshape result_counts_h2_raw_df_ to long format
+    counts_long <- result_counts_h2_raw_df_ %>%
+      pivot_longer(
+        cols = starts_with("count_h2_raw_manage_type"),
+        names_to = "variable",
+        values_to = "counts"
+      ) %>%
+      mutate(
+        variable = case_when(
+          variable == "count_h2_raw_manage_type_1" ~ "Mean h2 in management type 1",
+          variable == "count_h2_raw_manage_type_2" ~ "Mean h2 in management type 2",
+          variable == "count_h2_raw_manage_type_3" ~ "Mean h2 in management type 3",
+          TRUE ~ variable
+        )
+      )
+
+    # join counts to melted_df
+    melted_df <- melted_df %>%
+      left_join(counts_long, by = c("Trait", "variable"))
+
+    # update combined label to include counts for numeric cells
+    melted_df <- melted_df %>%
+      mutate(
+        combined_label = ifelse(
+          is_numeric,
+          paste0(round(as.numeric(value), 2), " [", counts, "]"),
+          value # keep original labels for non-numeric cells
+        )
+      )
+
+    # create a color vector for labels associated to x-axis
+    colors <- c(
+      "blue4", "blue3", "blue2",
+      "darkgoldenrod4",
+      "darkorchid4", "darkorchid3", "darkorchid2"
+    )
+
+    # create the plot
+    p <- ggplot(melted_df, aes(x = variable, y = Trait, fill = as.numeric(value))) +
+      geom_tile(color = "white") +
+      scale_fill_gradient(
+        low = "#FADADD", high = "red",
+        na.value = "gray90", name = "h2"
+      ) +
+      geom_text(aes(label = combined_label, color = label_color), size = 3) +
+      scale_color_identity() +
+      labs(
+        title = paste0(
+          "Mean of estimated heritabilities h2 for traits using raw phenotypes (without outliers), per management type across environments in ", site_,
+          ",\n and mean difference tests performed using the Games-Howell non-parametric test at a ", alpha_mean_h2, " significance level."
+        ),
+        x = NULL,
+        y = NULL
+      ) +
+      theme_minimal() +
+      theme(
+        axis.text.x = element_text(angle = 45, hjust = 1),
+        panel.grid = element_blank()
+      )
+
+    # modify the X-axis colors based on the groups
+    p <- p + scale_x_discrete(
+      breaks = unique(melted_df$variable),
+      labels = unique(melted_df$variable),
+      limits = unique(melted_df$variable)
+    ) +
+      # modify the colors of the X-axis text
+      theme(
+        axis.text.x = element_text(
+          color = colors, # apply the colors for each year
+          angle = 45,
+          hjust = 1
+        )
+      )
+    p <- grid.arrange(
+      p,
+      top = NULL,
+      bottom = textGrob("[.]: number of environments with an estimable h2 (inlier), an environment is defined as the combination of site, year and management
+      G-H: Games-Howell non parametric test (robust to unequal variances and unequal sample sizes, and no distributional assumptions)
+      Management type 1: normal irrigation and normal pesticide
+      Management type 2: normal irrigation and reduced pesticide
+      Management type 3: reduced irrigation and normal pesticide",
+        gp = gpar(fontsize = 10, fontface = "italic")
+      )
+    )
+
+    # save plot
+    ggsave(
+      paste0(
+        output_gem_graphics_path,
+        "mean_estimated_h2_traits_raw_pheno_per_management_", site_, "_",
+        alpha_mean_h2, "_significance_level.png"
+      ),
+      plot = p, width = 16, height = 8, dpi = 300
+    )
+  }
+  return(TRUE)
+}
+
+# function which compute pheno means per managment type across all environments
+create_mean_pheno_graphic_per_manage_and_all_env_gh <- function(
+    pheno_df_,
+    h2_outlier_path,
+    selected_traits_,
+    excluded_pseudo_trait_for_save_,
+    vect_alpha_mean_y,
+    output_gem_graphics_path) {
+  # get environments for which h2 are inliers, for phenotypic means,
+  # and create vector of variables to keep
+  inlier_env_ <- as.data.frame(fread(paste0(
+    h2_outlier_path,
+    "envir_per_trait_retained_based_on_inlier_h2_for_adj_phenotypes.csv"
+  )))
+  var_to_keep <- c()
+  for (i in 1:nrow(inlier_env_)) {
+    var_to_keep <- c(
+      var_to_keep,
+      paste0(
+        inlier_env_$trait[i], "_",
+        unlist(str_split(
+          inlier_env_$env_retained_based_on_inlier_h2[i],
+          ", "
+        ))
+      )
+    )
+  }
+
+  # filter selected traits from pheno_df_
+  pheno_traits <- setdiff(selected_traits_, excluded_pseudo_trait_for_save_)
+  pheno_filtered <- pheno_df_ %>%
+    select(Management, Environment, all_of(pheno_traits)) %>%
+    pivot_longer(
+      cols = -c(Management, Environment),
+      names_to = "Trait",
+      values_to = "Value"
+    ) %>%
+    filter(!is.na(Value))
+  pheno_filtered$var_ <- paste0(pheno_filtered$Trait, "_", pheno_filtered$Environment)
+  pheno_filtered <- pheno_filtered[pheno_filtered$var_ %in% var_to_keep, ]
+
+  # compute means per management type for each trait
+  pheno_summary <- pheno_filtered %>%
+    group_by(Trait, Management) %>%
+    summarise(
+      Mean = mean(Value, na.rm = TRUE),
+      Count = sum(!is.na(Value)), # number of observations
+      .groups = "drop"
+    )
+
+  # run levene's test for variance homogeneity
+  traits <- unique(pheno_filtered$Trait)
+
+  for (alpha_mean_y in vect_alpha_mean_y) {
+    # initialize a list to store results
+    levene_results_list <- list()
+
+    # loop to calculate the Levene test for each trait
+    for (trait in traits) {
+      # filter the data for the current trait
+      data_subset <- pheno_filtered %>%
+        filter(Trait == trait)
+
+      # perform the Levene test
+      levene_test <- car::leveneTest(Value ~ Management, data = data_subset)
+
+      signif_ <- ""
+      if (is.numeric(levene_test$`Pr(>F)`[1]) && levene_test$`Pr(>F)`[1] <= 1e-3) {
+        signif_ <- "***"
+      } else if (is.numeric(levene_test$`Pr(>F)`[1]) && levene_test$`Pr(>F)`[1] <= 1e-2) {
+        signif_ <- "**"
+      } else if (is.numeric(levene_test$`Pr(>F)`[1]) && levene_test$`Pr(>F)`[1] <= 5e-2) {
+        signif_ <- "*"
+      }
+      levene_signif <- signif_
+
+      # store the results in the list
+      levene_results_list[[trait]] <- data.frame(
+        Trait = trait,
+        Levene_pval = levene_test$`Pr(>F)`[1],
+        Levene_significance = levene_signif
+      )
+    }
+
+    # combine the results into a single data frame
+    levene_results <- do.call(rbind, levene_results_list)
+
+    # games-howell test for mean differences
+    games_howell_results <- pheno_filtered %>%
+      group_by(Trait) %>%
+      games_howell_test(Value ~ Management)
+
+    games_howell_results$p.adj.signif <- ifelse(
+      games_howell_results$p.adj <= alpha_mean_y,
+      games_howell_results$p.adj.signif, "ns"
+    )
+
+    # combine statistics
+    pheno_combined <- pheno_summary %>%
+      left_join(levene_results, by = "Trait") %>%
+      left_join(
+        games_howell_results %>%
+          mutate(
+            GH_Test = paste0(
+              format(p.adj, digits = 5, nsmall = 5), " (", p.adj.signif, ")"
+            )
+          ) %>%
+          pivot_wider(
+            id_cols = Trait,
+            names_from = group1:group2,
+            values_from = GH_Test
+          ),
+        by = "Trait"
+      )
+
+    # reformat mean and levene p-values
+    pheno_combined$Mean <- format(pheno_combined$Mean,
+      digits = 2, nsmall = 2
+    )
+    pheno_combined$Levene_pval <- format(pheno_combined$Levene_pval,
+      digits = 2, nsmall = 2
+    )
+    pheno_combined$Levene_pval <- ifelse(
+      str_detect(pheno_combined$Levene_significance, fixed("*")),
+      paste0(
+        pheno_combined$Levene_pval,
+        " (",
+        pheno_combined$Levene_significance,
+        ")"
+      ),
+      paste0(
+        pheno_combined$Levene_pval,
+        " (ns)"
+      )
+    )
+
+    # add missing management specified with NA for traits which don't have them
+    pheno_combined <- pheno_combined %>%
+      complete(Trait, Management, fill = list(Mean = NA))
+    pheno_combined$Mean[is.na(pheno_combined$Mean)] <- "No data"
+    pheno_combined$Count[is.na(pheno_combined$Count)] <- "No data"
+    pheno_combined$Levene_pval[
+      is.na(pheno_combined$Levene_pval)
+    ] <- "No data or sample too small"
+    pheno_combined$Levene_significance[
+      is.na(pheno_combined$Levene_significance)
+    ] <- "No data or sample too small"
+    pheno_combined$`1_2`[
+      is.na(pheno_combined$`1_2`)
+    ] <- "No data or sample too small"
+    pheno_combined$`1_3`[
+      is.na(pheno_combined$`1_3`)
+    ] <- "No data or sample too small"
+    pheno_combined$`2_3`[
+      is.na(pheno_combined$`2_3`)
+    ] <- "No data or sample too small"
+
+    # pivot the data to a wide format with one row per Trait
+    pheno_combined_wide <- pheno_combined %>%
+      # pivot the Mean column to create wide columns for each management type
+      pivot_wider(
+        names_from = Management, # use the management column to create new column names
+        values_from = Mean, # fill these columns with the mean values
+        names_prefix = "Mean value in management type " # prefix for new column names
+      ) %>%
+      # group by Trait to handle multiple rows per Trait
+      group_by(Trait) %>%
+      # collapse non-numeric columns (like significance) to single values per Trait
+      summarise(
+        across(
+          starts_with("Mean value"), ~ first(na.omit(.)), # keep the first non-NA value
+          .names = "{.col}"
+        ),
+        `Levene variance homogeneity test's p-value` = first(Levene_pval),
+        `G-H mean equality test's p-value: manage. type 1 vs 2` = first(`1_2`),
+        `G-H mean equality test's p-value: manage. type 1 vs 3` = first(`1_3`),
+        `G-H mean equality test's p-value: manage. type 2 vs 3` = first(`2_3`),
+        .groups = "drop" # ensure the output is ungrouped
+      ) %>%
+      # reorder columns for readability
+      select(
+        Trait,
+        starts_with("Mean value"), # include the mean columns in order
+        `Levene variance homogeneity test's p-value`,
+        `G-H mean equality test's p-value: manage. type 1 vs 2`,
+        `G-H mean equality test's p-value: manage. type 1 vs 3`,
+        `G-H mean equality test's p-value: manage. type 2 vs 3`
+      )
+
+    # convert to long format for ggplot
+    melted_df <- melt(pheno_combined_wide,
+      id.vars = "Trait",
+      variable.name = "variable", value.name = "value"
+    )
+
+    # identify cells containing asterisks (*)
+    melted_df <- melted_df %>%
+      mutate(
+        is_numeric = !is.na(as.numeric(as.character(value))),
+        has_star = grepl("\\*", value),
+        label_color = case_when(
+          has_star ~ "red",
+          TRUE ~ "black"
+        )
+      )
+
+    # modify pheno_combined which contain counts
+    pheno_combined$Management <- paste0(
+      "Mean value in management type ",
+      pheno_combined$Management
+    )
+    pheno_combined_sub_ <- pheno_combined[
+      , c("Trait", "Management", "Mean", "Count")
+    ]
+    colnames(pheno_combined_sub_) <- c("Trait", "variable", "value", "count")
+
+    # join counts to melted_df
+    melted_df <- melted_df %>%
+      left_join(pheno_combined_sub_, by = c("Trait", "variable", "value"))
+
+    # combine counts
+    melted_df$combined_label <- ifelse(!is.na(melted_df$count),
+      paste0(
+        melted_df$value,
+        " [",
+        melted_df$count,
+        "]"
+      ),
+      melted_df$value
+    )
+    melted_df$combined_label[
+      melted_df$combined_label == "No data (No data)"
+    ] <- "No data"
+
+    # create a color vector for labels associated to x-axis
+    colors <- c(
+      "blue4", "blue3", "blue2",
+      "darkgoldenrod4",
+      "darkorchid4", "darkorchid3", "darkorchid2"
+    )
+
+    # create the plot
+    pt <- ggplot(melted_df, aes(x = variable, y = Trait, fill = as.numeric(value))) +
+      geom_tile(color = "white") +
+      scale_fill_gradient(
+        low = "lightgreen", high = "lightgreen",
+        na.value = "gray90", name = "Mean of phenotypic values"
+      ) +
+      geom_text(aes(label = combined_label, color = label_color), size = 3) +
+      scale_color_identity() +
+      labs(
+        title = paste0("Mean of raw phenotypic values (without outliers) for traits, per management type across all environments in REFPOP,
+    and mean difference tests performed using the Games-Howell non-parametric test at a ", alpha_mean_y, " significance level."),
+        x = NULL,
+        y = NULL
+      ) +
+      theme_minimal() +
+      theme(
+        axis.text.x = element_text(angle = 45, hjust = 1),
+        panel.grid = element_blank()
+      )
+
+    # modify the X-axis colors based on the groups
+    pt <- pt + scale_x_discrete(
+      breaks = unique(melted_df$variable),
+      labels = unique(melted_df$variable),
+      limits = unique(melted_df$variable)
+    ) +
+      # modify the colors of the X-axis text
+      theme(
+        axis.text.x = element_text(
+          color = colors, # apply the colors for each year
+          angle = 45,
+          hjust = 1
+        )
+      )
+    pt <- grid.arrange(
+      pt,
+      top = NULL,
+      bottom = textGrob("[.]: number of phenotypic values across environments, an environment is defined as the combination of site, year and management
+    G-H: Games-Howell non parametric test (robust to unequal variances and unequal sample sizes, and no distributional assumptions)
+    Management type 1: normal irrigation and normal pesticide
+    Management type 2: normal irrigation and reduced pesticide
+    Management type 3: reduced irrigation and normal pesticide",
+        gp = gpar(fontsize = 10, fontface = "italic")
+      )
+    )
+    # save plot
+    ggsave(
+      paste0(
+        output_gem_graphics_path,
+        "mean_phenotypic_value_traits_raw_pheno_per_management_refpop_",
+        alpha_mean_y, "_significance_level.png"
+      ),
+      plot = pt, width = 16, height = 8, dpi = 300
+    )
+  }
+  return(TRUE)
+}
+
+
+# function which compute pheno means per managment type across all environments and
+# site
+create_mean_pheno_graphic_per_manage_and_site_gh <- function(
+    site_,
+    pheno_df_,
+    h2_outlier_path,
+    selected_traits_,
+    excluded_pseudo_trait_for_save_,
+    vect_alpha_mean_y = 0.01,
+    output_gem_graphics_path) {
+  # get environments for which h2 are inliers, for phenotypic means,
+  # and create vector of variables to keep
+  inlier_env_ <- as.data.frame(fread(paste0(
+    h2_outlier_path,
+    "envir_per_trait_retained_based_on_inlier_h2_for_adj_phenotypes.csv"
+  )))
+  var_to_keep <- c()
+  for (i in 1:nrow(inlier_env_)) {
+    var_to_keep <- c(
+      var_to_keep,
+      paste0(
+        inlier_env_$trait[i], "_",
+        unlist(str_split(
+          inlier_env_$env_retained_based_on_inlier_h2[i],
+          ", "
+        ))
+      )
+    )
+  }
+
+  pheno_df_ <- pheno_df_[str_detect(pheno_df_$Environment, paste0(site_, "_")), ]
+
+  if (nrow(pheno_df_) > 0) {
+    # remove buffers if any
+    if (sum(str_detect(pheno_df_$Environment, "_BUFFER")) > 0) {
+      pheno_df_ <- pheno_df_[!str_detect(pheno_df_$Environment, "_BUFFER"), ]
+    }
+
+    # filter selected traits from pheno_df_
+    pheno_traits <- setdiff(selected_traits_, excluded_pseudo_trait_for_save_)
+    pheno_filtered <- pheno_df_ %>%
+      select(Management, Environment, all_of(pheno_traits)) %>%
+      pivot_longer(
+        cols = -c(Management, Environment),
+        names_to = "Trait",
+        values_to = "Value"
+      ) %>%
+      filter(!is.na(Value))
+    pheno_filtered$var_ <- paste0(pheno_filtered$Trait, "_", pheno_filtered$Environment)
+    pheno_filtered <- pheno_filtered[pheno_filtered$var_ %in% var_to_keep, ]
+
+    # compute means per management type for each trait
+    pheno_summary <- pheno_filtered %>%
+      group_by(Trait, Management) %>%
+      summarise(
+        Mean = mean(Value, na.rm = TRUE),
+        Count = sum(!is.na(Value)), # number of observations
+        .groups = "drop"
+      )
+
+    # run levene's test for variance homogeneity
+    traits <- unique(pheno_filtered$Trait)
+
+    for (alpha_mean_y in vect_alpha_mean_y) {
+      # initialize a list to store results
+      levene_results_list <- list()
+
+      # loop to calculate the Levene test for each trait
+      for (trait in traits) {
+        print(trait)
+        trait_ <<- trait
+        tryCatch(
+          {
+            # filter the data for the current trait
+            data_subset <- pheno_filtered %>%
+              filter(Trait == trait)
+
+            # perform the Levene test
+            levene_test <- car::leveneTest(Value ~ Management, data = data_subset)
+
+            signif_ <- ""
+            if (is.numeric(levene_test$`Pr(>F)`[1]) && levene_test$`Pr(>F)`[1] <= 1e-3) {
+              signif_ <- "***"
+            } else if (is.numeric(levene_test$`Pr(>F)`[1]) && levene_test$`Pr(>F)`[1] <= 1e-2) {
+              signif_ <- "**"
+            } else if (is.numeric(levene_test$`Pr(>F)`[1]) && levene_test$`Pr(>F)`[1] <= 5e-2) {
+              signif_ <- "*"
+            }
+            levene_signif <- signif_
+
+            # store the results in the list
+            levene_results_list[[trait]] <- data.frame(
+              Trait = trait,
+              Levene_pval = format(levene_test$`Pr(>F)`[1],
+                digits = 5, nsmall = 5
+              ),
+              Levene_significance = levene_signif
+            )
+          },
+          error = function(e) {
+            levene_results_list[[trait]] <<- data.frame(
+              Trait = trait_,
+              Levene_pval = "No data or sample too small",
+              Levene_significance = ""
+            )
+          }
+        )
+      }
+
+      # combine the results into a single data frame
+      levene_results <- do.call(rbind, levene_results_list)
+
+      # filter valid traits with observations in at least two management groups
+      # and perform the Games-Howell test in one step
+      games_howell_results <- pheno_filtered %>%
+        group_by(Trait) %>% # group data by trait
+        filter(n_distinct(Management) > 1) %>% # keep only traits with observations in both management groups
+        group_by(Trait) %>% # group again to apply the Games-Howell test for each trait
+        games_howell_test(Value ~ Management) # perform the Games-Howell test on Value by anagement
+
+
+      games_howell_results$p.adj.signif <- ifelse(
+        games_howell_results$p.adj <= alpha_mean_y,
+        games_howell_results$p.adj.signif, "ns"
+      )
+
+      # combine statistics
+      pheno_combined <- pheno_summary %>%
+        left_join(levene_results, by = "Trait") %>%
+        left_join(
+          games_howell_results %>%
+            mutate(
+              GH_Test = paste0(
+                format(p.adj, digits = 5, nsmall = 5), " (", p.adj.signif, ")"
+              )
+            ) %>%
+            pivot_wider(
+              id_cols = Trait,
+              names_from = group1:group2,
+              values_from = GH_Test
+            ),
+          by = "Trait"
+        )
+
+      # reformat mean and levene p-values
+      pheno_combined$Mean <- format(pheno_combined$Mean,
+        digits = 2, nsmall = 2
+      )
+      pheno_combined$Levene_pval <- format(pheno_combined$Levene_pval,
+        digits = 2, nsmall = 2
+      )
+      pheno_combined$Levene_pval <- ifelse(
+        str_detect(pheno_combined$Levene_significance, fixed("*")),
+        paste0(
+          pheno_combined$Levene_pval,
+          " (",
+          pheno_combined$Levene_significance,
+          ")"
+        ),
+        paste0(
+          pheno_combined$Levene_pval,
+          " (ns)"
+        )
+      )
+
+      # add missing management specified with NA for traits which don't have them
+      pheno_combined <- pheno_combined %>%
+        complete(Trait, Management, fill = list(Mean = NA))
+      pheno_combined$Mean[is.na(pheno_combined$Mean)] <- "No data"
+      pheno_combined$Count[is.na(pheno_combined$Count)] <- "No data"
+      pheno_combined$Levene_pval[
+        is.na(pheno_combined$Levene_pval)
+      ] <- "No data or sample too small"
+      pheno_combined$Levene_significance[
+        is.na(pheno_combined$Levene_significance)
+      ] <- "No data or sample too small"
+      if ("1_2" %in% colnames(pheno_combined)) {
+        pheno_combined$`1_2`[
+          is.na(pheno_combined$`1_2`)
+        ] <- "No data or sample too small"
+      } else {
+        pheno_combined$`1_2` <- "No data or sample too small"
+      }
+      if ("1_3" %in% colnames(pheno_combined)) {
+        pheno_combined$`1_3`[
+          is.na(pheno_combined$`1_3`)
+        ] <- "No data or sample too small"
+      } else {
+        pheno_combined$`1_3` <- "No data or sample too small"
+      }
+      if ("2_3" %in% colnames(pheno_combined)) {
+        pheno_combined$`2_3`[
+          is.na(pheno_combined$`2_3`)
+        ] <- "No data or sample too small"
+      } else {
+        pheno_combined$`2_3` <- "No data or sample too small"
+      }
+
+      # pivot the data to a wide format with one row per Trait
+      pheno_combined_wide <- pheno_combined %>%
+        # pivot the Mean column to create wide columns for each management type
+        pivot_wider(
+          names_from = Management, # use the management column to create new column names
+          values_from = Mean, # fill these columns with the mean values
+          names_prefix = "Mean value in management type " # prefix for new column names
+        ) %>%
+        # group by Trait to handle multiple rows per Trait
+        group_by(Trait) %>%
+        # collapse non-numeric columns (like significance) to single values per Trait
+        summarise(
+          across(
+            starts_with("Mean value"), ~ first(na.omit(.)), # keep the first non-NA value
+            .names = "{.col}"
+          ),
+          `Levene variance homogeneity test's p-value` = first(Levene_pval),
+          `G-H mean equality test's p-value: manage. type 1 vs 2` = first(`1_2`),
+          `G-H mean equality test's p-value: manage. type 1 vs 3` = first(`1_3`),
+          `G-H mean equality test's p-value: manage. type 2 vs 3` = first(`2_3`),
+          .groups = "drop" # ensure the output is ungrouped
+        ) %>%
+        # reorder columns for readability
+        select(
+          Trait,
+          starts_with("Mean value"), # include the mean columns in order
+          `Levene variance homogeneity test's p-value`,
+          `G-H mean equality test's p-value: manage. type 1 vs 2`,
+          `G-H mean equality test's p-value: manage. type 1 vs 3`,
+          `G-H mean equality test's p-value: manage. type 2 vs 3`
+        )
+
+      if (!("Mean value in management type 1" %in% colnames(pheno_combined_wide))) {
+        pheno_combined_wide$`Mean value in management type 1` <- "No data"
+      }
+      if (!("Mean value in management type 2" %in% colnames(pheno_combined_wide))) {
+        pheno_combined_wide$`Mean value in management type 2` <- "No data"
+      }
+      if (!("Mean value in management type 3" %in% colnames(pheno_combined_wide))) {
+        pheno_combined_wide$`Mean value in management type 3` <- "No data"
+      }
+      pheno_combined_wide <- pheno_combined_wide[
+        , c(
+          "Trait",
+          "Mean value in management type 1",
+          "Mean value in management type 2",
+          "Mean value in management type 3",
+          "Levene variance homogeneity test's p-value",
+          "G-H mean equality test's p-value: manage. type 1 vs 2",
+          "G-H mean equality test's p-value: manage. type 1 vs 3",
+          "G-H mean equality test's p-value: manage. type 2 vs 3"
+        )
+      ]
+
+      # convert to long format for ggplot
+      melted_df <- melt(pheno_combined_wide,
+        id.vars = "Trait",
+        variable.name = "variable", value.name = "value"
+      )
+
+      # identify cells containing asterisks (*)
+      melted_df <- melted_df %>%
+        mutate(
+          is_numeric = !is.na(as.numeric(as.character(value))),
+          has_star = grepl("\\*", value),
+          label_color = case_when(
+            has_star ~ "red",
+            TRUE ~ "black"
+          )
+        )
+
+      # modify pheno_combined which contain counts
+      pheno_combined$Management <- paste0(
+        "Mean value in management type ",
+        pheno_combined$Management
+      )
+      pheno_combined_sub_ <- pheno_combined[
+        , c("Trait", "Management", "Mean", "Count")
+      ]
+      colnames(pheno_combined_sub_) <- c("Trait", "variable", "value", "count")
+
+      # join counts to melted_df
+      melted_df <- melted_df %>%
+        left_join(pheno_combined_sub_, by = c("Trait", "variable", "value"))
+
+      # combine counts
+      melted_df$combined_label <- ifelse(!is.na(melted_df$count),
+        paste0(
+          melted_df$value,
+          " [",
+          melted_df$count,
+          "]"
+        ),
+        melted_df$value
+      )
+      # rename some column cell elements
+      if (sum(melted_df$value ==
+        "No data or sample too small (ns)") > 0) {
+        melted_df$value[
+          melted_df$value ==
+            "No data or sample too small (ns)"
+        ] <- "No data or sample too small"
+      }
+      if (sum(melted_df$combined_label ==
+        "No data or sample too small (ns)") > 0) {
+        melted_df$combined_label[
+          melted_df$combined_label ==
+            "No data or sample too small (ns)"
+        ] <- "No data or sample too small"
+      }
+      if (sum(melted_df$combined_label ==
+        "No data [No data]") > 0) {
+        melted_df$combined_label[
+          melted_df$combined_label ==
+            "No data [No data]"
+        ] <- "No data"
+      }
+
+      # create a color vector for labels associated to x-axis
+      colors <- c(
+        "blue4", "blue3", "blue2",
+        "darkgoldenrod4",
+        "darkorchid4", "darkorchid3", "darkorchid2"
+      )
+
+      # create the plot
+      pt <- ggplot(melted_df, aes(x = variable, y = Trait, fill = as.numeric(value))) +
+        geom_tile(color = "white") +
+        scale_fill_gradient(
+          low = "lightgreen", high = "lightgreen",
+          na.value = "gray90", name = "Mean of phenotypic values"
+        ) +
+        geom_text(aes(label = combined_label, color = label_color), size = 3) +
+        scale_color_identity() +
+        labs(
+          title = paste0(
+            "Mean of raw phenotypic values (without outliers) for traits, per management type across environments in ", site_,
+            ",\n and mean difference tests performed using the Games-Howell non-parametric test at a ", alpha_mean_y, " significance level."
+          ),
+          x = NULL,
+          y = NULL
+        ) +
+        theme_minimal() +
+        theme(
+          axis.text.x = element_text(angle = 45, hjust = 1),
+          panel.grid = element_blank()
+        )
+
+      # modify the X-axis colors based on the groups
+      pt <- pt + scale_x_discrete(
+        breaks = unique(melted_df$variable),
+        labels = unique(melted_df$variable),
+        limits = unique(melted_df$variable)
+      ) +
+        # modify the colors of the X-axis text
+        theme(
+          axis.text.x = element_text(
+            color = colors, # apply the colors for each year
+            angle = 45,
+            hjust = 1
+          )
+        )
+      pt <- grid.arrange(
+        pt,
+        top = NULL,
+        bottom = textGrob("[.]: number of phenotypic values across environments, an environment is defined as the combination of site, year and management
+    G-H: Games-Howell non parametric test (robust to unequal variances and unequal sample sizes, and no distributional assumptions)
+    Management type 1: normal irrigation and normal pesticide
+    Management type 2: normal irrigation and reduced pesticide
+    Management type 3: reduced irrigation and normal pesticide",
+          gp = gpar(fontsize = 10, fontface = "italic")
+        )
+      )
+      # save plot
+      ggsave(
+        paste0(
+          output_gem_graphics_path,
+          "mean_phenotypic_value_traits_raw_pheno_per_management_", site_, "_",
+          alpha_mean_y, "_significance_level.png"
+        ),
+        plot = pt, width = 16, height = 8, dpi = 300
+      )
+    }
+  }
+  return(TRUE)
+}
+
+# function which estimates variance compnent contributions
+estimate_var_comp_contrib_per_trait <- function(
+    pheno_df_,
+    inlier_env_,
+    var_comp_names_,
+    vect_traits,
+    display_trait_iter_ = T,
+    refit_lmer_ = F) {
+  # add residual if missing
+  if (!("Residual" %in% var_comp_names_)) {
+    var_comp_names_ <- c(var_comp_names_, "Residual")
+  }
+
+  # initialize list for variance component contributions
+  list_var_contrib_per_trait_ <- list()
+  for (trait_ in vect_traits) {
+    if (display_trait_iter_) {
+      print(trait_)
+    }
+
+    # initialize variance components list at each iteration
+    list_var_comp_ <- vector("list", length(var_comp_names_))
+    names(list_var_comp_) <- var_comp_names_
+
+    # specifiy inliers environments for trait_
+    inlier_env_trait_ <- unlist(str_split(
+      inlier_env_$env_retained_based_on_inlier_h2[
+        inlier_env_$trait == trait_
+      ], ", "
+    ))
+    pheno_df_trait_ <- pheno_df_[pheno_df_$Environment %in% inlier_env_trait_, ]
+    pheno_df_trait_ <- pheno_df_trait_[!is.na(pheno_df_trait_[, trait_]), ]
+
+    if (nrow(pheno_df_trait_) > min_obs_lmer_) {
+      tryCatch(
+        {
+          # define formula
+          formula_ <- paste0(
+            trait_, " ~ 1 + ",
+            paste0("(1 | ",
+              var_comp_names_[!str_detect(var_comp_names_, "Residual")], ")",
+              collapse = " + "
+            )
+          )
+
+          # get random factors except residual and interaction terms
+          rand_fact_ <- var_comp_names_[!str_detect(var_comp_names_, "Residual")]
+          if (sum(str_detect(rand_fact_, ":")) > 0) {
+            rand_fact_ <- rand_fact_[!str_detect(rand_fact_, ":")]
+          }
+
+          # detect single level factors if any
+          single_level_fact_ <- c()
+          single_level_fact_ <- rand_fact_[
+            !sapply(pheno_df_trait_[, rand_fact_], function(x) n_distinct(x) > 1)
+          ]
+
+          # if any single level factor, remove it from formula
+          if (length(single_level_fact_) > 0) {
+            mask_ <- sapply(var_comp_names_, function(x) {
+              any(str_detect(x, single_level_fact_))
+            })
+            terms_ <- paste0("+ (1 | ", var_comp_names_[mask_], ")")
+            for (term_ in terms_) {
+              formula_ <- str_replace(formula_,
+                pattern = fixed(term_), replacement = ""
+              )
+            }
+          }
+
+          # fit mixed model for estimation of variance components
+          lmer_mod_ <-
+            suppressMessages(lmer(
+              as.formula(formula_),
+              data = pheno_df_trait_
+            ))
+
+          # get variance components, assign zero variance for single level factors
+          # and their interactions
+          var_cov <- VarCorr(lmer_mod_)
+          for (var_comp_ in var_comp_names_) {
+            if (!identical(var_comp_, "Residual")) {
+              if (length(single_level_fact_) > 0 &&
+                var_comp_ %in% var_comp_names_[mask_]) {
+                list_var_comp_[[var_comp_]] <- 0
+              } else {
+                list_var_comp_[[var_comp_]] <- var_cov[[var_comp_]][1]
+              }
+            } else {
+              list_var_comp_[[var_comp_]] <- as.numeric(sigma(lmer_mod_)^2)
+            }
+          }
+
+          # is model singular
+          if (isSingular(lmer_mod_, tol = 1e-18) && refit_lmer_) {
+            # initialize variance components list at each iteration
+            list_var_comp_ <- vector("list", length(var_comp_names_))
+            names(list_var_comp_) <- var_comp_names_
+
+            # detect factor to remove
+            fact_ <- names(which(VarCorr(lmer_mod_) < 1e-8))
+            print(paste0(
+              "Factor causing singularity: ", fact_,
+              ". Hence, removing this factor from the model"
+            ))
+
+            # remove the corresponding factor and its interactions from the formula
+            mask_ <- sapply(var_comp_names_, function(x) {
+              any(str_detect(x, fact_))
+            })
+            terms_ <- paste0("+ (1 | ", var_comp_names_[mask_], ")")
+            for (term_ in terms_) {
+              formula_ <- str_replace(formula_,
+                pattern = fixed(term_), replacement = ""
+              )
+            }
+
+            # refit mixed model for estimation of variance components
+            lmer_mod_ <-
+              suppressMessages(lmer(
+                as.formula(formula_),
+                data = pheno_df_trait_
+              ))
+
+            # get variance components, assign zero variance for single level factors
+            # and their interactions
+            var_cov <- VarCorr(lmer_mod_)
+            for (var_comp_ in var_comp_names_) {
+              if (!identical(var_comp_, "Residual")) {
+                if (length(fact_) > 0 &&
+                  var_comp_ %in% var_comp_names_[str_detect(
+                    var_comp_names_,
+                    fact_
+                  )]) {
+                  list_var_comp_[[var_comp_]] <- 0
+                } else {
+                  list_var_comp_[[var_comp_]] <- var_cov[[var_comp_]][1]
+                }
+              } else {
+                list_var_comp_[[var_comp_]] <- as.numeric(sigma(lmer_mod_)^2)
+              }
+            }
+          }
+
+          # get contributions in percentage
+          list_var_contrib_per_trait_[[trait_]] <- 100 * (unlist(list_var_comp_) /
+            sum(unlist(list_var_comp_)))
+        },
+        error = function(e) {
+          cat(
+            "Error with : ", conditionMessage(e), "\n"
+          )
+        }
+      )
+    } else {
+      print(paste0("Not enough data for ", trait_, ": ", nrow(pheno_df_trait_)))
+    }
+  }
+  return(list("var_comp_contrib_per_trait" = list_var_contrib_per_trait_))
+}
+
+# function which checks if variables has at least two levels
+has_multiple_levels <- function(var) {
+  return(is.factor(df_trait_[, var]) && length(levels(df_trait_[, var])) > 1)
+}
+
+# function to compute KS distance between two groups
+compute_ks <- function(data, trait, group1, group2) {
+  # extract data for each group
+  values1 <- data %>%
+    filter(Trait == trait, Management == group1) %>%
+    pull(Value)
+  values2 <- data %>%
+    filter(Trait == trait, Management == group2) %>%
+    pull(Value)
+
+  # verify if each group has enough data
+  if (length(values1) > 1 & length(values2) > 1) {
+    ks_test <- ks.test(values1, values2)
+    return(data.frame(
+      Trait = trait, Group1 = group1, Group2 = group2,
+      KS_Distance = ks_test$statistic, p_value = ks_test$p.value
+    ))
+  } else {
+    return(data.frame(
+      Trait = trait, Group1 = group1, Group2 = group2,
+      KS_Distance = NA, p_value = NA
+    ))
+  }
+}
+
+# function to compute wilcoxson test
+compute_wilcox <- function(data, trait, group1, group2) {
+  values1 <- data %>%
+    filter(Trait == trait, Management == group1) %>%
+    pull(Value)
+  values2 <- data %>%
+    filter(Trait == trait, Management == group2) %>%
+    pull(Value)
+
+  if (length(values1) > 1 & length(values2) > 1) {
+    wilcox_test <- wilcox.test(values1, values2, exact = FALSE)
+    return(data.frame(
+      Trait = trait, Group1 = group1, Group2 = group2,
+      Wilcoxon_W = wilcox_test$statistic, p_value = wilcox_test$p.value
+    ))
+  } else {
+    return(data.frame(
+      Trait = trait, Group1 = group1, Group2 = group2,
+      Wilcoxon_W = NA, p_value = NA
+    ))
+  }
+}
+
+# function which computes pheno means per management type in refpop
+create_mean_pheno_graphic_per_manage <- function(
+    pheno_df_,
+    h2_outlier_path,
+    selected_traits_,
+    excluded_pseudo_trait_for_save_,
+    output_gem_graphics_path) {
+  # get environments for which h2 are inliers, for phenotypic means,
+  # and create vector of variables to keep
+  inlier_env_ <- as.data.frame(fread(paste0(
+    h2_outlier_path,
+    "envir_per_trait_retained_based_on_inlier_h2_for_adj_phenotypes.csv"
+  )))
+  var_to_keep <- c()
+  for (i in 1:nrow(inlier_env_)) {
+    var_to_keep <- c(
+      var_to_keep,
+      paste0(
+        inlier_env_$trait[i], "_",
+        unlist(str_split(
+          inlier_env_$env_retained_based_on_inlier_h2[i],
+          ", "
+        ))
+      )
+    )
+  }
+
+  # filter selected traits from pheno_df_
+  pheno_traits <- setdiff(selected_traits_, excluded_pseudo_trait_for_save_)
+  pheno_filtered <- pheno_df_ %>%
+    select(Management, Environment, all_of(pheno_traits)) %>%
+    pivot_longer(
+      cols = -c(Management, Environment),
+      names_to = "Trait",
+      values_to = "Value"
+    ) %>%
+    filter(!is.na(Value))
+
+  pheno_filtered$var_ <- paste0(pheno_filtered$Trait, "_", pheno_filtered$Environment)
+  pheno_filtered <- pheno_filtered[pheno_filtered$var_ %in% var_to_keep, ]
+
+  # compute means per management type for each trait
+  pheno_summary <- as.data.frame(pheno_filtered %>%
+    group_by(Trait, Management) %>%
+    summarise(
+      Mean = mean(Value, na.rm = TRUE),
+      Count = sum(!is.na(Value)), # number of observations
+      .groups = "drop"
+    ))
+
+  # merge means and counts into a single column
+  pheno_wide <- as.data.frame(pheno_summary %>%
+    mutate(Mean_Count = paste0(
+      round(Mean, 2),
+      " [", Count, "]"
+    )) %>%
+    select(Trait, Management, Mean_Count) %>%
+    pivot_wider(
+      names_from = Management,
+      values_from = Mean_Count, names_prefix = "Mean_"
+    ))
+
+  # change column names
+  colnames(pheno_wide) <- c(
+    "Trait",
+    "Mean in management 1",
+    "Mean in management 2",
+    "Mean in management 3"
+  )
+
+  # transform the data to long format
+  pheno_long <- pheno_wide %>%
+    pivot_longer(cols = contains("Mean in management"), names_to = "Management", values_to = "Mean") %>%
+    mutate(Management = gsub("Mean_", "Management ", Management))
+
+  # create the plot
+  facet_plot_ <- ggplot(pheno_long %>% filter(!is.na(Mean)), aes(x = Management, y = Mean, fill = Management)) +
+    geom_col(position = "dodge", width = 0.7, alpha = 0.8) + # remove NA bars
+    facet_wrap(~Trait, scales = "free_y", ncol = 3) + # facet with 3 columns
+    labs(
+      title =
+        "Mean of raw phenotypic values (without outliers) for traits, per management type in REFPOP.",
+      x = NULL,
+      y = "Mean value"
+    ) +
+    theme_minimal(base_size = 14) + # larger text
+    theme(
+      axis.text.x = element_text(angle = 45, hjust = 1), # rotate x-axis labels
+      strip.text = element_text(size = 12, face = "bold"), # make facet titles more visible
+      panel.spacing = unit(1, "lines") # increase space between facets
+    ) +
+    scale_fill_manual(values = c("blue3", "brown", "darkmagenta"))
+
+  facet_plot_ <- grid.arrange(
+    facet_plot_,
+    top = NULL,
+    bottom = textGrob("[.]: number of phenotypic values in management type
+    Management 1: normal irrigation and normal pesticide
+    Management 2: normal irrigation and reduced pesticide
+    Management 3: reduced irrigation and normal pesticide",
+      gp = gpar(fontsize = 10, fontface = "italic")
+    )
+  )
+
+  # save plot
+  ggsave(
+    paste0(
+      output_gem_graphics_path,
+      "traits_mean_phenotypic_value_per_manage_across_env_refpop.png"
+    ),
+    plot = facet_plot_, width = 16, height = 8, dpi = 300
+  )
+
+  return(TRUE)
+}
+
+
+# function which computes pheno means per country in refpop
+create_mean_pheno_graphic_per_country <- function(
+    pheno_df_,
+    h2_outlier_path,
+    selected_traits_,
+    excluded_pseudo_trait_for_save_,
+    output_gem_graphics_path) {
+  # get environments for which h2 are inliers, for phenotypic means,
+  # and create vector of variables to keep
+  inlier_env_ <- as.data.frame(fread(paste0(
+    h2_outlier_path,
+    "envir_per_trait_retained_based_on_inlier_h2_for_adj_phenotypes.csv"
+  )))
+  var_to_keep <- c()
+  for (i in 1:nrow(inlier_env_)) {
+    var_to_keep <- c(
+      var_to_keep,
+      paste0(
+        inlier_env_$trait[i], "_",
+        unlist(str_split(
+          inlier_env_$env_retained_based_on_inlier_h2[i],
+          ", "
+        ))
+      )
+    )
+  }
+
+  # filter selected traits from pheno_df_
+  pheno_traits <- setdiff(selected_traits_, excluded_pseudo_trait_for_save_)
+  pheno_filtered <- pheno_df_ %>%
+    select(Country, Environment, all_of(pheno_traits)) %>%
+    pivot_longer(
+      cols = -c(Country, Environment),
+      names_to = "Trait",
+      values_to = "Value"
+    ) %>%
+    filter(!is.na(Value))
+
+  pheno_filtered$var_ <- paste0(pheno_filtered$Trait, "_", pheno_filtered$Environment)
+  pheno_filtered <- pheno_filtered[pheno_filtered$var_ %in% var_to_keep, ]
+
+  # compute means per country for each trait
+  pheno_summary <- as.data.frame(pheno_filtered %>%
+    group_by(Trait, Country) %>%
+    summarise(
+      Mean = mean(Value, na.rm = TRUE),
+      Count = sum(!is.na(Value)), # number of observations
+      .groups = "drop"
+    ))
+
+  # merge means and counts into a single column
+  pheno_wide <- as.data.frame(pheno_summary %>%
+    mutate(Mean_Count = paste0(
+      round(Mean, 2),
+      " [", Count, "]"
+    )) %>%
+    select(Trait, Country, Mean_Count) %>%
+    pivot_wider(
+      names_from = Country,
+      values_from = Mean_Count, names_prefix = "Mean_"
+    ))
+
+  # change column names for six country levels
+  colnames(pheno_wide) <- c(
+    "Trait", "Mean in BEL", "Mean in CHE",
+    "Mean in ESP", "Mean in FRA", "Mean in ITA",
+    "Mean in POL"
+  )
+
+  # transform the data to long format
+  pheno_long <- pheno_wide %>%
+    pivot_longer(
+      cols = contains("Mean in"),
+      names_to = "Country", values_to = "Mean"
+    ) %>%
+    mutate(Country = gsub("Mean_", "Country ", Country))
+
+  # create the plot
+  facet_plot_ <- ggplot(pheno_long %>% filter(!is.na(Mean)), aes(x = Country, y = Mean, fill = Country)) +
+    geom_col(position = "dodge", width = 0.7, alpha = 0.8) +
+    facet_wrap(~Trait, scales = "free_y", ncol = 3) +
+    labs(
+      title =
+        "Mean of raw phenotypic values (without outliers) for traits, per country in REFPOP.",
+      x = NULL,
+      y = "Mean value"
+    ) +
+    theme_minimal(base_size = 14) +
+    theme(
+      axis.text.x = element_text(angle = 45, hjust = 1),
+      strip.text = element_text(size = 12, face = "bold"),
+      panel.spacing = unit(1, "lines")
+    ) +
+    scale_fill_manual(values = c("coral", "orange3", "magenta", "deepskyblue", "plum2", "red"))
+
+  facet_plot_ <- grid.arrange(
+    facet_plot_,
+    top = NULL,
+    bottom = textGrob("[.]: number of phenotypic values in country",
+      gp = gpar(fontsize = 10, fontface = "italic")
+    )
+  )
+
+  # save plot
+  ggsave(
+    paste0(
+      output_gem_graphics_path,
+      "traits_mean_phenotypic_value_per_country_across_env_refpop.png"
+    ),
+    plot = facet_plot_, width = 16, height = 8, dpi = 300
+  )
+
+  return(TRUE)
+}
+
+# function which computes pheno means per year in refpop
+create_mean_pheno_graphic_per_year <- function(
+    pheno_df_,
+    h2_outlier_path,
+    selected_traits_,
+    excluded_pseudo_trait_for_save_,
+    output_gem_graphics_path) {
+  # get environments for which h2 are inliers, for phenotypic means,
+  # and create vector of variables to keep
+  inlier_env_ <- as.data.frame(fread(paste0(
+    h2_outlier_path,
+    "envir_per_trait_retained_based_on_inlier_h2_for_adj_phenotypes.csv"
+  )))
+  var_to_keep <- c()
+  for (i in 1:nrow(inlier_env_)) {
+    var_to_keep <- c(
+      var_to_keep,
+      paste0(
+        inlier_env_$trait[i], "_",
+        unlist(str_split(
+          inlier_env_$env_retained_based_on_inlier_h2[i],
+          ", "
+        ))
+      )
+    )
+  }
+
+  # filter selected traits from pheno_df_
+  pheno_traits <- setdiff(selected_traits_, excluded_pseudo_trait_for_save_)
+  pheno_filtered <- pheno_df_ %>%
+    select(Year, Environment, all_of(pheno_traits)) %>%
+    pivot_longer(
+      cols = -c(Year, Environment),
+      names_to = "Trait",
+      values_to = "Value"
+    ) %>%
+    filter(!is.na(Value))
+
+  pheno_filtered$var_ <- paste0(pheno_filtered$Trait, "_", pheno_filtered$Environment)
+  pheno_filtered <- pheno_filtered[pheno_filtered$var_ %in% var_to_keep, ]
+
+  # compute means per year for each trait
+  pheno_summary <- as.data.frame(pheno_filtered %>%
+    group_by(Trait, Year) %>%
+    summarise(
+      Mean = mean(Value, na.rm = TRUE),
+      Count = sum(!is.na(Value)), # number of observations
+      .groups = "drop"
+    ))
+
+  # merge means and counts into a single column
+  pheno_wide <- as.data.frame(pheno_summary %>%
+    mutate(Mean_Count = paste0(
+      round(Mean, 2),
+      " [", Count, "]"
+    )) %>%
+    select(Trait, Year, Mean_Count) %>%
+    pivot_wider(
+      names_from = Year,
+      values_from = Mean_Count, names_prefix = "Mean_"
+    ))
+
+  # change column names for six year levels
+  colnames(pheno_wide) <- c(
+    "Trait", "Mean in 2018", "Mean in 2019",
+    "Mean in 2020", "Mean in 2021", "Mean in 2022",
+    "Mean in 2023"
+  )
+
+  # transform the data to long format
+  pheno_long <- pheno_wide %>%
+    pivot_longer(
+      cols = contains("Mean in"),
+      names_to = "Year", values_to = "Mean"
+    ) %>%
+    mutate(Year = gsub("Mean_", "Year ", Year))
+
+  # create the plot
+  facet_plot_ <- ggplot(pheno_long %>% filter(!is.na(Mean)), aes(x = Year, y = Mean, fill = Year)) +
+    geom_col(position = "dodge", width = 0.7, alpha = 0.8) +
+    facet_wrap(~Trait, scales = "free_y", ncol = 3) +
+    labs(
+      title =
+        "Mean of raw phenotypic values (without outliers) for traits, per year in REFPOP.",
+      x = NULL,
+      y = "Mean value"
+    ) +
+    theme_minimal(base_size = 14) +
+    theme(
+      axis.text.x = element_text(angle = 45, hjust = 1),
+      strip.text = element_text(size = 12, face = "bold"),
+      panel.spacing = unit(1, "lines")
+    ) +
+    scale_fill_manual(values = c("yellow3", "grey", "darkred", "black", "darkviolet", "darkgreen"))
+
+  facet_plot_ <- grid.arrange(
+    facet_plot_,
+    top = NULL,
+    bottom = textGrob("[.]: number of phenotypic values in year",
+      gp = gpar(fontsize = 10, fontface = "italic")
+    )
+  )
+
+  # save plot
+  ggsave(
+    paste0(
+      output_gem_graphics_path,
+      "traits_mean_phenotypic_value_per_year_across_env_refpop.png"
+    ),
+    plot = facet_plot_, width = 16, height = 8, dpi = 300
+  )
+
+  return(TRUE)
+}

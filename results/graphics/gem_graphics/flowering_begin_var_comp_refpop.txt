@@ -1,0 +1,35 @@
+Flowering_begin for whole REFPOP
+
+> list_var_comp_
+$Country
+[1] 98.02493
+
+$Year
+[1] 7.086174
+
+$Management
+[1] 0.04701723
+
+$Genotype
+[1] 7.777455
+
+$`Country:Year`
+[1] 21.66705
+
+$`Country:Management`
+[1] 0.02610011
+
+$`Genotype:Country`
+[1] 3.34732
+
+$`Genotype:Management`
+[1] 0.1719036
+
+$Residual
+[1] 8.337651
+
+> list_var_contrib_per_trait_[[trait_]]
+            Country                Year          Management            Genotype        Country:Year  Country:Management    Genotype:Country 
+        66.91779184          4.83745426          0.03209683          5.30936526         14.79124871          0.01781752          2.28508491 
+Genotype:Management            Residual 
+         0.11735191          5.69178877 

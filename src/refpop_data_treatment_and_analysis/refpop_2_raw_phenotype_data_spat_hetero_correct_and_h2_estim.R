@@ -17,7 +17,13 @@ library(htmlwidgets)
 library(emmeans)
 library(SpATS)
 library(stringr)
+library(grid)
+library(ggplot2)
+library(grid)
+library(gridExtra)
+library(reshape2)
 library(lme4)
+library(dplyr)
 library(anytime)
 library(foreach)
 library(parallel)
@@ -48,9 +54,19 @@ pheno_file_path_ <- paste0(
   "raw_phenotype_data_correc_manage_type_no_md_outliers.csv"
 )
 
+raw_pheno_file_path_ <- paste0(
+  pheno_dir_path_,
+  "raw_data_phenotype_corrected_management_types.csv"
+)
+
 output_spats_file_path <- paste0(
   pheno_dir_path_,
   "spats_per_env_adjusted_phenotypes/"
+)
+
+output_h2_file_path <- paste0(
+  pheno_dir_path_,
+  "h2_per_env_and_management/"
 )
 
 # outlier results data paths
@@ -118,7 +134,7 @@ miss_data_singular_model_h2_out_vect_ <-
     .packages = pkgs_to_export_,
     .combine = c
   ) %dopar% {
-    print(paste0("performing computation for ", trait_))
+    # print(paste0("performing computation for ", trait_))
 
     # keep variables of interest
     df_ <- pheno_df_[, c(vars_to_keep_, trait_)]
@@ -673,6 +689,15 @@ miss_data_singular_model_h2_out_vect_ <-
         }
       }
 
+      # save computed h2 for combination of environment and management type
+      fwrite(df_h2_raw_adj_and_manage_types_,
+        file = paste0(
+          output_h2_file_path,
+          trait_,
+          "_h2_per_env_and_management.csv"
+        )
+      )
+
       # create boxplots
       boxplots_ <- plot_ly(df_h2_raw_adj_and_manage_types_, type = "box")
 
@@ -821,3 +846,199 @@ fwrite(pheno_df_, paste0(
 
 # remove single files for df_trait_env_retain_
 file.remove(file_list)
+
+# get pheno_df and detect attributes, e.g. number of modalities or levels for specific variables
+raw_pheno_df_ <- as.data.frame(fread(raw_pheno_file_path_))
+management_types <- unique(raw_pheno_df_$Management)
+
+# get pheno_df for management type 1, 2 and 3
+raw_pheno_manage_df <- raw_pheno_df_[raw_pheno_df_$Management %in% management_types[-1], ]
+
+# enumerate the number of trees (total rows for each combination of trait, management, and year)
+enumerate_tab_ <- raw_pheno_manage_df %>%
+  pivot_longer(
+    cols = starts_with("Harvest_date"):starts_with("Weight_sample"),
+    names_to = "Trait",
+    values_to = "Value"
+  ) %>%
+  filter(!is.na(Value)) %>%
+  group_by(Trait, Management, Year) %>%
+  summarise(nb_trees = n(), .groups = "drop") %>%
+  pivot_wider(
+    names_from = c("Management", "Year"),
+    values_from = "nb_trees",
+    names_prefix = "Management_type_"
+  ) %>%
+  rename_with(~ gsub("Management_type_", "", .))
+if ( !("2_2018" %in% colnames(enumerate_tab_)) ){
+  enumerate_tab_ <- enumerate_tab_ %>%
+    add_column(
+      "2_2018" = 0,
+      .after = "1_2023"
+    )
+}
+if ( !("2_2019" %in% colnames(enumerate_tab_)) ){
+  enumerate_tab_ <- enumerate_tab_ %>%
+    add_column(
+      "2_2019" = 0,
+      .after = "2_2018"
+    )
+}
+if ( !("3_2018" %in% colnames(enumerate_tab_)) ){
+  enumerate_tab_ <- enumerate_tab_ %>%
+    add_column(
+      "3_2018" = 0,
+      .after = "2_2023"
+    )
+}
+
+# reformat the table to have columns for each management type and their corresponding years
+enumerate_tab_ <- enumerate_tab_ %>%
+  pivot_longer(
+    cols = -Trait,
+    names_to = c("Management_type", "Year"),
+    names_sep = "_",
+    values_to = "nb_trees"
+  ) %>%
+  pivot_wider(
+    names_from = c("Management_type", "Year"),
+    values_from = "nb_trees"
+  )
+enumerate_tab_ <- as.data.frame(enumerate_tab_)
+colnames(enumerate_tab_)[-1] <- paste0(
+  "Management ",
+  str_replace(colnames(enumerate_tab_)[-1],
+    pattern = "_", replacement = " ("
+  ),
+  ")"
+)
+
+# replace NA values with 0 in enumerate_tab_
+enumerate_tab_[is.na(enumerate_tab_)] <- 0
+enumerate_tab_$Trait <- as.character(enumerate_tab_$Trait)
+
+# convert the data into "long" format using melt
+melt_tab_ <- melt(enumerate_tab_, id.vars = "Trait")
+
+# create a color vector for each year based on the management type
+colors <- c(rep("blue3", 6), rep("brown", 6), rep("darkmagenta", 6))
+
+# create the heatmap with management labels for each group of years
+p <- ggplot(melt_tab_, aes(x = variable, y = Trait, fill = value)) +
+  geom_tile() +
+  geom_text(aes(label = ifelse(!is.na(value), value, "")),
+    color = "black", size = 4
+  ) +
+  scale_fill_gradient(
+    low = "white", high = "darkgreen", na.value = "white",
+    name = "Frequency"
+  ) +
+  theme_minimal() +
+  labs(
+    title = "Number of phenotyped trees per management type and year for each trait in REFPOP.",
+    x = NULL, y = NULL
+  ) +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    axis.ticks.x = element_blank(),
+    panel.grid = element_blank()
+  ) +
+  guides(fill = guide_colorbar(
+    title = "Frequency",
+    label.position = "right",
+  ))
+
+# modify the X-axis colors based on the groups
+p <- p + scale_x_discrete(
+  breaks = unique(melt_tab_$variable),
+  labels = unique(melt_tab_$variable),
+  limits = unique(melt_tab_$variable)
+) +
+  # modify the colors of the X-axis text
+  theme(
+    axis.text.x = element_text(
+      color = colors, # apply the colors for each year
+      angle = 45,
+      hjust = 1
+    )
+  )
+p <- grid.arrange(
+  p,
+  top = NULL,
+  bottom = textGrob("Management 1: normal irrigation and normal pesticide
+  Management 2: normal irrigation and reduced pesticide
+  Management 3: reduced irrigation and normal pesticide",
+    gp = gpar(fontsize = 10, fontface = "italic")
+  )
+)
+
+# save plot
+ggsave(
+  paste0(
+    output_pheno_graphics_path,
+    "number_of_phenotyped_trees_per_management_year_combination.png"
+  ),
+  plot = p, width = 16, height = 8, dpi = 300
+)
+
+# enumerate the number of trees (total rows for each combination of trait, country and year)
+enumerate_tab_ <- raw_pheno_manage_df %>%
+  pivot_longer(
+    cols = starts_with("Harvest_date"):starts_with("Weight_sample"),
+    names_to = "Trait",
+    values_to = "Value"
+  ) %>%
+  filter(!is.na(Value)) %>%
+  group_by(Trait, Country_Year) %>%
+  summarise(nb_trees = n(), .groups = "drop") %>%
+  pivot_wider(
+    names_from = c("Country_Year"),
+    values_from = "nb_trees",
+    names_prefix = ""
+  ) 
+enumerate_tab_ <- enumerate_tab_[,c('Trait', sort(colnames(enumerate_tab_)[-1]))]
+
+# replace NA values with 0 in enumerate_tab_
+enumerate_tab_[is.na(enumerate_tab_)] <- 0
+enumerate_tab_$Trait <- as.character(enumerate_tab_$Trait)
+
+# convert the data into "long" format using melt
+melt_tab_ <- melt(enumerate_tab_, id.vars = "Trait")
+
+# create the heatmap with management labels for each group of years
+p <- ggplot(melt_tab_, aes(x = variable, y = Trait, fill = value)) +
+  geom_tile() +
+  geom_text(aes(label = ifelse(!is.na(value), value, "")),
+            color = "black", size = 4
+  ) +
+  scale_fill_gradient(
+    low = "white", high = "blue", na.value = "white",
+    name = "Frequency"
+  ) +
+  theme_minimal() +
+  labs(
+    title = "Number of phenotyped trees per site and year for each trait in REFPOP.",
+    x = NULL, y = NULL
+  ) +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    axis.ticks.x = element_blank(),
+    panel.grid = element_blank(),
+    plot.background = element_rect(fill = "gray100", color = NA),
+    panel.background = element_rect(fill = "gray100", color = NA)
+  ) +
+  guides(fill = guide_colorbar(
+    title = "Frequency",
+    label.position = "right",
+  ))
+
+# save plot
+ggsave(
+  paste0(
+    output_pheno_graphics_path,
+    "number_of_phenotyped_trees_per_environment.png"
+  ),
+  plot = p, width = 16, height = 6, dpi = 300
+)
+
+

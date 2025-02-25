@@ -18,7 +18,6 @@ if (install_other_requirements) {
   remotes::install_github("hemstrow/snpR")
   py_install("umap-learn", pip = T, pip_ignore_installed = T)
 }
-library(snpR)
 library(mixOmics)
 library(data.table)
 library(plotly)
@@ -31,7 +30,7 @@ library(foreach)
 library(doParallel)
 
 # define computation mode, i.e. "local" or "cluster"
-computation_mode <- "cluster"
+computation_mode <- "local"
 
 # if comutations are local in rstudio, detect and set script path
 # automatically using rstudioapi
@@ -60,8 +59,8 @@ bed_file <- paste0(geno_dir_path, "refpop_genotype.bed")
 bim_file <- paste0(geno_dir_path, "refpop_genotype.bim")
 fam_file <- paste0(geno_dir_path, "refpop_genotype.fam")
 
-read_with_bigsnpr <- T
-perform_umap_ <- F
+read_with_bigsnpr <- F
+perform_umap_ <- T
 
 # define umap training and plot parameters
 
@@ -79,6 +78,10 @@ vect_origin_family_or_genotype_as_label_ <- c("origin", "family")
 
 # if umap_refpop_train_data = "accessions", should progenies be projected using umap ?
 predict_umap_progeny_ <- F
+
+# should snp be sampled for genomic data (to have equivalent result as in WISER study)
+perform_snp_sampling_ <- T
+snp_sample_size_ <- 50e3
 
 # color function and palettes for genotypes, families and origins
 
@@ -141,6 +144,8 @@ if (read_with_bigsnpr) {
   if (!file.exists(paste0(geno_dir_path, "genotype_data.csv"))) {
     fwrite(geno_df, paste0(geno_dir_path, "genotype_data.csv"))
   }
+} else {
+  geno_df <- as.data.frame(fread(paste0(geno_dir_path, "genotype_data.csv")))
 }
 
 # get geographical origins of genotypes
@@ -196,6 +201,19 @@ fwrite(geno_df[, geno_fam_orig_vect_],
   file = paste0(pheno_dir_path, "genotype_family_origin_information.csv"),
   sep = ","
 )
+
+# should snp be sampled before analyses ?
+if (perform_snp_sampling_) {
+  # sample snp with same seeds as in WISER study
+  set.seed(123)
+  idx_snp_sample_size_ <- sample(
+    4:ncol(geno_df),
+    size = snp_sample_size_, replace = F
+  )
+  geno_df <- geno_df[
+    , c(1:3, idx_snp_sample_size_)
+  ]
+}
 
 for (use_origin_family_or_genotype_as_label_ in
   vect_origin_family_or_genotype_as_label_) {
@@ -350,7 +368,7 @@ for (use_origin_family_or_genotype_as_label_ in
     # 2D plot
     # create base graphic
     if (identical(umap_refpop_train_data, "accessions") && predict_umap_progeny_) {
-      umap_2d_title_ <- "UMAP 2D plot for REFPOP genotype data with umap trained
+      umap_2d_title_ <- "UMAP 2D plot for REFPOP genomic data (50000 SNP) with umap trained
     on accessions, and progenies projected using trained model"
       output_path_2d_umap <- paste0(
         output_geno_graphics_path,
@@ -360,7 +378,7 @@ for (use_origin_family_or_genotype_as_label_ in
         "_as_label.html"
       )
     } else {
-      umap_2d_title_ <- "UMAP 2D plot for REFPOP genotype data"
+      umap_2d_title_ <- "UMAP 2D plot for REFPOP genomic data (50000 SNP)"
       output_path_2d_umap <- paste0(
         output_geno_graphics_path,
         umap_refpop_train_data, "/",
@@ -417,7 +435,7 @@ for (use_origin_family_or_genotype_as_label_ in
     # 3D plot
     # create base graphic
     if (identical(umap_refpop_train_data, "accessions") && predict_umap_progeny_) {
-      umap_3d_title_ <- "UMAP 3D plot for REFPOP genotype data with umap trained
+      umap_3d_title_ <- "UMAP 3D plot for REFPOP genomic data (50000 SNP) with umap trained
     on accessions, and progenies projected using trained model"
       output_path_3d_umap <- paste0(
         output_geno_graphics_path,
@@ -427,7 +445,7 @@ for (use_origin_family_or_genotype_as_label_ in
         "_as_label.html"
       )
     } else {
-      umap_3d_title_ <- "UMAP 3D plot for REFPOP genotype data"
+      umap_3d_title_ <- "UMAP 3D plot for REFPOP genomic data (50000 SNP)"
       output_path_3d_umap <- paste0(
         output_geno_graphics_path,
         umap_refpop_train_data, "/",
@@ -475,9 +493,7 @@ for (use_origin_family_or_genotype_as_label_ in
     ncomp = 500, center = T, scale = T
   )
   geno_pca_mat_ <- as.data.frame(geno_pca_obj_$variates$X)
-  geno_pca_exp_var_ <- geno_pca_obj_$prop_expl_var$X
-  geno_pca_cum_exp_var_ <- geno_pca_obj_$cum.var
-  plot(geno_pca_cum_exp_var_)
+  geno_pca_exp_var_ <- geno_pca_obj_$explained_variance
 
   # plot coordinates of individuals on two first pcs :
   if (identical(use_origin_family_or_genotype_as_label_, "family")) {
@@ -494,7 +510,7 @@ for (use_origin_family_or_genotype_as_label_ in
     ) %>%
       layout(
         plot_bgcolor = "#e5ecf6",
-        title = "PCA 2D plot for REFPOP genotype data",
+        title = "PCA 2D plot for REFPOP genomic data (50000 SNP)",
         xaxis = list(title = paste0(
           names(geno_pca_exp_var_)[1], ": ",
           signif(100 * as.numeric(geno_pca_exp_var_)[1], 2), "%"
@@ -538,7 +554,7 @@ for (use_origin_family_or_genotype_as_label_ in
     ) %>%
       layout(
         plot_bgcolor = "#e5ecf6",
-        title = "PCA 2D plot for REFPOP genotype data",
+        title = "PCA 2D plot for REFPOP genomic data (50000 SNP)",
         xaxis = list(title = paste0(
           names(geno_pca_exp_var_)[1], ": ",
           signif(100 * as.numeric(geno_pca_exp_var_)[1], 2), "%"
@@ -570,6 +586,44 @@ for (use_origin_family_or_genotype_as_label_ in
     ))
   }
 }
+
+make_simple_plots_ <- F
+if (make_simple_plots_) {
+  # make simple ggplots
+  ggplot(geno_pca_mat_, aes(x = PC1, y = PC2)) +
+    geom_point(color = "blue") + # Blue points
+    geom_text(aes(label = rownames(geno_pca_mat_)),
+      vjust = -0.5, hjust = 0.5
+    ) + # add individual indices as labels
+    theme_minimal() + # minimal theme for the plot
+    labs(x = paste0(
+      names(geno_pca_exp_var_)[1], ": ",
+      signif(100 * as.numeric(geno_pca_exp_var_)[1], 2), "%"
+    ), y = paste0(
+      names(geno_pca_exp_var_)[2], ": ",
+      signif(100 * as.numeric(geno_pca_exp_var_)[2], 2), "%"
+    )) + # axis labels
+    ggtitle("PCA 2D plot for REFPOP genomic data (50000 SNP) without labels") + # title of the plot
+    theme(
+      axis.text = element_text(size = 12), # axis text size
+      axis.title = element_text(size = 14)
+    ) # axis title text size
+
+
+  ggplot(geno_umap_2d, aes(x = X1, y = X2)) +
+    geom_point(color = "blue") + # Blue points
+    geom_text(aes(label = rownames(geno_pca_mat_)),
+      vjust = -0.5, hjust = 0.5
+    ) + # add individual indices as labels
+    theme_minimal() + # minimal theme for the plot
+    labs(x = "First component", y = "Second component") + # axis labels
+    ggtitle("UMAP 2D plot for REFPOP genomic data (50000 SNP) without labels") + # title of the plot
+    theme(
+      axis.text = element_text(size = 12), # axis text size
+      axis.title = element_text(size = 14)
+    ) # axis title text size
+}
+
 
 # # get phased genotype data and split their columns according to each phase
 # phased_geno_df <- readRDS(paste0(geno_dir_path, "phased_data/phased_genotypes.RDS"))

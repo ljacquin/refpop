@@ -35,7 +35,7 @@ df_raw <- droplevels(as.data.frame(fread(paste0(
   "raw_data_phenotype_uncorrected_management_types.csv"
 ))))
 
-# define environments for which managments must be modified
+# define environments for which managements must be modified
 env_list_2_prime_ <- c("BEL", "ESP", "FRA", "CHE")
 as_from_for_2_prime_ <- 2020
 
