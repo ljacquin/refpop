@@ -1304,6 +1304,10 @@ compute_transformed_vars_and_ols_estimates <- function(
       y_hat <- x_mat_tilde %*% beta_hat
       xi_hat <- y - y_hat
 
+      # add the individual estimated phenotype with fixed effects eliminated
+      # and corrected for the genetic covariance structure.
+      raw_pheno_df$xi_hat <- xi_hat
+
       return(list(
         "omic_df" = omic_df,
         "sig_mat_u" = sig_mat_,
@@ -1315,7 +1319,8 @@ compute_transformed_vars_and_ols_estimates <- function(
         "beta_hat" = beta_hat,
         "y_hat" = y_hat,
         "xi_hat" = xi_hat,
-        "y" = y
+        "y" = y,
+        "xi_phenotypes" = raw_pheno_df
       ))
     },
     error = function(e) {
@@ -1355,18 +1360,15 @@ generate_row_position_variables_by_environment <- function(df) {
   return(df)
 }
 
-
 # function which computes phenotypes approximating genetic values using whitening
 estimate_wiser_phenotype <- function(omic_df, raw_pheno_df, trait_,
                                      fixed_effects_vars = c(
-                                       "Envir", "Country", "Year",
-                                       "Row", "Position", "Management"
+                                       "Envir", "Row", "Position"
                                      ),
                                      fixed_effects_vars_computed_as_factor = c(
-                                       "Envir", "Country", "Year",
-                                       "Row", "Position", "Management"
+                                       "Envir", "Row", "Position"
                                      ),
-                                     envir_var = "Country",
+                                     envir_var = "Envir",
                                      fixed_effects_vars_computed_as_factor_by_envir = c("Row", "Position"),
                                      random_effects_vars = "Genotype",
                                      init_sigma2_u = 1,
@@ -1495,7 +1497,8 @@ estimate_wiser_phenotype <- function(omic_df, raw_pheno_df, trait_,
         "wiser_x_mat_tilde" = transform_and_ls_obj$x_mat_tilde,
         "wiser_xi_hat" = transform_and_ls_obj$xi_hat,
         "wiser_y_hat" = transform_and_ls_obj$y_hat,
-        "wiser_y" = transform_and_ls_obj$y
+        "wiser_y" = transform_and_ls_obj$y,
+        "wiser_xi_phenotypes" <- transform_and_ls_obj$xi_phenotypes
       ))
     },
     error = function(e) {
