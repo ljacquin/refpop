@@ -30,7 +30,7 @@ library(lsmeans)
 library(lme4)
 
 # define computation mode, i.e. "local" or "cluster"
-computation_mode <- "cluster"
+computation_mode <- "local"
 
 # if comutations are local in rstudio, detect and set script path
 # automatically using rstudioapi
@@ -157,7 +157,8 @@ for (file_ in files_names_spats_adj_pheno) {
           ),
           " + (1 | Genotype)"
         )),
-        data = df_
+        data = df_,
+        REML = FALSE
       )
       aic_[n_comp_] <- AIC(lmer_model_)
     }
@@ -173,7 +174,8 @@ for (file_ in files_names_spats_adj_pheno) {
         ),
         " + (1 | Genotype)"
       )),
-      data = df_
+      data = df_,
+      REML = TRUE
     )
     blup_list_[[str_replace_all(file_, "_spats_adjusted_.*",
       replacement = ""
@@ -247,7 +249,8 @@ for (file_ in files_names_spats_adj_pheno) {
           ),
           " + (1 | Genotype)"
         )),
-        data = df_
+        data = df_,
+        REML = FALSE
       )
       aic_[n_comp_] <- AIC(lmer_model_)
     }
@@ -262,7 +265,8 @@ for (file_ in files_names_spats_adj_pheno) {
         ),
         " + (1 | Genotype)"
       )),
-      data = df_
+      data = df_,
+      REML = TRUE
     )
     blup_list_[[str_replace_all(file_, "_spats_adjusted_.*",
       replacement = ""

@@ -384,9 +384,10 @@ split_column <- function(col) {
 tune_mtry_ranger_rf <- function(X, Y,
                                 mtry_grid_,
                                 num_trees_ = 500,
-                                pkgs_to_export_) {
+                                pkgs_to_export_,
+                                n_cores_ = 8) {
   # initialize the cluster
-  cl <- makeCluster(detectCores())
+  cl <- makeCluster(n_cores_)
   registerDoParallel(cl)
   tryCatch(
     {
@@ -401,7 +402,7 @@ tune_mtry_ranger_rf <- function(X, Y,
           mtry = mtry_,
           num.trees = num_trees_
         )
-        # correlate out-of-bag (OOB) predictions (almost asymptotically
+        # compute mse for out-of-bag (OOB) predictions (almost asymptotically
         # equivalent to LOOCV on large samples) with observed values
         mse_ <- mean((rf_model$predictions - Y)^2)
         names(mse_) <- as.character(mtry_)
@@ -1508,7 +1509,6 @@ estimate_wiser_phenotype <- function(omic_df, raw_pheno_df, trait_,
     }
   )
 }
-
 
 # function which performs parallelized k-folds cv using several prediction methods
 perform_kfold_cv_wiser <- function(omic_df, raw_pheno_df, trait_,
@@ -3786,4 +3786,698 @@ create_mean_pheno_graphic_per_year <- function(
   )
 
   return(TRUE)
+}
+
+# function which reformats snp(s) which have p-values below the corrected
+# Bonferroni threshold
+correct_signif_snp_threshold <- function(res_threshold) {
+  corrected_rows <- list()
+  row_index <- 1
+
+  for (i in seq_len(nrow(res_threshold))) {
+    snp <- res_threshold$SNP[i]
+    p_value <- res_threshold$`p-value`[i]
+    mlmm_step <- res_threshold$MLMM_Step[i]
+
+    # Check if the p-value contains an SNP instead of a numeric value
+    if (grepl("AX-", p_value)) {
+      # Add the row with the first SNP and assign a common identifier (-9)
+      corrected_rows[[row_index]] <- data.frame(
+        SNP = snp,
+        `p-value` = res_threshold$MLMM_Step[i],
+        MLMM_Step = -9, stringsAsFactors = FALSE
+      )
+      row_index <- row_index + 1
+
+      # Add the row for the second SNP with the same values
+      corrected_rows[[row_index]] <- data.frame(
+        SNP = p_value,
+        `p-value` = res_threshold$MLMM_Step[i],
+        MLMM_Step = -9, stringsAsFactors = FALSE
+      )
+      row_index <- row_index + 1
+    } else {
+      # Add other SNPs normally
+      corrected_rows[[row_index]] <- data.frame(
+        SNP = snp,
+        `p-value` = p_value,
+        MLMM_Step = mlmm_step, stringsAsFactors = FALSE
+      )
+      row_index <- row_index + 1
+    }
+  }
+
+  # Convert the list to a data.frame
+  corrected_res_threshold <- do.call(rbind, corrected_rows)
+  return(corrected_res_threshold)
+}
+
+# function which make boxplots for trait phenotypes according to SNP allele
+# combinations (i.e. homozygote and heterozygote) of genotypes
+genotypes_boxplot_ <- function(X, Y,
+                               ylab_ = NULL,
+                               xlab_ = NULL,
+                               markers = "all",
+                               r2_ = NULL,
+                               score_ = NULL,
+                               score_text_ = "",
+                               output_path_,
+                               file_name_,
+                               effects = NULL,
+                               genotypes = c(
+                                 "00",
+                                 "01|10", "11"
+                               ), tukeyTextCol = NA, tukeyTextCex = 1, tukeyCol = c(
+                                 "#2ecc71", "#3498db", "#9b59b6", "#6c7a89",
+                                 "#f2ca27", "#e67e22", "#e74c3c", "#c08d57"
+                               ), tukeyPch = c(1, 3, 2, 4:8), tukeyCex = 1, ...) {
+  if (!is.null(score_) && !is.null(r2_)) {
+    stat_txt_ <- paste0(
+      " (", score_text_, " = ",
+      score_,
+      ", R2 = ",
+      r2_,
+      ")"
+    )
+  } else {
+    stat_txt_ <- ""
+  }
+  stopifnot(
+    names(Y) == rownames(X), class(markers) %in% c(
+      "factor",
+      "character"
+    ), length(markers) >= 1, markers %in% c(
+      "all",
+      colnames(X)
+    ), class(genotypes) %in% c("factor", "character"),
+    length(genotypes) == 3, sum(duplicated(genotypes)) ==
+      0
+  )
+  if (markers == "all") {
+    if (!is.null(effects)) {
+      markers <- unique(gsub(
+        "(.+)_(00|01\\|10|11)", "\\1",
+        grep("_(00|01\\|10|11)", rownames(effects), value = TRUE)
+      ))
+    } else {
+      markers <- colnames(X)
+    }
+  }
+  png(paste0(output_path_, file_name_))
+  for (marker in markers) {
+    x <- X[, marker]
+    x <- x - min(x)
+    x <- x / max(x) * 2
+    x <- x + (x %% 1 == 0.5) * runif(length(x)) * 0.001
+    x <- round(x)
+    x <- factor(genotypes[x + 1], levels = c(
+      "00", "01|10",
+      "11"
+    ))
+    boxplot(Y ~ x,
+      main = paste0(
+        "Marker ", marker, "\n",
+        stat_txt_
+      ), ...,
+      ylab = ylab_, xlab = xlab_
+    )
+    if (!is.null(effects)) {
+      tukeyClasses <- effects[paste0(marker, "_", c(
+        "00",
+        "01|10", "11"
+      )), "Tukey.Class"]
+      means <- tapply(Y, x, mean)[genotypes]
+      names(tukeyClasses) <- names(means)
+      tukeyClasses <- as.factor(unlist(sapply(
+        1:length(tukeyClasses),
+        function(i) {
+          tc <- unlist(strsplit(
+            as.character(tukeyClasses[i]),
+            ""
+          ))
+          names(tc) <- rep(names(tukeyClasses[i]), length(tc))
+          tc
+        }
+      )))
+      means <- means[names(tukeyClasses)]
+      xtc <- match(names(means), c("00", "01|10", "11"))
+      points(xtc, means,
+        col = tukeyCol[tukeyClasses],
+        pch = tukeyPch[tukeyClasses], cex = tukeyCex
+      )
+      if (!is.na(tukeyTextCol)) {
+        text(1:3, means, tukeyClasses,
+          cex = tukeyTextCex,
+          col = tukeyTextCol
+        )
+      }
+    }
+  }
+  dev.off()
+
+  return(TRUE)
+}
+
+# function based on mlmm which plots a manhattan plot for chromosomes in a
+# sequential order
+mlmm_manhattan_plot_ <- function(res.mlmm, map = NULL, steps = 1,
+                                 hideCofactors = FALSE,
+                                 chrToPlot = "all", unit = "cM",
+                                 output_path_,
+                                 file_name_,
+                                 threshold_,
+                                 main_,
+                                 cex_main_ = 0.8,
+                                 cex_lab_ = 0.8,
+                                 ...) {
+  # correct so
+  chrToPlot <- sort(chrToPlot)
+  xlabChr <- ifelse(is.null(map), "index", paste0("position (", unit, ")"))
+  stopifnot(class(res.mlmm) == "list")
+  stopifnot(is.na(res.mlmm) | sapply(res.mlmm, function(x) {
+    is.numeric(x) & is.character(names(x))
+  }))
+
+  if (is.null(map)) {
+    map <- data.frame(
+      mkId = factor(), chr = factor(levels = 0),
+      pos = numeric()
+    )
+  }
+
+  stopifnot(class(map) %in% c("matrix", "data.frame"))
+  if (class(map) == "matrix") {
+    map <- as.data.frame(map)
+  }
+
+  stopifnot(ncol(map) == 3)
+  colnames(map) <- c("mkId", "chr", "pos")
+  rownames(map) <- map$mkId
+  stopifnot(class(map[, 1]) %in% c("factor", "character"))
+  map[, 1] <- as.factor(map[, 1])
+  stopifnot(class(map[, 2]) %in% c("factor", "character", "numeric", "integer"))
+
+  # convert chromosome levels into numeric
+  if (is.factor(map[, 2])) {
+    map[, 2] <- as.numeric(as.character(map[, 2]))
+  }
+  map[, 2] <- as.factor(map[, 2])
+
+  stopifnot(is.numeric(map[, 3]))
+  if (!"0" %in% levels(map[, 2])) {
+    levels(map[, 2]) <- c(levels(map[, 2]), "0")
+  }
+
+  if (sum(is.na(map[, 2]))) {
+    map[is.na(map[, 2]), 2] <- 0
+  }
+
+  mrksnames <- unique(sub("^selec_", "", Reduce(c, lapply(res.mlmm, names))))
+  if (sum(!mrksnames %in% map$mkId) > 0) {
+    map <- rbind(map, data.frame(
+      mkId = mrksnames[!mrksnames %in% map$mkId],
+      chr = factor(0), pos = NA
+    ))
+  }
+
+  map$pos[map$chr == 0] <- seq(0, max(map$pos, sum(map$chr == 0),
+    na.rm = TRUE
+  ), length.out = sum(map$chr == 0))
+  chrLength <- tapply(map$pos, map$chr, max, na.rm = TRUE)
+  map$pos <- ifelse(is.na(map$pos), chrLength[as.character(map$chr)] + 1, map$pos)
+
+  stopifnot(
+    is.numeric(steps), as.integer(steps) == steps, length(steps) >= 1,
+    sum(is.na(steps)) == 0, is.logical(hideCofactors), length(hideCofactors) == 1
+  )
+
+  if (length(chrToPlot == 1) && chrToPlot == "all") {
+    chrToPlot <- levels(map[, 2])
+  } else {
+    stopifnot(chrToPlot %in% levels(map$chr))
+  }
+
+  map <- subset(map, chr %in% chrToPlot)
+  map$chr <- factor(as.character(map$chr))
+  rownames(map) <- map$mkId
+
+  # correct sorting of chromosomes
+  chrs <- sort(as.numeric(levels(map$chr)))
+  chrs <- as.character(sort(chrs))
+  map$chr <- factor(as.character(map$chr), levels = chrs)
+
+  chrLengths <- tapply(map$pos, map$chr, max, na.rm = TRUE)
+  if (length(chrToPlot) == 1) {
+    space <- 0
+    chrStarts <- 0
+  } else {
+    space <- 0.3 * sum(chrLengths) / (length(chrLengths) - 1)
+    chrStarts <- c(0, cumsum(chrLengths + space)[-length(chrLengths)])
+  }
+
+  names(chrStarts) <- levels(map$chr)
+  chrEnds <- chrLengths + chrStarts
+
+  png(paste0(output_path_, file_name_),
+    width = 1200,
+    height = 600, res = 150
+  )
+  for (step in steps) {
+    p.values <- res.mlmm[[step + 1]]
+    mrkIds <- sub("^selec_", "", names(p.values))
+    isCofactor <- grepl("^selec_", names(p.values))
+
+    if (hideCofactors) {
+      p.values <- p.values[!isCofactor]
+      mrkIds <- mrkIds[!isCofactor]
+      isCofactor <- isCofactor[!isCofactor]
+    }
+
+    logP <- -log(p.values, 10)
+    chr <- map[mrkIds, "chr"]
+    pos <- map[mrkIds, "pos"]
+    xPos <- chrStarts[chr] + pos
+    palette <- c("#53CF85", "#5DA3E8", "#E3665B", "#F5BD62")
+
+    plot(xPos, logP,
+      xlim = c(0, max(chrEnds, na.rm = TRUE)),
+      col = palette[as.numeric(chr) %% length(palette) + 1],
+      pch = ifelse(isCofactor, 8, 20), axes = FALSE,
+      xlab = ifelse(length(chrToPlot) >= 2, "Chromosome", xlabChr),
+      ylab = expression("-log"[10] * "(p)"),
+      main = main_,
+      cex.main = cex_main_,
+      cex.lab = cex_lab_,
+      ...
+    )
+    abline(h = threshold_, col = "red", lty = 2)
+
+    if (length(chrToPlot) >= 2) {
+      axis(1, at = (chrStarts + chrEnds) / 2, labels = names(chrStarts), tick = FALSE)
+      for (iChr in 1:length(chrStarts)) {
+        axis(1,
+          at = c(chrStarts[iChr], chrEnds[iChr]),
+          labels = NA, tick = TRUE, lwd = 1
+        )
+        axis(1,
+          at = c(chrStarts[iChr], chrEnds[iChr]),
+          labels = NA, tick = TRUE, lwd.ticks = 0, line = 0.5
+        )
+      }
+    } else {
+      axis(1)
+    }
+    axis(2)
+    box()
+  }
+  dev.off()
+  return(TRUE)
+}
+
+# function which computes all multi-locus mixed models and return the p-values
+# and degrees of freedom
+mlmm_allmodels_ <- function(Y, XX, KK, nbchunks = 2, maxsteps = 20,
+                            cofs = NULL,
+                            female = NULL, male = NULL, threshold = NULL) {
+  nom.effet <- c("eff1", "eff2", "eff3")
+  n <- length(Y)
+  nb.effet <- length(XX)
+  m <- ncol(XX[[1]])
+  for (ki in 1:nb.effet) {
+    stopifnot(nrow(XX[[ki]]) == n)
+    stopifnot(anyDuplicated(colnames(XX[[ki]])) == 0)
+    if (ki == 1) {
+      newnames <- gsub("[^a-zA-Z0-9]", "_", colnames(XX[[ki]]))
+      stopifnot(anyDuplicated(newnames) == 0)
+      XX_mrk_names <- structure(colnames(XX[[ki]]), names = newnames)
+    } else {
+      stopifnot(colnames(XX[[ki]]) == colnames(XX[[1]]))
+    }
+    colnames(XX[[ki]]) <- newnames
+  }
+  if (nb.effet > 1) {
+    for (ki in 2:nb.effet) {
+      stopifnot(ncol(XX[[ki]]) == m)
+    }
+  }
+  stopifnot(nrow(cofs) == n)
+  nb.level.byeffect <- rep(n, nb.effet)
+  ind <- as.factor(names(Y))
+  effet <- list()
+  for (ki in 1:nb.effet) {
+    effet[[ki]] <- ind
+  }
+  stopifnot(length(KK) == nb.effet)
+  if (!is.null(female) & !is.null(male)) {
+    if (is.factor(female) == FALSE) {
+      female <- as.factor(female)
+    }
+    if (is.factor(male) == FALSE) {
+      male <- as.factor(male)
+    }
+    n.female <- length(levels(female))
+    n.male <- length(levels(male))
+    if (nb.effet == 2) {
+      nb.level.byeffect <- c(n.female, n.male)
+    }
+    if (nb.effet == 2) {
+      effet <- list(female, male)
+    }
+    if (nb.effet == 3) {
+      nb.level.byeffect <- c(n.female, n.male, n)
+    }
+    if (nb.effet == 3) {
+      effet <- list(female, male, ind)
+    }
+  }
+  for (ki in 1:nb.effet) {
+    stopifnot(nrow(KK[[ki]]) == nb.level.byeffect[ki])
+    stopifnot(ncol(KK[[ki]]) == nb.level.byeffect[ki])
+  }
+  for (ki in 1:nb.effet) {
+    stopifnot(length(effet[[ki]]) == n)
+  }
+  stopifnot(nbchunks >= 2)
+  stopifnot(maxsteps >= 3)
+  X0 <- as.matrix(rep(1, n))
+  colnames(X0) <- "mu"
+  KK.norm <- list()
+  for (ki in 1:nb.effet) {
+    n.temp <- nb.level.byeffect[ki]
+    cst <- (n.temp - 1) / sum((diag(n.temp) - matrix(
+      1, n.temp,
+      n.temp
+    ) / n.temp) * KK[[ki]])
+    KK.norm[[ki]] <- cst * KK[[ki]]
+  }
+  KK.cov <- list()
+  for (ki in 1:nb.effet) {
+    KK.cov[[ki]] <- ind.covariances(KK.norm[[ki]], effet[[ki]])
+  }
+  for (ki in 1:nb.effet) {
+    effet[[ki]] <- ind
+  }
+  names(effet) <- nom.effet[1:nb.effet]
+  KK.proj <- list()
+  for (ki in 1:nb.effet) {
+    KK.proj[[ki]] <- proj.matrix.sdp(KK.cov[[ki]])
+    colnames(KK.proj[[ki]]) <- names(Y)
+    rownames(KK.proj[[ki]]) <- names(Y)
+  }
+  names(KK.proj) <- nom.effet[1:nb.effet]
+  addcof_fwd <- list()
+  addcof_fwd[[1]] <- "NA"
+  cof_fwd <- list()
+  if (is.null(cofs)) {
+    cof_fwd[[1]] <- X0
+  } else {
+    cof_fwd[[1]] <- cbind(X0, as.matrix(cofs))
+  }
+  mod_fwd <- list()
+  mod_fwd[[1]] <- mixedModelWithSommer(Y, KK.proj, effet, cof_fwd[[1]])
+  herit_fwd <- list()
+  herit_fwd[[1]] <- 1 - as.vector(mod_fwd[[1]]$sigma[["units"]]) / Reduce(
+    "+",
+    mod_fwd[[1]]$sigma
+  )
+  V <- as.vector(mod_fwd[[1]]$sigma[["units"]]) * diag(n)
+  for (ki in 1:nb.effet) {
+    V <- V + as.vector(mod_fwd[[1]]$sigma[[ki]]) * KK.cov[[ki]]
+  }
+  InvV <- solve(chol(V))
+  df1 <- list()
+  df1[[1]] <- Matrix::rankMatrix(cof_fwd[[1]])
+  df_list <- list()
+  df_list[[1]] <- NA
+  pval <- list()
+  pval[[1]] <- NA
+  fwd_lm <- list()
+  pval_cof_fwd <- list()
+  pval_cof_fwd[[1]] <- NULL
+  pval_cof_fwd[[2]] <- NULL
+  cat("null model done! pseudo-h=", round(
+    herit_fwd[[1]],
+    3
+  ), "\n")
+  for (i in 2:(maxsteps)) {
+    if (i > 3 & herit_fwd[[i - 1]] < 0.01) {
+      break
+    } else {
+      list.Prep <- Prep.forRSS(i, InvV, Y, cof_fwd, n)
+      RSS_H1.rank <- RSS.forSNP(
+        i, list.Prep, nbchunks,
+        XX
+      )
+      RSS_H1 <- RSS_H1.rank[, 1]
+      RSS_H0 <- sum(list.Prep$Res_H0^2)
+      df2 <- n - RSS_H1.rank[, 2] - df1[[i - 1]]
+      df1.test <- RSS_H1.rank[, 2]
+      Ftest <- (rep(RSS_H0, length(RSS_H1)) / RSS_H1 - 1) *
+        df2 / df1.test
+      Ftest[is.na(Ftest)] <- 0
+      pval[[i]] <- pf(Ftest, df1.test, df2, lower.tail = FALSE)
+      df_list[[i]] <- c(df1.test, df2)
+      addcof_fwd[[i]] <- names(which(pval[[i]] == min(pval[[i]]))[1])
+      cof_fwd[[i]] <- cof_fwd[[(i - 1)]]
+      for (ki in 1:nb.effet) {
+        cof_fwd[[i]] <- cbind(cof_fwd[[i]], XX[[ki]][
+          ,
+          colnames(XX[[1]]) %in% addcof_fwd[[i]]
+        ])
+      }
+      colnames(cof_fwd[[i]])[(ncol(cof_fwd[[i]]) - (nb.effet -
+        1)):ncol(cof_fwd[[i]])] <- c(paste0(
+        nom.effet[1:nb.effet],
+        "_", addcof_fwd[[i]]
+      ))
+      mod_fwd[[i]] <- mixedModelWithSommer(
+        Y, KK.proj,
+        effet, cof_fwd[[i]]
+      )
+      df1[[i]] <- Matrix::rankMatrix(cof_fwd[[i]])
+      herit_fwd[[i]] <- 1 - as.vector(mod_fwd[[i]]$sigma[["units"]]) / Reduce(
+        "+",
+        mod_fwd[[i]]$sigma
+      )
+      rm(list.Prep)
+      cat("step ", i - 1, " done! pseudo-h=", round(
+        herit_fwd[[i]],
+        3
+      ), "model: Y ~", paste0(sub("^eff1_", "", colnames(cof_fwd[[i]])),
+        collapse = " + "
+      ), "\n")
+    }
+    V <- as.vector(mod_fwd[[i]]$sigma[["units"]]) * diag(n)
+    for (ki in 1:nb.effet) {
+      V <- V + as.vector(mod_fwd[[i]]$sigma[[ki]]) * KK.cov[[ki]]
+    }
+    InvV <- solve(chol(V))
+    pval_cof_fwd[[i + 1]] <- my.pval.aov(
+      addcof_fwd, cof_fwd[[1]],
+      InvV, Y, XX
+    )
+    pval[[i]] <- c(pval_cof_fwd[[i]], pval[[i]])
+  }
+  if (length(pval) >= 2) {
+    for (i in 2:length(pval)) {
+      isSelec <- grepl("^selec_", names(pval[[i]]))
+      newnames <- XX_mrk_names[sub("^selec_", "", names(pval[[i]]))]
+      newnames <- ifelse(isSelec, paste0("selec_", newnames),
+        newnames
+      )
+      names(pval[[i]]) <- newnames
+    }
+  }
+  return(list("p_val" = pval, "df_list" = df_list))
+}
+
+# function which makes a qqplot for observed and expected p-values based on
+# the F-distribution with df1 and df2 degrees of freedom
+qqplot_f_distrib_mlmm_gwas_ <- function(p_val_obs_,
+                                        df1, df2, seed_ = 42,
+                                        main_ = "Q-Q plot for ",
+                                        cex_main_ = 0.8,
+                                        cex_lab_ = 0.8,
+                                        output_path_,
+                                        file_name_) {
+  p_val_obs_ <- as.numeric(p_val_obs_)
+  set.seed(seed_)
+  p_val_theo_ <- pf(rf(
+    length(p_val_obs_), df1, df2
+  ), df1, df2, lower.tail = F)
+  minus_log10_p_val_obs_ <- -log10(p_val_obs_)
+  minus_log10_p_val_theo_ <- -log10(p_val_theo_)
+  max_val_lim_ <- max(
+    max(minus_log10_p_val_obs_),
+    max(minus_log10_p_val_obs_)
+  )
+  png(paste0(output_path_, file_name_),
+    width = 1200,
+    height = 600, res = 150
+  )
+  plot_ <- fastqq::qqplot(
+    minus_log10_p_val_theo_,
+    minus_log10_p_val_obs_,
+    main = main_,
+    cex.main = cex_main_,
+    cex.lab = cex_lab_,
+    xlab = expression("Expected -log"[10] * "(p)"),
+    ylab = expression("Observed -log"[10] * "(p)"),
+    xlim = c(0, max_val_lim_),
+    pch = 19, conf.level = 0.95,
+    conf.args = list(exact = T, col = "lightgrey")
+  )
+  abline(a = 0, b = 1, col = "red")
+  dev.off()
+  return(TRUE)
+}
+
+# generic function based on qqman which makes a manhattan plot using as a input
+# a data frame with snp name, chromosome number, bp and p-values
+qqman_manhattan_plot_ <- function(df_, main_, ylim_ = c(0, 10),
+                                  cex_ = 0.6, cex_axis_ = 0.6,
+                                  col_ = c("blue4", "orange3"),
+                                  suggestiveline_ = F,
+                                  genomewideline_ = F,
+                                  chrlabs_ = NULL,
+                                  output_path_,
+                                  file_name_) {
+  png(paste0(output_path_, file_name_),
+    width = 1200,
+    height = 600, res = 150
+  )
+  manhattan(df_,
+    main = main_,
+    ylim = ylim_,
+    cex = cex_,
+    cex.axis = cex_axis_,
+    col = col_,
+    suggestiveline = suggestiveline_,
+    genomewideline = genomewideline_,
+    chrlabs = chrlabs_
+  )
+  dev.off()
+  return(TRUE)
+}
+
+# generic function which makes a manhattan based on ggplot and plotly using as a
+# input a data frame with snp name, chromosome number, bp and scores (i.e.
+# can be normalized variable importance, -log10(p-values), etc.)
+manhattan_ggplot_plotly_ <- function(
+    df_,
+    trait_,
+    qgpd_threshold = quant_qgpd_tresh_,
+    x_lab_ = "SNP index",
+    y_lab_ = "Normalized variable importance",
+    title_ = "",
+    title_size_ = 16,
+    axis_title_size_ = 14,
+    output_path_ = NULL,
+    file_name_ = NULL,
+    make_ggplotly_ = F,
+    max_y = 1) {
+  # convert chr to factor and add snp index column
+  df_$chr <- as.factor(df_$chr)
+  df_$index <- 1:nrow(df_)
+
+  p <- ggplot(df_, aes(
+    x = index,
+    y = score,
+    color = chr,
+    text = paste0(
+      y_lab_,
+      ": ", signif(score, 4), "<br>",
+      "SNP: ", snp, "<br>",
+      "Position in bp: ", bp, "<br>",
+      "Chromosome number: ", chr
+    )
+  )) +
+    geom_point(size = 3) +
+    geom_hline(
+      yintercept = qgpd_threshold,
+      linetype = "dashed", color = "red"
+    ) +
+    annotate("text",
+      y = qgpd_threshold + qgpd_threshold / 3,
+      x = max(df_$index) - length(df_$index) / 2,
+      label = paste0(
+        "GPD threshold: ",
+        signif(qgpd_threshold, 2)
+      ),
+      color = "red", size = 4, fontface = "bold"
+    ) +
+    labs(
+      x = x_lab_, y = y_lab_,
+      title = title_
+    ) +
+    scale_color_discrete(name = "Chromosome") +
+    scale_y_continuous(
+      limits = c(0, max_y),
+      expand = c(0, 0)
+    ) +
+    theme(
+      plot.title = element_text(
+        hjust = 0.5,
+        size = title_size_
+      ),
+      axis.title = element_text(
+        size = axis_title_size_
+      )
+    )
+  # save to ggplot format
+  ggsave(
+    filename = paste0(output_path_, file_name_),
+    width = 20,
+    height = 8,
+    limitsize = F,
+    plot = p
+  )
+  if (make_ggplotly_) {
+    # convert ggplot to ggplotly and save plot
+    p <- ggplotly(p, tooltip = "text")
+    saveWidget(p, file = paste0(
+      paste0(output_path_, str_replace(file_name_,
+        pattern = ".png", replacement = ""
+      )),
+      ".html"
+    ))
+  }
+  return(TRUE)
+}
+
+# function which filter marker data for minor allele frequency (maf)
+filter_maf <- function(df_, q = 0.05) {
+  # test if genotype column is present
+  if (colnames(df_)[1] != "Genotype") {
+    stop("First column should be named 'Genotype'")
+  }
+
+  # extract genotype names and remove genotype column for maf computation
+  geno_names <- df_[, 1]
+  df_ <- df_[, -1]
+  maf_values <- apply(df_, 2, function(geno) {
+    n <- sum(!is.na(geno)) # get number of individuals without missing data
+    count_2 <- sum(geno == 2, na.rm = TRUE) # get count for homozygotes 11
+    count_1 <- sum(geno == 1, na.rm = TRUE) # get count for heterozygotes 01|10
+    p <- (2 * count_2 + count_1) / (2 * n) # get frequency for allele 1
+    maf <- min(p, 1 - p) # get maf
+    return(maf)
+  })
+
+  # filter out snps with a maf inferior to q
+  df_ <- df_[, maf_values >= q, drop = F]
+
+  # add genotype column to filtered data and rename appropriately
+  df_ <- cbind(geno_names, df_)
+  colnames(df_)[1] <- "Genotype"
+
+  return(df_)
+}
+
+
+# function which computes min-max normalization
+min_max_normalization <- function(vect_) {
+  normalized_vect_ <- (vect_ - min(vect_)) /
+    (max(vect_) - min(vect_))
+  return(normalized_vect_)
 }
