@@ -1,0 +1,6 @@
+snp_name,count,chromosome_number,position_in_bp,ls_means_mlmm_neg_log10_p,ls_means_lm_r2,ls_means_rf_norm_var_import,ls_means_rf_r2,wiser_mlmm_neg_log10_p,wiser_lm_r2,wiser_rf_norm_var_import,wiser_rf_r2
+AX-115363183,1,4,616066,8.65,0.0246,,,,,,
+AX-115262223,1,11,7658137,,,,,,,0.852,0.0747
+AX-115464051,1,13,10447849,6.77,0.0625,,,,,,
+AX-115330171,1,16,38293453,,,,,,,0.782,0.0777
+AX-115552490,1,16,38305427,,,,,,,0.777,0.0778
