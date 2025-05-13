@@ -30,9 +30,10 @@ library(foreach)
 library(parallel)
 library(doParallel)
 library(future.apply)
+library(ggrepel)
 
 # define computation mode, i.e. "local" or "cluster"
-computation_mode <- "cluster"
+computation_mode <- "local"
 
 # if comutations are local in rstudio, detect and set script path
 # automatically using rstudioapi
@@ -87,13 +88,20 @@ selected_traits_ <- c(
 excluded_pseudo_trait_for_save_ <- c("Weight_sample", "Sample_size", "Scab_fruits")
 
 # define analyses to be performed or not
-perform_var_comp_analyses_ <- T
-perform_signif_testing_gcym_ <- T
-perform_signif_testing_genv_ <- T
-parallelize_signif_testing_ <- T # should significance testing using LRT be parallelized ?
+perform_var_comp_analyses_ <- F
+perform_signif_testing_gcym_ <- F
+perform_signif_testing_genv_ <- F
+parallelize_signif_testing_ <- F # should significance testing using LRT be parallelized ?
+perform_comparison_with_wiser_ <- F
 
 # define minimum number of observations for lmer
 min_obs_lmer_ <- 5
+
+# define minimum number of genotypes
+min_obs_ <- 2
+
+# set p-value threshold
+p_val_thresh <- 0.05
 
 # read phenotype data without md and knowledge rule based outliers
 pheno_df_ <- as.data.frame(fread(paste0(
@@ -866,7 +874,7 @@ if (perform_signif_testing_gcym_) {
 # make corrplots for refpop
 
 # scale the data for correlation plots as it can affect the real correlation values
-# due to variation in scales (e.g. higher standard deviation in one variable due to 
+# due to variation in scales (e.g. higher standard deviation in one variable due to
 # different scales)
 df_traits_refpop_ <- as.data.frame(scale(apply(
   df_[, vect_traits],
@@ -912,13 +920,13 @@ for (country_ in vect_sites_) {
   df_traits_country_ <- df_[df_$Country %in% country_, vect_traits]
 
   # scale the data for correlation plots as it can affect the real correlation values
-  # due to variation in scales (e.g. higher standard deviation in one variable due to 
+  # due to variation in scales (e.g. higher standard deviation in one variable due to
   # different scales)
   df_traits_country_ <- as.data.frame(scale(apply(
     df_traits_country_,
     2, as.numeric
   ), center = T, scale = T))
-  
+
   # remove columns that are entirely NA
   df_traits_country_ <- df_traits_country_ %>% select(where(~ any(!is.na(.))))
 
@@ -953,3 +961,507 @@ for (country_ in vect_sites_) {
     plot = corrplot_country_, width = 16, height = 8, dpi = 300
   )
 }
+
+# define trait_
+trait_ <- "Fruit_weight"
+
+# set number of top genotypes selected for a specific trait
+n_sel_ <- 60
+
+# get phenotype data frame without missing data for the specific trait
+pheno_df_trait_ <- pheno_df_[
+  !is.na(pheno_df_[, trait_]),
+]
+
+# get phenotypes per management type (1, 2 and 3)
+pheno_df_trait_manage_1 <- pheno_df_trait_[
+  pheno_df_trait_$Management %in% "1",
+]
+nrow(pheno_df_trait_manage_1)
+
+pheno_df_trait_manage_2 <- pheno_df_trait_[
+  pheno_df_trait_$Management %in% "2",
+]
+nrow(pheno_df_trait_manage_2)
+
+pheno_df_trait_manage_3 <- pheno_df_trait_[
+  pheno_df_trait_$Management %in% "3",
+]
+nrow(pheno_df_trait_manage_3)
+
+# initialize list for data frame results
+list_df <- list()
+weight_vect <- c(0.3, 0.35, 0.35)
+sum(weight_vect)
+
+# estimate genotypic values based on management type
+
+# -- management 1
+if (nrow(pheno_df_trait_manage_1) > 0) {
+  # get mean value for trait in this management
+  mean_pheno_trait_manage_1 <- mean(
+    pheno_df_trait_manage_1[, trait_],
+    na.rm = T
+  )
+  print(
+    paste0(
+      "mean_pheno_trait_manage_1: ",
+      signif(mean_pheno_trait_manage_1, 3)
+    )
+  )
+
+  # fit a linear model with genotype and environment as fixed effects only
+  lm_trait_manage_1 <- lm(
+    as.formula(
+      paste0(trait_, "~ 1 + Genotype + Environment")
+    ),
+    data = pheno_df_trait_manage_1
+  )
+
+  #  get fixed effects for genotype in management 1 data
+  fixed_eff_df <- as.data.frame(
+    coef(lm_trait_manage_1)
+  )
+
+  # get genotype names and values
+  geno_names_ <- str_replace_all(
+    rownames(fixed_eff_df)[str_detect(rownames(fixed_eff_df), "Genotype")],
+    pattern = "Genotype", replacement = ""
+  )
+
+  fixed_eff_values <- fixed_eff_df[
+    str_detect(rownames(fixed_eff_df), "Genotype"),
+  ]
+
+
+  # modify fixed_eff_df data frame
+  fixed_eff_df <- data.frame(
+    "Genotype" = geno_names_,
+    "blue_manage_1" = fixed_eff_values
+  )
+
+  # sort the merged data frame according to the genotypic value
+  fixed_eff_df <- fixed_eff_df[
+    order(-fixed_eff_df$blue_manage_1),
+  ]
+
+  if (nrow(fixed_eff_df) > 0) {
+    list_df[[1]] <- fixed_eff_df
+  }
+}
+
+# -- management 2
+if (nrow(pheno_df_trait_manage_2) > 0) {
+  # get mean value for trait in this management
+  mean_pheno_trait_manage_2 <- mean(
+    pheno_df_trait_manage_2[, trait_],
+    na.rm = T
+  )
+  print(
+    paste0(
+      "mean_pheno_trait_manage_2: ",
+      signif(mean_pheno_trait_manage_2, 3)
+    )
+  )
+
+  # fit a linear model with genotype and environment as fixed effects only
+  lm_trait_manage_2 <- lm(
+    as.formula(
+      paste0(trait_, "~ 1 + Genotype + Environment")
+    ),
+    data = pheno_df_trait_manage_2
+  )
+
+  #  get fixed effects for genotype in management 1 data
+  fixed_eff_df <- as.data.frame(
+    coef(lm_trait_manage_2)
+  )
+
+  # get genotype names and values
+  geno_names_ <- str_replace_all(
+    rownames(fixed_eff_df)[str_detect(rownames(fixed_eff_df), "Genotype")],
+    pattern = "Genotype", replacement = ""
+  )
+
+  fixed_eff_values <- fixed_eff_df[
+    str_detect(rownames(fixed_eff_df), "Genotype"),
+  ]
+
+
+  # modify fixed_eff_df data frame
+  fixed_eff_df <- data.frame(
+    "Genotype" = geno_names_,
+    "blue_manage_2" = fixed_eff_values
+  )
+
+  # sort the merged data frame according to the genotypic value
+  fixed_eff_df <- fixed_eff_df[
+    order(-fixed_eff_df$blue_manage_2),
+  ]
+
+  if (nrow(fixed_eff_df) > 0) {
+    list_df[[2]] <- fixed_eff_df
+  }
+}
+
+# -- management 3
+if (nrow(pheno_df_trait_manage_3) > 0) {
+  # get mean value for trait in this management
+  mean_pheno_trait_manage_3 <- mean(
+    pheno_df_trait_manage_3[, trait_],
+    na.rm = T
+  )
+  print(
+    paste0(
+      "mean_pheno_trait_manage_3: ",
+      signif(mean_pheno_trait_manage_3, 3)
+    )
+  )
+
+  # fit a linear model with genotype and environment as fixed effects only
+  lm_trait_manage_3 <- lm(
+    as.formula(
+      paste0(trait_, "~ 1 + Genotype + Environment")
+    ),
+    data = pheno_df_trait_manage_3
+  )
+
+  #  get fixed effects for genotype in management 1 data
+  fixed_eff_df <- as.data.frame(
+    coef(lm_trait_manage_3)
+  )
+
+  # get genotype names and values
+  geno_names_ <- str_replace_all(
+    rownames(fixed_eff_df)[str_detect(rownames(fixed_eff_df), "Genotype")],
+    pattern = "Genotype", replacement = ""
+  )
+
+  fixed_eff_values <- fixed_eff_df[
+    str_detect(rownames(fixed_eff_df), "Genotype"),
+  ]
+
+
+  # modify fixed_eff_df data frame
+  fixed_eff_df <- data.frame(
+    "Genotype" = geno_names_,
+    "blue_manage_3" = fixed_eff_values
+  )
+
+  # sort the merged data frame according to the genotypic value
+  fixed_eff_df <- fixed_eff_df[
+    order(-fixed_eff_df$blue_manage_3),
+  ]
+
+  if (nrow(fixed_eff_df) > 0) {
+    list_df[[3]] <- fixed_eff_df
+  }
+}
+
+# filter non-NULL data frames from the list
+valid_dfs <- Filter(Negate(is.null), list_df)
+
+# merge valid_dfs dfs
+merge_valid_dfs <- Reduce(
+  function(x, y) {
+    merge(x, y,
+      by = "Genotype", all = F
+    )
+  },
+  valid_dfs
+)
+
+# add weighted mean for genotype fixed effect values across managements
+# (i.e. add a convex combination of fixed effect values across managements)
+merge_valid_dfs$blue_weighted_mean <-
+  merge_valid_dfs$blue_manage_1 * weight_vect[1] +
+  merge_valid_dfs$blue_manage_2 * weight_vect[2] +
+  merge_valid_dfs$blue_manage_3 * weight_vect[3]
+
+# sort by weighted mean in descending order
+merge_valid_dfs <- merge_valid_dfs[
+  order(-merge_valid_dfs$blue_weighted_mean),
+]
+
+# select the top n_sel_ genotypes
+top_genotypes_df <- head(merge_valid_dfs, n_sel_)
+
+# compute global repeatability for genotypes across managements
+compute_R(merge_valid_dfs[
+  , str_detect(colnames(merge_valid_dfs), "Genotype|_manage_")
+])
+
+# write top selected genotypes
+top_genotypes_df <- top_genotypes_df %>%
+  mutate(across(where(is.numeric), ~ signif(.x, 5)))
+
+fwrite(top_genotypes_df, file = paste0(
+  output_gem_graphics_path,
+  trait_,
+  "_top_", n_sel_,
+  "_selected_genotypes.csv"
+))
+
+# scatter plot management 1 versus 2
+
+# fit a linear regression model using merge_valid_dfs
+lm_ <- lm(blue_manage_2 ~ blue_manage_1,
+  data = merge_valid_dfs
+)
+
+# extract the regression coefficients (y = mx + c)
+m <- coef(lm_)[2] # slope (m)
+c <- coef(lm_)[1] # intercept (c)
+
+# apply the function to calculate the distance for each genotype in merge_valid_dfs
+merge_valid_dfs$distance <- mapply(
+  orthogonal_distance,
+  merge_valid_dfs$blue_manage_1,
+  merge_valid_dfs$blue_manage_2,
+  MoreArgs = list(m = m, c = c)
+)
+
+# mark whether a genotype is in top_genotypes_df for highlighting
+merge_valid_dfs$highlight <- ifelse(merge_valid_dfs$Genotype %in%
+  top_genotypes_df$Genotype,
+"Top genotype", "Other"
+)
+
+# create a scatter plot
+ggplot_manage_1_2 <- ggplot(merge_valid_dfs, aes(
+  x = blue_manage_1,
+  y = blue_manage_2, label = Genotype
+)) +
+  geom_point(aes(color = distance, shape = highlight),
+    size = 3
+  ) + # points colored by distance, shape for highlighting
+  geom_smooth(method = "lm", se = FALSE, color = "blue") + # regression line
+  geom_text_repel(
+    data = subset(merge_valid_dfs, highlight == "Top genotype"),
+    size = 3,
+    max.overlaps = Inf, # show all labels
+    box.padding = 0.4, # space around text
+    point.padding = 0.2, # distance from point
+    segment.size = 0.2 # thin line connecting label to point
+  ) +
+  scale_color_gradient(low = "green", high = "red") + # distance color gradient
+  scale_shape_manual(values = c(16, 17)) + # different point shapes
+  labs(
+    title = paste0("Genotype BLUE for ", trait_, " in management 1 and 2"),
+    subtitle = "Orthogonal distance quantifies deviation from the expected trend in both managements simultaneously",
+    x = "Genotype BLUE in management 1 (normal irrigation and normal pesticide)",
+    y = "Genotype BLUE in management 2 (normal irrigation and reduced pesticide)",
+    color = "Orthogonal distance to regression line",
+    shape = "Genotype type"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.background = element_rect(fill = "white", color = NA),
+    panel.background = element_rect(fill = "white", color = NA)
+  )
+# save ggplot
+ggsave(
+  paste0(
+    output_gem_graphics_path,
+    trait_,
+    "_genotype_blue_manage_1_and_2.png"
+  ),
+  plot = ggplot_manage_1_2, width = 16, height = 8, dpi = 300
+)
+
+# scatter plot management 1 versus 3
+
+# fit a linear regression model using merge_valid_dfs
+lm_ <- lm(blue_manage_3 ~ blue_manage_1,
+  data = merge_valid_dfs
+)
+
+# extract the regression coefficients (y = mx + c)
+m <- coef(lm_)[2] # slope (m)
+c <- coef(lm_)[1] # intercept (c)
+
+# apply the function to calculate the distance for each genotype in merge_valid_dfs
+merge_valid_dfs$distance <- mapply(
+  orthogonal_distance,
+  merge_valid_dfs$blue_manage_1,
+  merge_valid_dfs$blue_manage_3,
+  MoreArgs = list(m = m, c = c)
+)
+
+# mark whether a genotype is in top_genotypes_df for highlighting
+merge_valid_dfs$highlight <- ifelse(merge_valid_dfs$Genotype %in%
+  top_genotypes_df$Genotype,
+"Top genotype", "Other"
+)
+
+# create a scatter plot
+ggplot_manage_1_3 <- ggplot(merge_valid_dfs, aes(
+  x = blue_manage_1,
+  y = blue_manage_3, label = Genotype
+)) +
+  geom_point(aes(color = distance, shape = highlight),
+    size = 3
+  ) + # points colored by distance, shape for highlighting
+  geom_smooth(method = "lm", se = FALSE, color = "blue") + # regression line
+  geom_text_repel(
+    data = subset(merge_valid_dfs, highlight == "Top genotype"),
+    size = 3,
+    max.overlaps = Inf, # Show all labels
+    box.padding = 0.4, # Space around text
+    point.padding = 0.2, # Distance from point
+    segment.size = 0.2 # Thin line connecting label to point
+  ) +
+  scale_color_gradient(low = "green", high = "red") + # distance color gradient
+  scale_shape_manual(values = c(16, 17)) + # different point shapes
+  labs(
+    title = paste0("Genotype BLUE for ", trait_, " in management 1 and 3"),
+    subtitle = "Orthogonal distance quantifies deviation from the expected trend in both managements simultaneously",
+    x = "Genotype BLUE in management 1 (normal irrigation and normal pesticide)",
+    y = "Genotype BLUE in management 3 (reduced irrigation and normal pesticide)",
+    color = "Orthogonal distance to regression line",
+    shape = "Genotype type"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.background = element_rect(fill = "white", color = NA),
+    panel.background = element_rect(fill = "white", color = NA)
+  )
+# save ggplot
+ggsave(
+  paste0(
+    output_gem_graphics_path,
+    trait_,
+    "_genotype_blue_manage_1_and_3.png"
+  ),
+  plot = ggplot_manage_1_3, width = 16, height = 8, dpi = 300
+)
+
+# scatter plot management 2 versus 3
+
+# fit a linear regression model using merge_valid_dfs
+lm_ <- lm(blue_manage_3 ~ blue_manage_2,
+  data = merge_valid_dfs
+)
+
+# extract the regression coefficients (y = mx + c)
+m <- coef(lm_)[2] # slope (m)
+c <- coef(lm_)[1] # intercept (c)
+
+# apply the function to calculate the distance for each genotype in merge_valid_dfs
+merge_valid_dfs$distance <- mapply(
+  orthogonal_distance,
+  merge_valid_dfs$blue_manage_2,
+  merge_valid_dfs$blue_manage_3,
+  MoreArgs = list(m = m, c = c)
+)
+
+# mark whether a genotype is in top_genotypes_df for highlighting
+merge_valid_dfs$highlight <- ifelse(merge_valid_dfs$Genotype %in%
+  top_genotypes_df$Genotype,
+"Top genotype", "Other"
+)
+
+# create a scatter plot
+ggplot_manage_2_3 <- ggplot(merge_valid_dfs, aes(
+  x = blue_manage_2,
+  y = blue_manage_3, label = Genotype
+)) +
+  geom_point(aes(color = distance, shape = highlight),
+    size = 3
+  ) + # points colored by distance, shape for highlighting
+  geom_smooth(method = "lm", se = FALSE, color = "blue") + # regression line
+  geom_text_repel(
+    data = subset(merge_valid_dfs, highlight == "Top genotype"),
+    size = 3,
+    max.overlaps = Inf, # show all labels
+    box.padding = 0.4, # space around text
+    point.padding = 0.2, # distance from point
+    segment.size = 0.2 # thin line connecting label to point
+  ) +
+  scale_color_gradient(low = "green", high = "red") + # distance color gradient
+  scale_shape_manual(values = c(16, 17)) + # different point shapes
+  labs(
+    title = paste0("Genotype BLUE for ", trait_, " in management 2 and 3"),
+    subtitle = "Orthogonal distance quantifies deviation from the expected trend in both managements simultaneously",
+    x = "Genotype BLUE in management 2 (normal irrigation and reduced pesticide)",
+    y = "Genotype BLUE in management 3 (reduced irrigation and normal pesticide)",
+    color = "Orthogonal distance to regression line",
+    shape = "Genotype type"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.background = element_rect(fill = "white", color = NA),
+    panel.background = element_rect(fill = "white", color = NA)
+  )
+# save ggplot
+ggsave(
+  paste0(
+    output_gem_graphics_path,
+    trait_,
+    "_genotype_blue_manage_2_and_3.png"
+  ),
+  plot = ggplot_manage_2_3, width = 16, height = 8, dpi = 300
+)
+
+# compare selected genotypes for Fruit_number and Fruit_weight
+geno_trait_fruit_number <- fread(paste0(
+  output_gem_graphics_path,
+  "Fruit_number_top_", n_sel_,
+  "_selected_genotypes.csv"
+))
+
+geno_trait_fruit_weight <- fread(paste0(
+  output_gem_graphics_path,
+  "Fruit_weight_top_", n_sel_,
+  "_selected_genotypes.csv"
+))
+
+common_geno_df <- as.data.frame(
+  merge(geno_trait_fruit_number, geno_trait_fruit_weight,
+    by = "Genotype", all = F
+  )
+)
+common_geno_df <- common_geno_df[, str_detect(
+  colnames(common_geno_df),
+  "Genotype|weighted"
+)]
+
+common_geno_df <- common_geno_df[
+  order(-common_geno_df[,2]),
+  ]
+
+colnames(common_geno_df)[2:3] <- paste0(
+  c("Fruit_number", "Fruit_weight"),
+  "_blue_weighted_mean_management_1_2_3"
+)
+
+fwrite(common_geno_df, file = paste0(
+  output_gem_graphics_path,
+  "Fruit_number_Fruit_weight_top_", 
+  nrow(common_geno_df),
+  "_common_genotypes.csv"
+))
+
+#-------------------------------------------------------------------------------
+# # get wiser phenotypes
+# wiser_pheno_trait_ <- readRDS(
+#   paste0(
+#     pheno_dir_path_,
+#     "/wiser_phenotype_estimates/wiser_obj_linear_kernel_",
+#     trait_
+#   )
+# )
+# wiser_pheno_trait_ <- wiser_pheno_trait_$wiser_phenotypes
+# top_geno_wiser_pheno_trait_ <- head(wiser_pheno_trait_[
+#   order(-wiser_pheno_trait_$v_hat), ], n_sel_)
+#
+# intersect(top_geno_wiser_pheno_trait_$Genotype, top_genotypes_df$Genotype)
+#
+# df_all <- data.frame("Genotype" = merge_valid_dfs$Genotype,
+#                      "blue_weighted_mean" = merge_valid_dfs$blue_weighted_mean)
+#
+# merged_df_all <- merge(wiser_pheno_trait_,
+#                        df_all, by = "Genotype", all = F)
+#
+# cor(merged_df_all$v_hat, merged_df_all$blue_weighted_mean)
+# plot(merged_df_all$v_hat, merged_df_all$blue_weighted_mean)

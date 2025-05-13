@@ -1,0 +1,18 @@
+> # compute global repeatability for genotypes across managements for Fruit_number
+> compute_R(merge_valid_dfs[
++   , str_detect(colnames(merge_valid_dfs), "Genotype|_manage_")
++ ])
+[1] 0.59
+
+> # compute global repeatability for genotypes across managements for Fruit_weight
+> compute_R(merge_valid_dfs[
++   , str_detect(colnames(merge_valid_dfs), "Genotype|_manage_")
++ ])
+[1] 0.62
+ 
+ intersect(geno_trait_fruit_number$Genotype, geno_trait_fruit_weight$Genotype)
+ [1] "12_F052"           "12_J027"           "I_W037"            "I_BB031"           "I_BB070"           "FuPi_097"          "I_BB049"           "I_M014"           
+ [9] "GaCr_056"          "12_K023"           "I_W002"            "NOVADI_0622"       "12_O072"           "NOVADI_0356"       "133"               "GaPi_017"         
+[17] "12_N034"           "12_J029"           "NOVADI_0114"       "FuGa_015"          "JoPr_1990_102_097" "12_O056"           "NOVADI_0042"       "410"              
+[25] "FuPi_054"          "I_CC048"           "ACW_25622"         "2410"              "12_L001"           "65"                "12_P034"           "12_196"           
+[33] "GaPi_028"

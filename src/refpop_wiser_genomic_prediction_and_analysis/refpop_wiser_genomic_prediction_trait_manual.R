@@ -82,13 +82,19 @@ options(future.globals.maxSize = 60 * 1024^3)
 options(expressions = 5e5)
 options(warn = -1)
 
-# set color gradients and color vector for predictive abilities
+# set color gradients and color vector for predictive abilities (pa)
 blue_gradient <- c("#90B3E0", "#3D9BC5", "#005AB5", "#00407A", "#002A66")
 yellow_orange_gradient <- colorRampPalette(c("#FFEA00", "#FF7A00"))(5)
-pa_colors_ <- c(blue_gradient, yellow_orange_gradient)
+green_gradient <- c("#A3E4A7", "#66C266", "#2E8B57", "#006400", "#003200")
+violet_gradient <- c("#D1B3FF", "#A974F4", "#8A2BE2", "#5D00A6", "#3C0073")
+pa_colors_ <- c(blue_gradient, yellow_orange_gradient, green_gradient, violet_gradient)
 
 # set color vector for computed genomic heritabilities (h2)
-h2_colors_ <- c(blue_gradient[3], yellow_orange_gradient[3])
+h2_colors_ <- c(
+  blue_gradient[3],
+  yellow_orange_gradient[3],
+  green_gradient[3]
+)
 
 # define number of cores
 nb_cores_ <- 12
@@ -176,6 +182,17 @@ ls_mean_pheno_df <- as.data.frame(fread(paste0(
   "adjusted_ls_mean_phenotypes.csv"
 )))[, c("Genotype", trait_)]
 
+blup_pheno_df <- as.data.frame(fread(paste0(
+  pheno_dir_path,
+  "blup_phenotypes.csv"
+)))[, c("Genotype", trait_)]
+
+blup_pca_pheno_df <- as.data.frame(fread(paste0(
+  pheno_dir_path,
+  "blup_pca_phenotypes.csv"
+)))[, c("Genotype", trait_)]
+
+# get genotype data
 omic_df <- as.data.frame(fread(paste0(
   geno_dir_path,
   "genotype_data.csv"
@@ -195,6 +212,22 @@ idx_na_inf_char_ls_means <- which(is.na(ls_mean_pheno_df[, trait_]) |
   is.na(suppressWarnings(as.numeric(ls_mean_pheno_df[, trait_]))))
 if (length(idx_na_inf_char_ls_means) > 0) {
   ls_mean_pheno_df <- ls_mean_pheno_df[-idx_na_inf_char_ls_means, ]
+}
+
+# remove rows with na, inf or char associated to trait for blup_pheno_df
+idx_na_inf_char_blups <- which(is.na(blup_pheno_df[, trait_]) |
+  is.infinite(blup_pheno_df[, trait_]) |
+  is.na(suppressWarnings(as.numeric(blup_pheno_df[, trait_]))))
+if (length(idx_na_inf_char_blups) > 0) {
+  blup_pheno_df <- blup_pheno_df[-idx_na_inf_char_blups, ]
+}
+
+# remove rows with na, inf or char associated to trait for blup_pca_pheno_df
+idx_na_inf_char_blups <- which(is.na(blup_pca_pheno_df[, trait_]) |
+  is.infinite(blup_pca_pheno_df[, trait_]) |
+  is.na(suppressWarnings(as.numeric(blup_pca_pheno_df[, trait_]))))
+if (length(idx_na_inf_char_blups) > 0) {
+  blup_pca_pheno_df <- blup_pca_pheno_df[-idx_na_inf_char_blups, ]
 }
 
 # remove monomorphic markers
@@ -236,6 +269,27 @@ if (file.exists(paste0(
     "_kernel_", trait_
   ))
 } else {
+  # get optimal whitening method and regularization parameter using k-folds CV
+  opt_white_reg_par <- optimize_whitening_and_regularization(
+    omic_df, raw_pheno_df, trait_,
+    fixed_effects_vars = c(
+      "Envir", "Row", "Position"
+    ),
+    fixed_effects_vars_computed_as_factor = c(
+      "Envir", "Row", "Position"
+    ),
+    envir_var = "Envir",
+    fixed_effects_vars_computed_as_factor_by_envir = c("Row", "Position"),
+    random_effects_vars = "Genotype",
+    whitening_method_grid = c("ZCA-cor", "PCA-cor", "Cholesky"),
+    alpha_grid = c(0.01, 0.1),
+    k_folds = 5
+  )
+  print(opt_white_reg_par)
+  opt_whitening_method_ <- as.character(opt_white_reg_par$opt_whitening_method)
+  opt_alpha_ <- as.numeric(opt_white_reg_par$opt_alpha_)
+  rm(opt_white_reg_par)
+
   # estimate wiser phenotype
   start_time_ <- Sys.time()
   wiser_obj <- estimate_wiser_phenotype(omic_df, raw_pheno_df, trait_,
@@ -248,7 +302,9 @@ if (file.exists(paste0(
     envir_var = "Envir",
     fixed_effects_vars_computed_as_factor_by_envir = c("Row", "Position"),
     random_effects_vars = "Genotype",
-    kernel_type = kernel_
+    kernel_type = kernel_,
+    whitening_method = opt_whitening_method_,
+    alpha_ = opt_alpha_
   )
   end_time_ <- Sys.time()
   time_taken_ <- end_time_ - start_time_
@@ -287,15 +343,45 @@ if (file.exists(paste0(
   ))
 }
 
-# before k-folds cv, ascertain that ls-means and wiser phenotypes are associated
-# to the same genotypes
+# before k-folds cv, ascertain that blups, ls-means and wiser phenotypes are
+# associated to the same genotypes
+colnames(ls_mean_pheno_df)[
+  str_detect(colnames(ls_mean_pheno_df),
+    pattern = trait_
+  )
+] <- paste0(trait_, "_ls_mean")
 merged_df <- merge(
-  ls_mean_pheno_df,
   wiser_obj$wiser_phenotypes,
+  ls_mean_pheno_df,
   by = "Genotype"
 )
+
+colnames(blup_pheno_df)[
+  str_detect(colnames(blup_pheno_df),
+    pattern = trait_
+  )
+] <- paste0(trait_, "_blup")
+merged_df <- merge(
+  merged_df,
+  blup_pheno_df,
+  by = "Genotype"
+)
+
+colnames(blup_pca_pheno_df)[
+  str_detect(colnames(blup_pca_pheno_df),
+    pattern = trait_
+  )
+] <- paste0(trait_, "_blup_pca")
+merged_df <- merge(
+  merged_df,
+  blup_pca_pheno_df,
+  by = "Genotype"
+)
+
 v_hat <- merged_df$v_hat
-ls_mean_trait <- merged_df[, trait_]
+trait_ls_mean <- merged_df[, paste0(trait_, "_ls_mean")]
+trait_blup <- merged_df[, paste0(trait_, "_blup")]
+trait_blup_pca <- merged_df[, paste0(trait_, "_blup_pca")]
 omic_df <- omic_df[rownames(omic_df) %in% merged_df$Genotype, ]
 rm(wiser_obj)
 
@@ -340,10 +426,22 @@ df_result_ <- foreach(
       "GBLUP_ls_means_pa" = NA,
       "GBLUP_ls_means_h2" = NA,
       "RKHS_ls_means_pa" = NA,
-      "LASSO_ls_means_pa" = NA
+      "LASSO_ls_means_pa" = NA,
+      "RF_blups_pa" = NA,
+      "SVR_blups_pa" = NA,
+      "GBLUP_blups_pa" = NA,
+      "GBLUP_blups_h2" = NA,
+      "RKHS_blups_pa" = NA,
+      "LASSO_blups_pa" = NA,
+      "RF_blups_pca_pa" = NA,
+      "SVR_blups_pca_pa" = NA,
+      "GBLUP_blups_pca_pa" = NA,
+      "GBLUP_blups_pca_h2" = NA,
+      "RKHS_blups_pca_pa" = NA,
+      "LASSO_blups_pca_pa" = NA
     )
 
-    # training and prediction based on computed phenotypes, i.e. v_hat
+    # training and prediction based on v_hat (i.e. wiser phenotypes)
 
     # train and predict with Random Forest
     rf_model <- ranger(
@@ -441,7 +539,7 @@ df_result_ <- foreach(
 
     # train and predict with Random Forest
     rf_model <- ranger(
-      y = ls_mean_trait[idx_train],
+      y = trait_ls_mean[idx_train],
       x = omic_df[idx_train, ],
       mtry = ncol(omic_df) / 3,
       num.trees = 1000
@@ -452,21 +550,21 @@ df_result_ <- foreach(
     )
     fold_result["RF_ls_means_pa"] <- cor(
       f_hat_val_rf$predictions,
-      ls_mean_trait[idx_val]
+      trait_ls_mean[idx_val]
     )
 
     # train and predict with SVR
     # a correct value for c_par according to Cherkassy and Ma (2004).
     # Neural networks 17, 113-126 is defined as follows
     c_par <- max(
-      abs(mean(ls_mean_trait[idx_train])
-      + 3 * sd(ls_mean_trait[idx_train])),
-      abs(mean(ls_mean_trait[idx_train])
-      - 3 * sd(ls_mean_trait[idx_train]))
+      abs(mean(trait_ls_mean[idx_train])
+      + 3 * sd(trait_ls_mean[idx_train])),
+      abs(mean(trait_ls_mean[idx_train])
+      - 3 * sd(trait_ls_mean[idx_train]))
     )
     gaussian_svr_model <- ksvm(
       x = as.matrix(omic_df[idx_train, ]),
-      y = ls_mean_trait[idx_train],
+      y = trait_ls_mean[idx_train],
       scaled = F, type = "eps-svr",
       kernel = "rbfdot",
       kpar = "automatic", C = c_par, epsilon = 0.1
@@ -477,12 +575,12 @@ df_result_ <- foreach(
     )
     fold_result["SVR_ls_means_pa"] <- cor(
       f_hat_val_gaussian_svr,
-      ls_mean_trait[idx_val]
+      trait_ls_mean[idx_val]
     )
 
     # train and predict with GBLUP (linear kernel krmm)
     linear_krmm_model <- krmm(
-      Y = ls_mean_trait[idx_train],
+      Y = trait_ls_mean[idx_train],
       Matrix_covariates = omic_df[idx_train, ],
       method = "GBLUP"
     )
@@ -492,7 +590,7 @@ df_result_ <- foreach(
     )
     fold_result["GBLUP_ls_means_pa"] <- cor(
       f_hat_val_linear_krmm,
-      ls_mean_trait[idx_val]
+      trait_ls_mean[idx_val]
     )
     fold_result["GBLUP_ls_means_h2"] <- compute_genomic_h2(
       linear_krmm_model$sigma2K_hat,
@@ -501,7 +599,7 @@ df_result_ <- foreach(
 
     # train and predict with RKHS (non-linear Gaussian kernel krmm)
     gaussian_krmm_model <- krmm(
-      Y = ls_mean_trait[idx_train],
+      Y = trait_ls_mean[idx_train],
       Matrix_covariates = omic_df[idx_train, ],
       method = "RKHS", kernel = "Gaussian",
       rate_decay_kernel = 0.1
@@ -512,12 +610,12 @@ df_result_ <- foreach(
     )
     fold_result["RKHS_ls_means_pa"] <- cor(
       f_hat_val_gaussian_krmm,
-      ls_mean_trait[idx_val]
+      trait_ls_mean[idx_val]
     )
 
     # train and predict with LASSO
     cv_fit_lasso_model <- cv.glmnet(
-      intercept = T, y = ls_mean_trait[idx_train],
+      intercept = T, y = trait_ls_mean[idx_train],
       x = as.matrix(omic_df[idx_train, ]),
       type.measure = "mse", alpha = 1.0, nfold = 10,
       parallel = T
@@ -528,9 +626,196 @@ df_result_ <- foreach(
     )
     fold_result["LASSO_ls_means_pa"] <- cor(
       f_hat_val_lasso,
-      ls_mean_trait[idx_val]
+      trait_ls_mean[idx_val]
     )
 
+    # training and prediction based on blups
+
+    # train and predict with Random Forest
+    rf_model <- ranger(
+      y = trait_blup[idx_train],
+      x = omic_df[idx_train, ],
+      mtry = ncol(omic_df) / 3,
+      num.trees = 1000
+    )
+    f_hat_val_rf <- predict(
+      rf_model,
+      omic_df[idx_val, ]
+    )
+    fold_result["RF_blups_pa"] <- cor(
+      f_hat_val_rf$predictions,
+      trait_blup[idx_val]
+    )
+
+    # train and predict with SVR
+    # a correct value for c_par according to Cherkassy and Ma (2004).
+    # Neural networks 17, 113-126 is defined as follows
+    c_par <- max(
+      abs(mean(trait_blup[idx_train])
+      + 3 * sd(trait_blup[idx_train])),
+      abs(mean(trait_blup[idx_train])
+      - 3 * sd(trait_blup[idx_train]))
+    )
+    gaussian_svr_model <- ksvm(
+      x = as.matrix(omic_df[idx_train, ]),
+      y = trait_blup[idx_train],
+      scaled = F, type = "eps-svr",
+      kernel = "rbfdot",
+      kpar = "automatic", C = c_par, epsilon = 0.1
+    )
+    f_hat_val_gaussian_svr <- predict(
+      gaussian_svr_model,
+      as.matrix(omic_df[idx_val, ])
+    )
+    fold_result["SVR_blups_pa"] <- cor(
+      f_hat_val_gaussian_svr,
+      trait_blup[idx_val]
+    )
+
+    # train and predict with GBLUP (linear kernel krmm)
+    linear_krmm_model <- krmm(
+      Y = trait_blup[idx_train],
+      Matrix_covariates = omic_df[idx_train, ],
+      method = "GBLUP"
+    )
+    f_hat_val_linear_krmm <- predict_krmm(linear_krmm_model,
+      Matrix_covariates = omic_df[idx_val, ],
+      add_fixed_effects = T
+    )
+    fold_result["GBLUP_blups_pa"] <- cor(
+      f_hat_val_linear_krmm,
+      trait_blup[idx_val]
+    )
+    fold_result["GBLUP_blups_h2"] <- compute_genomic_h2(
+      linear_krmm_model$sigma2K_hat,
+      linear_krmm_model$sigma2E_hat
+    )
+
+    # train and predict with RKHS (non-linear Gaussian kernel krmm)
+    gaussian_krmm_model <- krmm(
+      Y = trait_blup[idx_train],
+      Matrix_covariates = omic_df[idx_train, ],
+      method = "RKHS", kernel = "Gaussian",
+      rate_decay_kernel = 0.1
+    )
+    f_hat_val_gaussian_krmm <- predict_krmm(gaussian_krmm_model,
+      Matrix_covariates = omic_df[idx_val, ],
+      add_fixed_effects = T
+    )
+    fold_result["RKHS_blups_pa"] <- cor(
+      f_hat_val_gaussian_krmm,
+      trait_blup[idx_val]
+    )
+
+    # train and predict with LASSO
+    cv_fit_lasso_model <- cv.glmnet(
+      intercept = T, y = trait_blup[idx_train],
+      x = as.matrix(omic_df[idx_train, ]),
+      type.measure = "mse", alpha = 1.0, nfold = 10,
+      parallel = T
+    )
+    f_hat_val_lasso <- predict(cv_fit_lasso_model,
+      newx = as.matrix(omic_df[idx_val, ]),
+      s = "lambda.min"
+    )
+    fold_result["LASSO_blups_pa"] <- cor(
+      f_hat_val_lasso,
+      trait_blup[idx_val]
+    )
+
+    # training and prediction based on pca based blups
+
+    # train and predict with Random Forest
+    rf_model <- ranger(
+      y = trait_blup_pca[idx_train],
+      x = omic_df[idx_train, ],
+      mtry = ncol(omic_df) / 3,
+      num.trees = 1000
+    )
+    f_hat_val_rf <- predict(
+      rf_model,
+      omic_df[idx_val, ]
+    )
+    fold_result["RF_blups_pca_pa"] <- cor(
+      f_hat_val_rf$predictions,
+      trait_blup_pca[idx_val]
+    )
+
+    # train and predict with SVR
+    # a correct value for c_par according to Cherkassy and Ma (2004).
+    # Neural networks 17, 113-126 is defined as follows
+    c_par <- max(
+      abs(mean(trait_blup_pca[idx_train])
+      + 3 * sd(trait_blup_pca[idx_train])),
+      abs(mean(trait_blup_pca[idx_train])
+      - 3 * sd(trait_blup_pca[idx_train]))
+    )
+    gaussian_svr_model <- ksvm(
+      x = as.matrix(omic_df[idx_train, ]),
+      y = trait_blup_pca[idx_train],
+      scaled = F, type = "eps-svr",
+      kernel = "rbfdot",
+      kpar = "automatic", C = c_par, epsilon = 0.1
+    )
+    f_hat_val_gaussian_svr <- predict(
+      gaussian_svr_model,
+      as.matrix(omic_df[idx_val, ])
+    )
+    fold_result["SVR_blups_pca_pa"] <- cor(
+      f_hat_val_gaussian_svr,
+      trait_blup_pca[idx_val]
+    )
+
+    # train and predict with GBLUP (linear kernel krmm)
+    linear_krmm_model <- krmm(
+      Y = trait_blup_pca[idx_train],
+      Matrix_covariates = omic_df[idx_train, ],
+      method = "GBLUP"
+    )
+    f_hat_val_linear_krmm <- predict_krmm(linear_krmm_model,
+      Matrix_covariates = omic_df[idx_val, ],
+      add_fixed_effects = T
+    )
+    fold_result["GBLUP_blups_pca_pa"] <- cor(
+      f_hat_val_linear_krmm,
+      trait_blup_pca[idx_val]
+    )
+    fold_result["GBLUP_blups_pca_h2"] <- compute_genomic_h2(
+      linear_krmm_model$sigma2K_hat,
+      linear_krmm_model$sigma2E_hat
+    )
+
+    # train and predict with RKHS (non-linear Gaussian kernel krmm)
+    gaussian_krmm_model <- krmm(
+      Y = trait_blup_pca[idx_train],
+      Matrix_covariates = omic_df[idx_train, ],
+      method = "RKHS", kernel = "Gaussian",
+      rate_decay_kernel = 0.1
+    )
+    f_hat_val_gaussian_krmm <- predict_krmm(gaussian_krmm_model,
+      Matrix_covariates = omic_df[idx_val, ],
+      add_fixed_effects = T
+    )
+    fold_result["RKHS_blups_pca_pa"] <- cor(
+      f_hat_val_gaussian_krmm,
+      trait_blup_pca[idx_val]
+    )
+
+    # train and predict with LASSO
+    cv_fit_lasso_model <- cv.glmnet(
+      intercept = T, y = trait_blup_pca[idx_train],
+      x = as.matrix(omic_df[idx_train, ]),
+      type.measure = "mse", alpha = 1.0, nfold = 10,
+      parallel = T
+    )
+    f_hat_val_lasso <- predict(cv_fit_lasso_model,
+      newx = as.matrix(omic_df[idx_val, ]),
+      s = "lambda.min"
+    )
+    fold_result["LASSO_blups_pca_pa"] <- cor(
+      f_hat_val_lasso,
+      trait_blup_pca[idx_val]
+    )
     fold_result
   }
   fold_results
@@ -604,7 +889,7 @@ violin_box_plots_pa_ <- violin_box_plots_pa_ %>%
     ),
     yaxis = list(
       title = "Predictive ability (PA)",
-      range = c(0, 1)
+      range = c(-0.8, 1)
     ),
     legend = list(title = list(text = "Prediction model"))
   )
