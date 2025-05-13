@@ -86,7 +86,8 @@ options(warn = -1)
 blue_gradient <- c("#90B3E0", "#3D9BC5", "#005AB5", "#00407A", "#002A66")
 yellow_orange_gradient <- colorRampPalette(c("#FFEA00", "#FF7A00"))(5)
 green_gradient <- c("#A3E4A7", "#66C266", "#2E8B57", "#006400", "#003200")
-pa_colors_ <- c(blue_gradient, yellow_orange_gradient, green_gradient)
+violet_gradient <- c("#D1B3FF", "#A974F4", "#8A2BE2", "#5D00A6", "#3C0073")
+pa_colors_ <- c(blue_gradient, yellow_orange_gradient, green_gradient, violet_gradient)
 
 # set color vector for computed genomic heritabilities (h2)
 h2_colors_ <- c(
@@ -186,6 +187,11 @@ blup_pheno_df <- as.data.frame(fread(paste0(
   "blup_phenotypes.csv"
 )))[, c("Genotype", trait_)]
 
+blup_pca_pheno_df <- as.data.frame(fread(paste0(
+  pheno_dir_path,
+  "blup_pca_phenotypes.csv"
+)))[, c("Genotype", trait_)]
+
 # get genotype data
 omic_df <- as.data.frame(fread(paste0(
   geno_dir_path,
@@ -214,6 +220,14 @@ idx_na_inf_char_blups <- which(is.na(blup_pheno_df[, trait_]) |
   is.na(suppressWarnings(as.numeric(blup_pheno_df[, trait_]))))
 if (length(idx_na_inf_char_blups) > 0) {
   blup_pheno_df <- blup_pheno_df[-idx_na_inf_char_blups, ]
+}
+
+# remove rows with na, inf or char associated to trait for blup_pca_pheno_df
+idx_na_inf_char_blups <- which(is.na(blup_pca_pheno_df[, trait_]) |
+  is.infinite(blup_pca_pheno_df[, trait_]) |
+  is.na(suppressWarnings(as.numeric(blup_pca_pheno_df[, trait_]))))
+if (length(idx_na_inf_char_blups) > 0) {
+  blup_pca_pheno_df <- blup_pca_pheno_df[-idx_na_inf_char_blups, ]
 }
 
 # remove monomorphic markers
@@ -341,6 +355,7 @@ merged_df <- merge(
   ls_mean_pheno_df,
   by = "Genotype"
 )
+
 colnames(blup_pheno_df)[
   str_detect(colnames(blup_pheno_df),
     pattern = trait_
@@ -352,9 +367,21 @@ merged_df <- merge(
   by = "Genotype"
 )
 
+colnames(blup_pca_pheno_df)[
+  str_detect(colnames(blup_pca_pheno_df),
+    pattern = trait_
+  )
+] <- paste0(trait_, "_blup_pca")
+merged_df <- merge(
+  merged_df,
+  blup_pca_pheno_df,
+  by = "Genotype"
+)
+
 v_hat <- merged_df$v_hat
 trait_ls_mean <- merged_df[, paste0(trait_, "_ls_mean")]
 trait_blup <- merged_df[, paste0(trait_, "_blup")]
+trait_blup_pca <- merged_df[, paste0(trait_, "_blup_pca")]
 omic_df <- omic_df[rownames(omic_df) %in% merged_df$Genotype, ]
 rm(wiser_obj)
 
@@ -405,7 +432,13 @@ df_result_ <- foreach(
       "GBLUP_blups_pa" = NA,
       "GBLUP_blups_h2" = NA,
       "RKHS_blups_pa" = NA,
-      "LASSO_blups_pa" = NA
+      "LASSO_blups_pa" = NA,
+      "RF_blups_pca_pa" = NA,
+      "SVR_blups_pca_pa" = NA,
+      "GBLUP_blups_pca_pa" = NA,
+      "GBLUP_blups_pca_h2" = NA,
+      "RKHS_blups_pca_pa" = NA,
+      "LASSO_blups_pca_pa" = NA
     )
 
     # training and prediction based on v_hat (i.e. wiser phenotypes)
@@ -690,6 +723,99 @@ df_result_ <- foreach(
       trait_blup[idx_val]
     )
 
+    # training and prediction based on pca based blups
+
+    # train and predict with Random Forest
+    rf_model <- ranger(
+      y = trait_blup_pca[idx_train],
+      x = omic_df[idx_train, ],
+      mtry = ncol(omic_df) / 3,
+      num.trees = 1000
+    )
+    f_hat_val_rf <- predict(
+      rf_model,
+      omic_df[idx_val, ]
+    )
+    fold_result["RF_blups_pca_pa"] <- cor(
+      f_hat_val_rf$predictions,
+      trait_blup_pca[idx_val]
+    )
+
+    # train and predict with SVR
+    # a correct value for c_par according to Cherkassy and Ma (2004).
+    # Neural networks 17, 113-126 is defined as follows
+    c_par <- max(
+      abs(mean(trait_blup_pca[idx_train])
+      + 3 * sd(trait_blup_pca[idx_train])),
+      abs(mean(trait_blup_pca[idx_train])
+      - 3 * sd(trait_blup_pca[idx_train]))
+    )
+    gaussian_svr_model <- ksvm(
+      x = as.matrix(omic_df[idx_train, ]),
+      y = trait_blup_pca[idx_train],
+      scaled = F, type = "eps-svr",
+      kernel = "rbfdot",
+      kpar = "automatic", C = c_par, epsilon = 0.1
+    )
+    f_hat_val_gaussian_svr <- predict(
+      gaussian_svr_model,
+      as.matrix(omic_df[idx_val, ])
+    )
+    fold_result["SVR_blups_pca_pa"] <- cor(
+      f_hat_val_gaussian_svr,
+      trait_blup_pca[idx_val]
+    )
+
+    # train and predict with GBLUP (linear kernel krmm)
+    linear_krmm_model <- krmm(
+      Y = trait_blup_pca[idx_train],
+      Matrix_covariates = omic_df[idx_train, ],
+      method = "GBLUP"
+    )
+    f_hat_val_linear_krmm <- predict_krmm(linear_krmm_model,
+      Matrix_covariates = omic_df[idx_val, ],
+      add_fixed_effects = T
+    )
+    fold_result["GBLUP_blups_pca_pa"] <- cor(
+      f_hat_val_linear_krmm,
+      trait_blup_pca[idx_val]
+    )
+    fold_result["GBLUP_blups_pca_h2"] <- compute_genomic_h2(
+      linear_krmm_model$sigma2K_hat,
+      linear_krmm_model$sigma2E_hat
+    )
+
+    # train and predict with RKHS (non-linear Gaussian kernel krmm)
+    gaussian_krmm_model <- krmm(
+      Y = trait_blup_pca[idx_train],
+      Matrix_covariates = omic_df[idx_train, ],
+      method = "RKHS", kernel = "Gaussian",
+      rate_decay_kernel = 0.1
+    )
+    f_hat_val_gaussian_krmm <- predict_krmm(gaussian_krmm_model,
+      Matrix_covariates = omic_df[idx_val, ],
+      add_fixed_effects = T
+    )
+    fold_result["RKHS_blups_pca_pa"] <- cor(
+      f_hat_val_gaussian_krmm,
+      trait_blup_pca[idx_val]
+    )
+
+    # train and predict with LASSO
+    cv_fit_lasso_model <- cv.glmnet(
+      intercept = T, y = trait_blup_pca[idx_train],
+      x = as.matrix(omic_df[idx_train, ]),
+      type.measure = "mse", alpha = 1.0, nfold = 10,
+      parallel = T
+    )
+    f_hat_val_lasso <- predict(cv_fit_lasso_model,
+      newx = as.matrix(omic_df[idx_val, ]),
+      s = "lambda.min"
+    )
+    fold_result["LASSO_blups_pca_pa"] <- cor(
+      f_hat_val_lasso,
+      trait_blup_pca[idx_val]
+    )
     fold_result
   }
   fold_results
