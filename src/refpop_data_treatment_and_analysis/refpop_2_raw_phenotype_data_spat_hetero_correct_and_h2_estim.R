@@ -18,6 +18,7 @@ library(emmeans)
 library(SpATS)
 library(stringr)
 library(grid)
+library(gstat)
 library(ggplot2)
 library(grid)
 library(gridExtra)
@@ -28,9 +29,10 @@ library(anytime)
 library(foreach)
 library(parallel)
 library(doParallel)
+library(sp)
 
 # define computation mode, i.e. "local" or "cluster"
-computation_mode <- "cluster"
+computation_mode <- "local"
 
 # if comutations are local in rstudio, detect and set script path
 # automatically using rstudioapi
@@ -76,9 +78,9 @@ pheno_outliers_results_path <- "../../results/phenotype_outlier_detection/"
 output_pheno_graphics_path <- "../../results/graphics/phenotype_graphics/"
 
 # define function(s) and package(s) to export for parallelization
-func_to_export_ <- c("fread")
+func_to_export_ <- c("fread", "coordinates")
 pkgs_to_export_ <- c(
-  "data.table", "stringr", "SpATS", "lme4",
+  "data.table", "stringr", "SpATS", "lme4", "gstat", "sp",
   "lubridate", "emmeans", "plotly", "tidyr", "htmlwidgets"
 )
 
@@ -393,9 +395,85 @@ miss_data_singular_model_h2_out_vect_ <-
       }
     }
 
-    # concatenate list elements for spatial heterogeneity correction into a single df_
+    # concatenate list elements for spatial heterogeneity correction
+    # into a single df_
     df_ <- do.call(rbind, list_spats_envir_)
     df_ <- drop_na(df_)
+
+    # make a spatial plot for the adjusted phenotypes
+    df_spats_trait_ <- df_
+    df_spats_trait_$P <- as.numeric(as.character(df_spats_trait_$P))
+    df_spats_trait_$R <- as.numeric(as.character(df_spats_trait_$R))
+    colnames(df_spats_trait_)[
+      str_detect(
+        colnames(df_spats_trait_),
+        "spats_residuals"
+      )
+    ] <- "spats_residuals"
+
+    spat_resid_plot_ <- ggplot(df_spats_trait_, aes(
+      x = P, y = R,
+      fill = spats_residuals
+    )) +
+      geom_tile(color = "white") +
+      scale_fill_gradient2(
+        low = "blue", mid = "white", high = "red",
+        midpoint = 0
+      ) +
+      labs(
+        title = paste0("SpATS residual spatial plot for ", trait_),
+        x = "Position (P)",
+        y = "Row (R)",
+        fill = "SpATS residuals"
+      ) +
+      theme(
+        axis.text.x = element_text(angle = 45, hjust = 1),
+        axis.ticks.x = element_blank(),
+        panel.grid = element_blank(),
+        plot.background = element_rect(fill = "gray100", color = NA),
+        panel.background = element_rect(fill = "gray100", color = NA)
+      ) +
+      coord_fixed()
+
+    # save plot
+    ggsave(
+      paste0(
+        output_pheno_graphics_path,
+        "spats_residuals_spatial_plot_", trait_, ".png"
+      ),
+      plot = spat_resid_plot_, width = 16, height = 8, dpi = 300
+    )
+
+    # make spatial object
+    coordinates(df_spats_trait_) <- ~ P + R
+
+    # compute residuals empirical variogram
+    emp_vgm <- variogram(spats_residuals ~ 1, data = df_spats_trait_)
+
+    # plot variogram
+    variogram_plot <- ggplot(emp_vgm, aes(x = dist, y = gamma)) +
+      geom_point(color = "darkblue", size = 2) +
+      labs(
+        title = paste0("SpATS residuals variogram for ", trait_),
+        x = "Distance",
+        y = "Semivariance"
+      ) +
+      scale_y_continuous(
+        expand = c(0, 0),
+        limits = c(0, 1.1 * max(emp_vgm$gamma))
+      ) +
+      theme_minimal()
+
+    # save variogram graphic
+    ggsave(
+      filename = paste0(
+        output_pheno_graphics_path,
+        "spats_variogram_spatial_plot_", trait_, ".png"
+      ),
+      plot = variogram_plot,
+      width = 7, height = 5, dpi = 300,
+      bg = "white"
+    )
 
     # get h2 outliers associated to raw phenotypes
     env_h2_raw_pheno_vect_ <- env_h2_raw_pheno_vect_[env_h2_raw_pheno_vect_ > 0]
@@ -870,21 +948,21 @@ enumerate_tab_ <- raw_pheno_manage_df %>%
     names_prefix = "Management_type_"
   ) %>%
   rename_with(~ gsub("Management_type_", "", .))
-if ( !("2_2018" %in% colnames(enumerate_tab_)) ){
+if (!("2_2018" %in% colnames(enumerate_tab_))) {
   enumerate_tab_ <- enumerate_tab_ %>%
     add_column(
       "2_2018" = 0,
       .after = "1_2023"
     )
 }
-if ( !("2_2019" %in% colnames(enumerate_tab_)) ){
+if (!("2_2019" %in% colnames(enumerate_tab_))) {
   enumerate_tab_ <- enumerate_tab_ %>%
     add_column(
       "2_2019" = 0,
       .after = "2_2018"
     )
 }
-if ( !("3_2018" %in% colnames(enumerate_tab_)) ){
+if (!("3_2018" %in% colnames(enumerate_tab_))) {
   enumerate_tab_ <- enumerate_tab_ %>%
     add_column(
       "3_2018" = 0,
@@ -995,8 +1073,8 @@ enumerate_tab_ <- raw_pheno_manage_df %>%
     names_from = c("Country_Year"),
     values_from = "nb_trees",
     names_prefix = ""
-  ) 
-enumerate_tab_ <- enumerate_tab_[,c('Trait', sort(colnames(enumerate_tab_)[-1]))]
+  )
+enumerate_tab_ <- enumerate_tab_[, c("Trait", sort(colnames(enumerate_tab_)[-1]))]
 
 # replace NA values with 0 in enumerate_tab_
 enumerate_tab_[is.na(enumerate_tab_)] <- 0
@@ -1009,7 +1087,7 @@ melt_tab_ <- melt(enumerate_tab_, id.vars = "Trait")
 p <- ggplot(melt_tab_, aes(x = variable, y = Trait, fill = value)) +
   geom_tile() +
   geom_text(aes(label = ifelse(!is.na(value), value, "")),
-            color = "black", size = 4
+    color = "black", size = 4
   ) +
   scale_fill_gradient(
     low = "white", high = "blue", na.value = "white",
@@ -1040,5 +1118,3 @@ ggsave(
   ),
   plot = p, width = 16, height = 6, dpi = 300
 )
-
-

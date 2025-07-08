@@ -28,6 +28,7 @@ library(htmlwidgets)
 library(stringr)
 library(foreach)
 library(doParallel)
+library(pheatmap)
 
 # define computation mode, i.e. "local" or "cluster"
 computation_mode <- "local"
@@ -52,6 +53,7 @@ num_cores <- detectCores()
 geno_dir_path <- "../../data/genotype_data/"
 pheno_dir_path <- "../../data/phenotype_data/"
 progeny_data_path <- "../../data/progeny_data/"
+
 # output result path for genotype graphics
 output_geno_graphics_path <- "../../results/graphics/genotype_graphics/"
 
@@ -189,6 +191,12 @@ idx_origin_geno_names <- which(colnames(geno_df) %in% c(
   "Family",
   "Origin"
 ))
+geno_fam_origin_df <- as.data.frame(geno_df[, 1:3])
+length(unique(geno_fam_origin_df$Genotype))
+unique(geno_fam_origin_df$Family)
+length(unique(geno_fam_origin_df$Family))
+unique(geno_fam_origin_df$Origin)
+length(unique(geno_fam_origin_df$Origin))
 
 # useful : save genotype, family and origin information to genotype and phenotype
 # data folders
@@ -368,23 +376,33 @@ for (use_origin_family_or_genotype_as_label_ in
     # 2D plot
     # create base graphic
     if (identical(umap_refpop_train_data, "accessions") && predict_umap_progeny_) {
-      umap_2d_title_ <- "UMAP 2D plot for REFPOP genomic data (50000 SNP) with umap trained
+      umap_2d_title_ <- "UMAP 2D plot for apple dataset genomic data (50000 SNP) with umap trained
     on accessions, and progenies projected using trained model"
-      output_path_2d_umap <- paste0(
+      output_path_2d_umap_with_label <- paste0(
         output_geno_graphics_path,
         umap_refpop_train_data, "/",
         umap_refpop_train_data, "_genotype_refpop_progeny_projected_umap_2d_",
         use_origin_family_or_genotype_as_label_,
         "_as_label.html"
       )
+      output_path_2d_umap_without_label <- paste0(
+        output_geno_graphics_path,
+        umap_refpop_train_data, "/",
+        umap_refpop_train_data, "_genotype_refpop_progeny_projected_umap_2d.html"
+      )
     } else {
-      umap_2d_title_ <- "UMAP 2D plot for REFPOP genomic data (50000 SNP)"
-      output_path_2d_umap <- paste0(
+      umap_2d_title_ <- "UMAP 2D plot for apple dataset genomic data (50000 SNP)"
+      output_path_2d_umap_with_label <- paste0(
         output_geno_graphics_path,
         umap_refpop_train_data, "/",
         umap_refpop_train_data, "_genotype_refpop_umap_2d_",
         use_origin_family_or_genotype_as_label_,
         "_as_label.html"
+      )
+      output_path_2d_umap_without_label <- paste0(
+        output_geno_graphics_path,
+        umap_refpop_train_data, "/",
+        umap_refpop_train_data, "_genotype_refpop_umap_2d.html"
       )
     }
 
@@ -405,14 +423,15 @@ for (use_origin_family_or_genotype_as_label_ in
       )
     }
 
+    # create umap plot with label
     fig_x_y <- plot_ly(
       type = "scatter", mode = "markers"
     ) %>%
       layout(
         plot_bgcolor = "#e5ecf6",
         title = umap_2d_title_,
-        xaxis = list(title = "first component"),
-        yaxis = list(title = "second component")
+        xaxis = list(title = "First component"),
+        yaxis = list(title = "Second component")
       )
     # regroup by label
     for (label_ in unique(geno_umap_2d$label)) {
@@ -430,12 +449,27 @@ for (use_origin_family_or_genotype_as_label_ in
       legend = list(title = list(text = label_title_))
     )
     # save graphics
-    saveWidget(fig_x_y, file = output_path_2d_umap)
+    saveWidget(fig_x_y, file = output_path_2d_umap_with_label)
+
+    # create umap plot without label
+    fig_x_y <- plot_ly(
+      data = geno_umap_2d,
+      x = ~X1, y = ~X2,
+      type = "scatter", mode = "markers", color = "orange"
+    ) %>%
+      layout(
+        plot_bgcolor = "#e5ecf6",
+        title = umap_2d_title_,
+        xaxis = list(title = "First component"),
+        yaxis = list(title = "Second component")
+      )
+    # save graphics
+    saveWidget(fig_x_y, file = output_path_2d_umap_without_label)
 
     # 3D plot
     # create base graphic
     if (identical(umap_refpop_train_data, "accessions") && predict_umap_progeny_) {
-      umap_3d_title_ <- "UMAP 3D plot for REFPOP genomic data (50000 SNP) with umap trained
+      umap_3d_title_ <- "UMAP 3D plot for apple dataset genomic data (50000 SNP) with umap trained
     on accessions, and progenies projected using trained model"
       output_path_3d_umap <- paste0(
         output_geno_graphics_path,
@@ -445,7 +479,7 @@ for (use_origin_family_or_genotype_as_label_ in
         "_as_label.html"
       )
     } else {
-      umap_3d_title_ <- "UMAP 3D plot for REFPOP genomic data (50000 SNP)"
+      umap_3d_title_ <- "UMAP 3D plot for apple dataset genomic data (50000 SNP)"
       output_path_3d_umap <- paste0(
         output_geno_graphics_path,
         umap_refpop_train_data, "/",
@@ -461,9 +495,9 @@ for (use_origin_family_or_genotype_as_label_ in
       layout(
         plot_bgcolor = "#e5ecf6",
         title = umap_3d_title_,
-        xaxis = list(title = "first component"),
-        yaxis = list(title = "second component"),
-        zaxis = list(title = "third component")
+        xaxis = list(title = "First component"),
+        yaxis = list(title = "Second component"),
+        zaxis = list(title = "Third component")
       )
     # regroup by label
     for (label_ in unique(geno_umap_3d$label)) {
@@ -504,13 +538,13 @@ for (use_origin_family_or_genotype_as_label_ in
     names(color_labels_) <- labels_
     geno_pca_mat_$label <- geno_fam_orig_df_$Family
 
-    # create plot
+    # create pca plot with labels
     fig_x_y <- plot_ly(
       type = "scatter", mode = "markers"
     ) %>%
       layout(
         plot_bgcolor = "#e5ecf6",
-        title = "PCA 2D plot for REFPOP genomic data (50000 SNP)",
+        title = "PCA 2D plot for apple dataset genomic data (50000 SNP)",
         xaxis = list(title = paste0(
           names(geno_pca_exp_var_)[1], ": ",
           signif(100 * as.numeric(geno_pca_exp_var_)[1], 2), "%"
@@ -538,7 +572,7 @@ for (use_origin_family_or_genotype_as_label_ in
     # save graphics
     saveWidget(fig_x_y, file = paste0(
       output_geno_graphics_path, pca_refpop_train_data, "/",
-      pca_refpop_train_data, "_genotype_pca_family_as_label.html"
+      pca_refpop_train_data, "_genotype_refpop_pca_family_as_label.html"
     ))
   } else if (identical(use_origin_family_or_genotype_as_label_, "origin")) {
     # define colors for labels
@@ -554,7 +588,7 @@ for (use_origin_family_or_genotype_as_label_ in
     ) %>%
       layout(
         plot_bgcolor = "#e5ecf6",
-        title = "PCA 2D plot for REFPOP genomic data (50000 SNP)",
+        title = "PCA 2D plot for apple dataset genomic data (50000 SNP)",
         xaxis = list(title = paste0(
           names(geno_pca_exp_var_)[1], ": ",
           signif(100 * as.numeric(geno_pca_exp_var_)[1], 2), "%"
@@ -582,10 +616,56 @@ for (use_origin_family_or_genotype_as_label_ in
     # save graphics
     saveWidget(fig_x_y, file = paste0(
       output_geno_graphics_path, pca_refpop_train_data, "/",
-      pca_refpop_train_data, "_genotype_pca_origin_as_label.html"
+      pca_refpop_train_data, "_genotype_refpop_pca_origin_as_label.html"
     ))
   }
+
+  # create pca plot without labels
+  fig_x_y <- plot_ly(
+    data = geno_pca_mat_,
+    x = ~PC1, y = ~PC2,
+    type = "scatter", mode = "markers"
+  ) %>%
+    layout(
+      plot_bgcolor = "#e5ecf6",
+      title = "PCA 2D plot for apple dataset genomic data (50000 SNP)",
+      xaxis = list(title = paste0(
+        names(geno_pca_exp_var_)[1], ": ",
+        signif(100 * as.numeric(geno_pca_exp_var_)[1], 2), "%"
+      )),
+      yaxis = list(title = paste0(
+        names(geno_pca_exp_var_)[2], ": ",
+        signif(100 * as.numeric(geno_pca_exp_var_)[2], 2), "%"
+      ))
+    )
+  # save graphics
+  saveWidget(fig_x_y, file = paste0(
+    output_geno_graphics_path, pca_refpop_train_data, "/",
+    pca_refpop_train_data, "_genotype_refpop_pca.html"
+  ))
 }
+
+# convert geno_df to numeric matrix
+geno_mat <- scale(apply(geno_df[,-c(1:3)], 2, as.numeric), center = T, scale = F)
+k_mat <- crossprod(t(geno_mat))
+
+# create a heatmap for genomic covariance matrix
+png(
+  paste0(
+    output_geno_graphics_path,
+    "apple_genomic_covariance_heatmap.png"
+  ),
+  width = 1200, height = 1200, res = 150
+)
+pheatmap(k_mat,
+         clustering_distance_rows = "euclidean",
+         clustering_distance_cols = "euclidean",
+         main = "Apple dataset genomic covariance matrix heatmap",
+         color = colorRampPalette(c("blue", "red"))(100),
+         show_rownames = T,
+         show_colnames = T
+)
+dev.off()
 
 make_simple_plots_ <- F
 if (make_simple_plots_) {
@@ -603,12 +683,11 @@ if (make_simple_plots_) {
       names(geno_pca_exp_var_)[2], ": ",
       signif(100 * as.numeric(geno_pca_exp_var_)[2], 2), "%"
     )) + # axis labels
-    ggtitle("PCA 2D plot for REFPOP genomic data (50000 SNP) without labels") + # title of the plot
+    ggtitle("PCA 2D plot for apple dataset genomic data (50000 SNP) without labels") + # title of the plot
     theme(
       axis.text = element_text(size = 12), # axis text size
       axis.title = element_text(size = 14)
     ) # axis title text size
-
 
   ggplot(geno_umap_2d, aes(x = X1, y = X2)) +
     geom_point(color = "blue") + # Blue points
@@ -617,7 +696,7 @@ if (make_simple_plots_) {
     ) + # add individual indices as labels
     theme_minimal() + # minimal theme for the plot
     labs(x = "First component", y = "Second component") + # axis labels
-    ggtitle("UMAP 2D plot for REFPOP genomic data (50000 SNP) without labels") + # title of the plot
+    ggtitle("UMAP 2D plot for apple dataset genomic data (50000 SNP) without labels") + # title of the plot
     theme(
       axis.text = element_text(size = 12), # axis text size
       axis.title = element_text(size = 14)

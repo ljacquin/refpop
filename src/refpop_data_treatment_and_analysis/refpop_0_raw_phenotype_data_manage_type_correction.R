@@ -14,7 +14,7 @@ library(stringr)
 library(lme4)
 
 # define computation mode, i.e. "local" or "cluster"
-computation_mode <- "cluster"
+computation_mode <- "local"
 
 # if comutations are local in rstudio, detect and set script path
 # automatically using rstudioapi
@@ -80,3 +80,5 @@ fwrite(df_raw, paste0(
   pheno_dir_path,
   "raw_data_phenotype_corrected_management_types.csv"
 ))
+
+# plot(table(df_raw$Genotype))
