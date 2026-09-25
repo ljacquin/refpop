@@ -132,8 +132,8 @@ marker_prefix_ <- "AX-"
 geno_dir_path <- "../../data/genotype_data/"
 pheno_dir_path <- "../../data/phenotype_data/"
 
-# set path for wiser phenotypes estimated using whitening
-wiser_pheno_dir_path <- "../../data/phenotype_data/wiser_phenotype_estimates/"
+# set path for wiser estimated breeding values
+wiser_bv_dir_path <- "../../data/phenotype_data/wiser_breeding_value_estimates/"
 
 # output result path for genotype graphics
 # output_pred_results_path <- "../../results/gwas/"
@@ -176,19 +176,19 @@ if (!dir.exists(paste0(output_pred_graphics_path, trait_))) {
   dir.create(paste0(output_pred_graphics_path, trait_))
 }
 
-# get wiser and adjusted ls-means phenotypes, and genotype data (genomic data)
+# get wiser and adjusted ls-means estimated breeding values, and genotype data (genomic data)
 
-# get trait wiser phenotypes
+# get trait wiser estimated breeding values
 wiser_trait_ <- readRDS(paste0(
-  wiser_pheno_dir_path,
+  wiser_bv_dir_path,
   paste0("wiser_obj_linear_kernel_", trait_)
-))$wiser_phenotypes
+))$wiser_breeding_values
 colnames(wiser_trait_)[2] <- trait_
 
-# get trait ls-means phenotypes
+# get trait ls-means estimated breeding values
 ls_means_trait_ <- as.data.frame(fread(paste0(
   pheno_dir_path,
-  "adjusted_ls_mean_phenotypes.csv"
+  "adjusted_ls_mean_breeding_values.csv"
 )))[, c("Genotype", trait_)]
 
 # get marker data
@@ -349,7 +349,7 @@ if (compute_umap_for_mlmm_) {
 wiser_y <- wiser_trait_[, trait_]
 names(wiser_y) <- wiser_trait_$Genotype
 
-# fit mlmm forward stepwise regression algorithm for wiser phenotypes
+# fit mlmm forward stepwise regression algorithm for wiser estimated breeding values
 mlmm_components_wiser_ <- mlmm_allmodels_(
   wiser_y, list(marker_df), list(k_mat),
   maxsteps = max_step_mlmm_fwd_reg_
@@ -376,7 +376,7 @@ manhattan_plot_done_ <- manhattan_plot_(mlmm_p_val_wiser_,
   threshold_ = -log10(threshold_),
   main_ = paste0(
     "MLMM GWAS for ", trait_,
-    " WISER phenotypes for REFPOP,
+    " WISER estimated breeding values for REFPOP,
     using a corrected Bonferroni threshold for 0.05"
   )
 )
@@ -402,7 +402,7 @@ deg_freed_step_opt_model_ <- sort(unique(mlmm_deg_freedom_wiser_[[
   optimal_model_associated_step_ + 1
 ]]))
 
-# make mlmm gwas qqplot for trait WISER estimated phenotypes
+# make mlmm gwas qqplot for trait WISER estimated breeding values
 qq_plot_done_ <- qqplot_f_distrib_mlmm_gwas_(
   p_val_obs_ = p_val_step_opt_model_,
   df1 = as.numeric(deg_freed_step_opt_model_[1]),
@@ -410,7 +410,7 @@ qq_plot_done_ <- qqplot_f_distrib_mlmm_gwas_(
   seed_ = 42,
   main_ = paste0(
     "MLMM GWAS Q-Q plot for ",
-    trait_, " WISER estimated phenotypes"
+    trait_, " WISER estimated breeding values"
   ),
   output_path_ = paste0(output_pred_graphics_path, trait_, "/"),
   file_name_ = paste0(trait_, "_wiser_qq_plot.png")
@@ -451,7 +451,7 @@ if (length(signif_snp_threshold_$SNP) > 0) {
     geno_box_plot_ <- genotypes_boxplot_(
       X = marker_matrix,
       Y = wiser_y,
-      ylab_ = paste0(trait_, " wiser phenotypes"),
+      ylab_ = paste0(trait_, " wiser estimated breeding values"),
       xlab_ = paste0(
         "Genotype alleles combination on chromosome ",
         map_df$chromosome[match(snp_, map_df$snp.name)]
@@ -490,7 +490,7 @@ if (length(signif_snp_threshold_$SNP) > 0) {
 ls_means_y <- ls_means_trait_[, trait_]
 names(ls_means_y) <- ls_means_trait_$Genotype
 
-# fit mlmm forward stepwise regression algorithm for adjusted ls-means phenotypes
+# fit mlmm forward stepwise regression algorithm for adjusted ls-means estimated breeding values
 mlmm_components_ls_means_ <- mlmm_allmodels_(
   ls_means_y, list(marker_df), list(k_mat),
   maxsteps = max_step_mlmm_fwd_reg_
@@ -518,7 +518,7 @@ manhattan_plot_done_ <- manhattan_plot_(
   threshold_ = -log10(threshold_),
   main_ = paste0(
     "MLMM GWAS for ", trait_,
-    " LS-means phenotypes for REFPOP,
+    " LS-means estimated breeding values for REFPOP,
     using a corrected Bonferroni threshold for 0.05"
   )
 )
@@ -544,7 +544,7 @@ deg_freed_step_opt_model_ <- sort(unique(mlmm_deg_freedom_ls_means_[[
   optimal_model_associated_step_ + 1
 ]]))
 
-# make mlmm gwas qqplot for trait adjsuted ls-means estimated phenotypes
+# make mlmm gwas qqplot for trait adjsuted ls-means estimated breeding values
 qq_plot_done_ <- qqplot_f_distrib_mlmm_gwas_(
   p_val_obs_ = p_val_step_opt_model_,
   df1 = as.numeric(deg_freed_step_opt_model_[1]),
@@ -552,7 +552,7 @@ qq_plot_done_ <- qqplot_f_distrib_mlmm_gwas_(
   seed_ = 42,
   main_ = paste0(
     "MLMM GWAS Q-Q plot for ",
-    trait_, " adjusted LS-means estimated phenotypes"
+    trait_, " adjusted LS-means estimated breeding values"
   ),
   output_path_ = paste0(output_pred_graphics_path, trait_, "/"),
   file_name_ = paste0(trait_, "_ls_means_qq_plot.png")
@@ -593,7 +593,7 @@ if (length(signif_snp_threshold_$SNP) > 0) {
     geno_box_plot_ <- genotypes_boxplot_(
       X = marker_matrix,
       Y = ls_means_y,
-      ylab_ = paste0(trait_, " adjusted LS-means phenotypes"),
+      ylab_ = paste0(trait_, " adjusted LS-means estimated breeding values"),
       xlab_ = paste0(
         "Genotype alleles combination on chromosome ",
         map_df$chromosome[match(snp_, map_df$snp.name)]
@@ -634,7 +634,7 @@ if (compute_pca_for_mlmm_) {
   ls_means_y <- ls_means_trait_[, trait_]
   names(ls_means_y) <- ls_means_trait_$Genotype
 
-  # fit mlmm forward stepwise regression algorithm for adjusted ls-means phenotypes
+  # fit mlmm forward stepwise regression algorithm for adjusted ls-means estimated breeding values
   # while accounting for population structure
   mlmm_components_ls_means_ <- mlmm_allmodels_(
     ls_means_y, list(marker_df), list(k_mat),
@@ -664,7 +664,7 @@ if (compute_pca_for_mlmm_) {
     threshold_ = -log10(threshold_),
     main_ = paste0(
       "MLMM PCA corrected GWAS for ", trait_,
-      " LS-means phenotypes for REFPOP,
+      " LS-means estimated breeding values for REFPOP,
     using a corrected Bonferroni threshold for 0.05"
     )
   )
@@ -690,7 +690,7 @@ if (compute_pca_for_mlmm_) {
     optimal_model_associated_step_ + 1
   ]]))
 
-  # make mlmm gwas qqplot for trait adjsuted ls-means estimated phenotypes
+  # make mlmm gwas qqplot for trait adjsuted ls-means estimated breeding values
   qq_plot_done_ <- qqplot_f_distrib_mlmm_gwas_(
     p_val_obs_ = p_val_step_opt_model_,
     df1 = as.numeric(deg_freed_step_opt_model_[1]),
@@ -698,7 +698,7 @@ if (compute_pca_for_mlmm_) {
     seed_ = 42,
     main_ = paste0(
       "MLMM PCA corrected GWAS Q-Q plot for ",
-      trait_, " adjusted LS-means estimated phenotypes"
+      trait_, " adjusted LS-means estimated breeding values"
     ),
     output_path_ = paste0(output_pred_graphics_path, trait_, "/"),
     file_name_ = paste0(trait_, "_pca_pop_struct_ls_means_qq_plot.png")
@@ -739,7 +739,7 @@ if (compute_pca_for_mlmm_) {
       geno_box_plot_ <- genotypes_boxplot_(
         X = marker_matrix,
         Y = ls_means_y,
-        ylab_ = paste0(trait_, " adjusted LS-means phenotypes"),
+        ylab_ = paste0(trait_, " adjusted LS-means estimated breeding values"),
         xlab_ = paste0(
           "Genotype alleles combination on chromosome ",
           map_df$chromosome[match(snp_, map_df$snp.name)]
@@ -781,7 +781,7 @@ if (compute_umap_for_mlmm_) {
   ls_means_y <- ls_means_trait_[, trait_]
   names(ls_means_y) <- ls_means_trait_$Genotype
 
-  # fit mlmm forward stepwise regression algorithm for adjusted ls-means phenotypes
+  # fit mlmm forward stepwise regression algorithm for adjusted ls-means estimated breeding values
   # while accounting for population structure
   mlmm_components_ls_means_ <- mlmm_allmodels_(
     ls_means_y, list(marker_df), list(k_mat),
@@ -811,7 +811,7 @@ if (compute_umap_for_mlmm_) {
     threshold_ = -log10(threshold_),
     main_ = paste0(
       "MLMM UMAP corrected GWAS for ", trait_,
-      " LS-means phenotypes for REFPOP,
+      " LS-means estimated breeding values for REFPOP,
     using a corrected Bonferroni threshold for 0.05"
     )
   )
@@ -837,7 +837,7 @@ if (compute_umap_for_mlmm_) {
     optimal_model_associated_step_ + 1
   ]]))
 
-  # make mlmm gwas qqplot for trait adjsuted ls-means estimated phenotypes
+  # make mlmm gwas qqplot for trait adjsuted ls-means estimated breeding values
   qq_plot_done_ <- qqplot_f_distrib_mlmm_gwas_(
     p_val_obs_ = p_val_step_opt_model_,
     df1 = as.numeric(deg_freed_step_opt_model_[1]),
@@ -845,7 +845,7 @@ if (compute_umap_for_mlmm_) {
     seed_ = 42,
     main_ = paste0(
       "MLMM UMAP corrected GWAS Q-Q plot for ",
-      trait_, " adjusted LS-means estimated phenotypes"
+      trait_, " adjusted LS-means estimated breeding values"
     ),
     output_path_ = paste0(output_pred_graphics_path, trait_, "/"),
     file_name_ = paste0(trait_, "_umap_pop_struct_ls_means_qq_plot.png")
@@ -886,7 +886,7 @@ if (compute_umap_for_mlmm_) {
       geno_box_plot_ <- genotypes_boxplot_(
         X = marker_matrix,
         Y = ls_means_y,
-        ylab_ = paste0(trait_, " adjusted LS-means phenotypes"),
+        ylab_ = paste0(trait_, " adjusted LS-means estimated breeding values"),
         xlab_ = paste0(
           "Genotype alleles combination on chromosome ",
           map_df$chromosome[match(snp_, map_df$snp.name)]

@@ -120,10 +120,10 @@ k_folds_ <- 5
 # define number of shuffles
 n_shuff_ <- 20
 
-# get phenotype and genotype data, and family and origin info
-pheno_df <- as.data.frame(fread(paste0(
+# get breeding values and genotype data, and family and origin info
+bv_df <- as.data.frame(fread(paste0(
   pheno_dir_path,
-  "adjusted_ls_mean_phenotypes.csv"
+  "adjusted_ls_mean_breeding_values.csv"
 )))
 
 geno_df <- as.data.frame(fread(paste0(
@@ -136,7 +136,7 @@ geno_df <- remove_monomorphic_markers(geno_df)
 monomorphic_markers_list_ <- geno_df$monomorphic_markers
 geno_df <- geno_df$filtered_df
 
-# set genotypes in the same order between pheno and geno data
+# set genotypes in the same order between bv and geno data
 # and sample markers according to a uniform distribution
 set.seed(123)
 snp_sample_size_ <- 50e3
@@ -148,23 +148,23 @@ geno_df <- geno_df[, c(
   idx_snp_sample_size_
 )]
 
-# merge pheno_df and geno_df for integrity of analyses and slice the merged df
-merged_df <- merge(pheno_df, geno_df, by = "Genotype")
-pheno_df <- merged_df[, traits_]
+# merge bv_df and geno_df for integrity of analyses and slice the merged df
+merged_df <- merge(bv_df, geno_df, by = "Genotype")
+bv_df <- merged_df[, traits_]
 geno_df <- merged_df[, -match(
   c("Genotype", traits_),
   colnames(merged_df)
 )]
 
 # remove na for analyzed trait_ and corresponding rows for marker data
-idx_na_trait_ <- which(is.na(pheno_df[, trait_]))
+idx_na_trait_ <- which(is.na(bv_df[, trait_]))
 if (length(idx_na_trait_) > 0) {
-  pheno_df <- pheno_df[-idx_na_trait_, ]
+  bv_df <- bv_df[-idx_na_trait_, ]
   geno_df <- geno_df[-idx_na_trait_, ]
 }
 
-# get number of phenotypes
-n <- nrow(pheno_df)
+# get number of breeding values
+n <- nrow(bv_df)
 
 # register parallel backend
 cl <- makeCluster(detectCores())
@@ -200,7 +200,7 @@ df_result_ <- foreach(
 
     # train and predict with Random Forest
     rf_model <- ranger(
-      y = pheno_df[idx_train, trait_],
+      y = bv_df[idx_train, trait_],
       x = geno_df[idx_train, ],
       mtry = ncol(geno_df) / 3,
       num.trees = 1000
@@ -211,40 +211,40 @@ df_result_ <- foreach(
     )
     fold_result["RF"] <- cor(
       f_hat_val_rf$predictions,
-      pheno_df[idx_val, trait_]
+      bv_df[idx_val, trait_]
     )
 
     # train and predict with SVR
     # a correct value for c_par according to Cherkassy and Ma (2004).
     # Neural networks 17, 113-126 is defined as follows
     c_par <- max(
-      abs(mean(pheno_df[idx_train, trait_])
-      + 3 * sd(pheno_df[idx_train, trait_])),
-      abs(mean(pheno_df[idx_train, trait_])
-      - 3 * sd(pheno_df[idx_train, trait_]))
+      abs(mean(bv_df[idx_train, trait_])
+      + 3 * sd(bv_df[idx_train, trait_])),
+      abs(mean(bv_df[idx_train, trait_])
+      - 3 * sd(bv_df[idx_train, trait_]))
     )
     gaussian_svr_model <- ksvm(
       x = as.matrix(geno_df[idx_train, ]),
-      y = pheno_df[idx_train, trait_],
+      y = bv_df[idx_train, trait_],
       scaled = F, type = "eps-svr",
       kernel = "rbfdot",
       kpar = "automatic", C = c_par, epsilon = 0.1
     )
     idx_sv_ <- SVindex(gaussian_svr_model)
-    sv_ <- pheno_df[idx_train, "Genotype"][idx_sv_]
+    sv_ <- bv_df[idx_train, "Genotype"][idx_sv_]
     f_hat_val_gaussian_svr <- predict(
       gaussian_svr_model,
       as.matrix(geno_df[idx_val, ])
     )
     fold_result["SVR"] <- cor(
       f_hat_val_gaussian_svr,
-      pheno_df[idx_val, trait_]
+      bv_df[idx_val, trait_]
     )
     fold_result["SVR_support_vectors"] <- paste0(sv_, collapse = ", ")
 
     # train and predict with GBLUP (linear kernel krmm)
     linear_krmm_model <- krmm(
-      Y = pheno_df[idx_train, trait_],
+      Y = bv_df[idx_train, trait_],
       Matrix_covariates = geno_df[idx_train, ],
       method = "GBLUP"
     )
@@ -254,12 +254,12 @@ df_result_ <- foreach(
     )
     fold_result["GBLUP"] <- cor(
       f_hat_val_linear_krmm,
-      pheno_df[idx_val, trait_]
+      bv_df[idx_val, trait_]
     )
 
     # train and predict with RKHS (non-linear Gaussian kernel krmm)
     gaussian_krmm_model <- krmm(
-      Y = pheno_df[idx_train, trait_],
+      Y = bv_df[idx_train, trait_],
       Matrix_covariates = geno_df[idx_train, ],
       method = "RKHS", kernel = "Gaussian",
       rate_decay_kernel = 0.1
@@ -270,12 +270,12 @@ df_result_ <- foreach(
     )
     fold_result["RKHS"] <- cor(
       f_hat_val_gaussian_krmm,
-      pheno_df[idx_val, trait_]
+      bv_df[idx_val, trait_]
     )
 
     # train and predict with LASSO
     cv_fit_lasso_model <- cv.glmnet(
-      intercept = T, y = pheno_df[idx_train, trait_],
+      intercept = T, y = bv_df[idx_train, trait_],
       x = as.matrix(geno_df[idx_train, ]),
       type.measure = "mse", alpha = 1.0, nfold = 10,
       parallel = T
@@ -286,7 +286,7 @@ df_result_ <- foreach(
     )
     fold_result["LASSO"] <- cor(
       f_hat_val_lasso,
-      pheno_df[idx_val, trait_]
+      bv_df[idx_val, trait_]
     )
 
     fold_result

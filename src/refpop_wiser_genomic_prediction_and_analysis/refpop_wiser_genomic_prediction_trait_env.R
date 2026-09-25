@@ -106,8 +106,8 @@ pkgs_to_export_ <- c(
 geno_dir_path <- "../../data/genotype_data/"
 pheno_dir_path <- "../../data/phenotype_data/"
 
-# set path for wiser phenotypes estimated using whitening
-wiser_pheno_dir_path <- "../../data/phenotype_data/wiser_phenotype_estimates_env/"
+# set path for wiser estimated breeding values
+wiser_bv_dir_path <- "../../data/phenotype_data/wiser_breeding_value_estimates_env/"
 
 # output result path for genotype graphics
 output_pred_results_path <- "../../results/genomic_prediction_env/"
@@ -221,25 +221,25 @@ rownames(omic_df) <- merged_df$Genotype
 n <- length(merged_df$Genotype)
 rm(merged_df)
 
-# compute wiser phenotype, corrected for fixed effects which takes into account
+# compute wiser breeding values, corrected for fixed effects which takes into account
 # genetic covariance between genotypes, using a whitening algorithm and
 # approximate bayesian computation (ABC)
 # since computations are long, save results for later use
 
-# if exist, read corrected phenotype data for trait associated to the
+# if exist, read estimated breeding values data for trait associated to the
 # defined kernel
 if (file.exists(paste0(
-  wiser_pheno_dir_path,
-  "wiser_phenotype_estimates_env_", kernel_,
+  wiser_bv_dir_path,
+  "wiser_breeding_value_estimates_env_", kernel_,
   "_kernel_", trait_, "_", env_, ".csv"
 ))) {
-  # load corrected phenotypes if file exists
+  # load estimated breeding values if file exists
   wiser_obj <- readRDS(paste0(
-    wiser_pheno_dir_path,
+    wiser_bv_dir_path,
     "wiser_obj_", kernel_,
     "_kernel_", trait_, "_", env_
   ))
-  wiser_pheno_df <- wiser_obj$wiser_phenotypes
+  wiser_bv_df <- wiser_obj$wiser_breeding_values
   omic_df <- wiser_obj$wiser_omic_data
   rm(wiser_obj)
 } else {
@@ -264,9 +264,9 @@ if (file.exists(paste0(
   opt_alpha_ <- as.numeric(opt_white_reg_par$opt_alpha_)
   rm(opt_white_reg_par)
 
-  # estimate wiser phenotype
+  # estimate wiser breeding values
   start_time_ <- Sys.time()
-  wiser_obj <- estimate_wiser_phenotype(omic_df, raw_pheno_df, trait_,
+  wiser_obj <- estimate_wiser_breeding_value(omic_df, raw_pheno_df, trait_,
     fixed_effects_vars = c(
       "Row", "Position"
     ),
@@ -288,20 +288,20 @@ if (file.exists(paste0(
     signif(time_taken_, 3)
   ))
 
-  # get estimated wiser phenotype, and associated marker data
-  wiser_pheno_df <- wiser_obj$wiser_phenotypes
+  # get estimated wiser breeding value, and associated marker data
+  wiser_bv_df <- wiser_obj$wiser_breeding_values
   omic_df <- wiser_obj$wiser_omic_data
 
-  # save wiser phenotype for kernel and trait
-  fwrite(wiser_obj$wiser_phenotypes, paste0(
-    wiser_pheno_dir_path,
-    "wiser_phenotype_estimates_env_", kernel_,
+  # save wiser estimated breeding values for kernel and trait
+  fwrite(wiser_obj$wiser_breeding_values, paste0(
+    wiser_bv_dir_path,
+    "wiser_breeding_value_estimates_env_", kernel_,
     "_kernel_", trait_, "_", env_, ".csv"
   ), row.names = F, col.names = T)
 
   # save wiser object for kernel and trait
   saveRDS(wiser_obj, paste0(
-    wiser_pheno_dir_path,
+    wiser_bv_dir_path,
     "wiser_obj_", kernel_,
     "_kernel_", trait_, "_", env_
   ))
@@ -326,8 +326,8 @@ if (file.exists(paste0(
   ))
 }
 
-# merge ls_means and wiser phenotypes by genotype for integrity of analyses
-merged_df <- merge(ls_means_df, wiser_pheno_df, by = "Genotype")
+# merge ls_means and wiser estimated breeding values by genotype for integrity of analyses
+merged_df <- merge(ls_means_df, wiser_bv_df, by = "Genotype")
 ls_means_trait_ <- merged_df[, trait_]
 v_hat <- merged_df[, "v_hat"]
 omic_df <- omic_df[rownames(omic_df) %in% merged_df$Genotype, ]
@@ -337,7 +337,7 @@ if (!dir.exists(paste0(output_pred_graphics_path, trait_, "/"))) {
   dir.create(paste0(output_pred_graphics_path, trait_, "/"))
 }
 
-# make a scatter plot between ls-means and wiser phenotypes with a simple linear
+# make a scatter plot between ls-means and wiser estimated breeding values with a simple linear
 # regression fit
 ls_means_wiser_plot_ <- create_scatter_plot_with_linear_fit(
   merged_df, trait_, env_
@@ -345,7 +345,7 @@ ls_means_wiser_plot_ <- create_scatter_plot_with_linear_fit(
 
 # save ls_means_wiser_plot_
 saveWidget(ls_means_wiser_plot_, file = paste0(
-  output_pred_graphics_path, trait_, "/ls_means_wiser_pheno_plot_",
+  output_pred_graphics_path, trait_, "/ls_means_wiser_bv_plot_",
   trait_, "_", kernel_, "_kernel_", snp_sample_size_, "_SNP_",
   env_, ".html"
 ))
@@ -391,7 +391,7 @@ df_result_ <- foreach(
       "LASSO_ls_means_pa" = NA
     )
 
-    # training and prediction based on computed phenotypes, i.e. v_hat
+    # training and prediction based on estimated breeding values, i.e. v_hat
 
     # train and predict with Random Forest
     rf_model <- ranger(
