@@ -1361,8 +1361,8 @@ generate_row_position_variables_by_environment <- function(df) {
   return(df)
 }
 
-# function which computes phenotypes approximating genetic values using whitening
-estimate_wiser_phenotype <- function(omic_df, raw_pheno_df, trait_,
+# function which computes breeding values approximating genetic values using whitening
+estimate_wiser_breeding_value <- function(omic_df, raw_pheno_df, trait_,
                                      fixed_effects_vars = c(
                                        "Envir", "Row", "Position"
                                      ),
@@ -1466,12 +1466,12 @@ estimate_wiser_phenotype <- function(omic_df, raw_pheno_df, trait_,
       # extract estimated fixed effects
       beta_hat <- transform_and_ls_obj$beta_hat
 
-      # compute phenotypic values using ols
+      # compute breeding values using ols
       v_hat <- ginv(t(transform_and_ls_obj$z_mat) %*% transform_and_ls_obj$z_mat) %*%
         t(transform_and_ls_obj$z_mat) %*% transform_and_ls_obj$xi_hat
 
-      # save wiser fixed effects estimates in a data frame
-      wiser_pheno_df <- data.frame(
+      # save wiser breeding values in a data frame
+      wiser_bv_df <- data.frame(
         "Genotype" = str_replace_all(
           colnames(transform_and_ls_obj$z_mat),
           pattern = "Genotype_",
@@ -1480,7 +1480,7 @@ estimate_wiser_phenotype <- function(omic_df, raw_pheno_df, trait_,
         "v_hat" = v_hat
       )
 
-      # save wiser phenotypes in a data frame
+      # save wiser fixed effects estimates in a data frame
       wiser_fix_eff_df <- data.frame(
         "fixed_effect_var" = colnames(transform_and_ls_obj$x_mat),
         "beta_hat_var" = beta_hat
@@ -1492,14 +1492,14 @@ estimate_wiser_phenotype <- function(omic_df, raw_pheno_df, trait_,
         "w_mat" = transform_and_ls_obj$w_mat,
         "wiser_fixed_effect_estimates" = wiser_fix_eff_df,
         "wiser_abc_variance_component_estimates" = var_comp_abc_obj,
-        "wiser_phenotypes" = wiser_pheno_df,
+        "wiser_breeding_values" = wiser_bv_df,
         "wiser_z_mat" = transform_and_ls_obj$z_mat,
         "wiser_x_mat" = transform_and_ls_obj$x_mat,
         "wiser_x_mat_tilde" = transform_and_ls_obj$x_mat_tilde,
         "wiser_xi_hat" = transform_and_ls_obj$xi_hat,
         "wiser_y_hat" = transform_and_ls_obj$y_hat,
         "wiser_y" = transform_and_ls_obj$y,
-        "wiser_xi_phenotypes" <- transform_and_ls_obj$xi_phenotypes
+        "wiser_xi_phenotypes" = transform_and_ls_obj$xi_phenotypes
       ))
     },
     error = function(e) {
@@ -1523,7 +1523,7 @@ perform_kfold_cv_wiser <- function(omic_df, raw_pheno_df, trait_,
                                    wiser_obj_local) {
   # extract the local wiser object
   omic_df <- wiser_obj_local$wiser_omic_data
-  v_hat <- wiser_obj_local$wiser_phenotypes$v_hat
+  v_hat <- wiser_obj_local$wiser_breeding_values$v_hat
 
   # set seed for reproducibility and get set of indices
   set.seed(123)
@@ -1699,7 +1699,7 @@ optimize_whitening_and_regularization <- function(
     method <- unique_combinations$whitening_method[j]
     alpha <- unique_combinations$alpha_[j]
 
-    wiser_obj <- estimate_wiser_phenotype(
+    wiser_obj <- estimate_wiser_breeding_value(
       omic_df, raw_pheno_df, trait_,
       fixed_effects_vars,
       fixed_effects_vars_computed_as_factor,
@@ -1848,16 +1848,16 @@ create_scatter_plot_with_linear_fit <- function(df_, trait_, env_) {
     layout(
       title = list(
         text = paste0(
-          trait_, " LS-means versus WISER phenotypes for ",
+          trait_, " LS-means versus WISER breeding values for ",
           env_
         ),
         x = 0.5
       ),
       xaxis = list(
-        title = "Genotype LS-means phenotype"
+        title = "Genotype LS-means breeding value"
       ),
       yaxis = list(
-        title = "Genotype WISER phenotype"
+        title = "Genotype WISER breeding value"
       ),
       annotations = list(
         x = x_annotation,

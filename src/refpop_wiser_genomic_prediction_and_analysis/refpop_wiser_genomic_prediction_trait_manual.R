@@ -112,8 +112,8 @@ pkgs_to_export_ <- c(
 geno_dir_path <- "../../data/genotype_data/"
 pheno_dir_path <- "../../data/phenotype_data/"
 
-# set path for wiser phenotypes estimated using whitening
-wiser_pheno_dir_path <- "../../data/phenotype_data/wiser_phenotype_estimates/"
+# set path for wiser estimated breeding values
+wiser_bv_dir_path <- "../../data/phenotype_data/wiser_breeding_value_estimates/"
 
 # output result path for genotype graphics
 output_pred_results_path <- "../../results/genomic_prediction/"
@@ -172,24 +172,24 @@ n_shuff_ <- 20
 # according to a uniform distribution
 snp_sample_size_ <- 50e3
 
-# get raw, adjusted ls-means phenotype and genotype data
+# get raw, adjusted ls-means estimated breeding values and genotype data
 raw_pheno_df <- as.data.frame(fread(paste0(
   pheno_dir_path, "phenotype_data.csv"
 )))
 
-ls_mean_pheno_df <- as.data.frame(fread(paste0(
+ls_mean_bv_df <- as.data.frame(fread(paste0(
   pheno_dir_path,
-  "adjusted_ls_mean_phenotypes.csv"
+  "adjusted_ls_mean_breeding_values.csv"
 )))[, c("Genotype", trait_)]
 
-blup_pheno_df <- as.data.frame(fread(paste0(
+blup_bv_df <- as.data.frame(fread(paste0(
   pheno_dir_path,
-  "blup_phenotypes.csv"
+  "blup_breeding_values.csv"
 )))[, c("Genotype", trait_)]
 
-blup_pca_pheno_df <- as.data.frame(fread(paste0(
+blup_pca_bv_df <- as.data.frame(fread(paste0(
   pheno_dir_path,
-  "blup_pca_phenotypes.csv"
+  "blup_pca_breeding_values.csv"
 )))[, c("Genotype", trait_)]
 
 # get genotype data
@@ -206,28 +206,28 @@ if (length(idx_na_inf_char_raw) > 0) {
   raw_pheno_df <- raw_pheno_df[-idx_na_inf_char_raw, ]
 }
 
-# remove rows with na, inf or char associated to trait for ls_mean_pheno_df
-idx_na_inf_char_ls_means <- which(is.na(ls_mean_pheno_df[, trait_]) |
-  is.infinite(ls_mean_pheno_df[, trait_]) |
-  is.na(suppressWarnings(as.numeric(ls_mean_pheno_df[, trait_]))))
+# remove rows with na, inf or char associated to trait for ls_mean_bv_df
+idx_na_inf_char_ls_means <- which(is.na(ls_mean_bv_df[, trait_]) |
+  is.infinite(ls_mean_bv_df[, trait_]) |
+  is.na(suppressWarnings(as.numeric(ls_mean_bv_df[, trait_]))))
 if (length(idx_na_inf_char_ls_means) > 0) {
-  ls_mean_pheno_df <- ls_mean_pheno_df[-idx_na_inf_char_ls_means, ]
+  ls_mean_bv_df <- ls_mean_bv_df[-idx_na_inf_char_ls_means, ]
 }
 
-# remove rows with na, inf or char associated to trait for blup_pheno_df
-idx_na_inf_char_blups <- which(is.na(blup_pheno_df[, trait_]) |
-  is.infinite(blup_pheno_df[, trait_]) |
-  is.na(suppressWarnings(as.numeric(blup_pheno_df[, trait_]))))
+# remove rows with na, inf or char associated to trait for blup_bv_df
+idx_na_inf_char_blups <- which(is.na(blup_bv_df[, trait_]) |
+  is.infinite(blup_bv_df[, trait_]) |
+  is.na(suppressWarnings(as.numeric(blup_bv_df[, trait_]))))
 if (length(idx_na_inf_char_blups) > 0) {
-  blup_pheno_df <- blup_pheno_df[-idx_na_inf_char_blups, ]
+  blup_bv_df <- blup_bv_df[-idx_na_inf_char_blups, ]
 }
 
-# remove rows with na, inf or char associated to trait for blup_pca_pheno_df
-idx_na_inf_char_blups <- which(is.na(blup_pca_pheno_df[, trait_]) |
-  is.infinite(blup_pca_pheno_df[, trait_]) |
-  is.na(suppressWarnings(as.numeric(blup_pca_pheno_df[, trait_]))))
+# remove rows with na, inf or char associated to trait for blup_pca_bv_df
+idx_na_inf_char_blups <- which(is.na(blup_pca_bv_df[, trait_]) |
+  is.infinite(blup_pca_bv_df[, trait_]) |
+  is.na(suppressWarnings(as.numeric(blup_pca_bv_df[, trait_]))))
 if (length(idx_na_inf_char_blups) > 0) {
-  blup_pca_pheno_df <- blup_pca_pheno_df[-idx_na_inf_char_blups, ]
+  blup_pca_bv_df <- blup_pca_bv_df[-idx_na_inf_char_blups, ]
 }
 
 # remove monomorphic markers
@@ -245,26 +245,26 @@ omic_df <- omic_df[, c(
   idx_snp_sample_size_
 )]
 
-# merge ls_mean_pheno_df and omic_df for integrity of analyses
-merged_df <- merge(ls_mean_pheno_df, omic_df, by = "Genotype")
-ls_mean_pheno_df <- merged_df[, c("Genotype", trait_)]
+# merge ls_mean_bv_df and omic_df for integrity of analyses
+merged_df <- merge(ls_mean_bv_df, omic_df, by = "Genotype")
+ls_mean_bv_df <- merged_df[, c("Genotype", trait_)]
 omic_df <- merged_df[, -match(c("Genotype", trait_), colnames(merged_df))]
 rownames(omic_df) <- merged_df$Genotype
 rm(merged_df)
 
-# compute wiser phenotypes,
+# estimate wiser breeding_values,
 # since computations are long, save results for later use
 
-# if exist, read corrected phenotype data for trait associated to the
+# if exist, read estimated breeding values data for trait associated to the
 # defined kernel
 if (file.exists(paste0(
-  wiser_pheno_dir_path,
+  wiser_bv_dir_path,
   "wiser_obj_", kernel_,
   "_kernel_", trait_
 ))) {
-  # load corrected phenotypes if file exists
+  # load estimated breeding values if file exists
   wiser_obj <- readRDS(paste0(
-    wiser_pheno_dir_path,
+    wiser_bv_dir_path,
     "wiser_obj_", kernel_,
     "_kernel_", trait_
   ))
@@ -290,9 +290,9 @@ if (file.exists(paste0(
   opt_alpha_ <- as.numeric(opt_white_reg_par$opt_alpha_)
   rm(opt_white_reg_par)
 
-  # estimate wiser phenotype
+  # estimate wiser breeding values
   start_time_ <- Sys.time()
-  wiser_obj <- estimate_wiser_phenotype(omic_df, raw_pheno_df, trait_,
+  wiser_obj <- estimate_wiser_breeding_value(omic_df, raw_pheno_df, trait_,
     fixed_effects_vars = c(
       "Envir", "Row", "Position"
     ),
@@ -316,7 +316,7 @@ if (file.exists(paste0(
 
   # save wiser object for kernel and trait
   saveRDS(wiser_obj, paste0(
-    wiser_pheno_dir_path,
+    wiser_bv_dir_path,
     "wiser_obj_", kernel_,
     "_kernel_", trait_
   ))
@@ -343,38 +343,38 @@ if (file.exists(paste0(
   ))
 }
 
-# before k-folds cv, ascertain that blups, ls-means and wiser phenotypes are
+# before k-folds cv, ascertain that blups, ls-means and wiser estimated breeding values are
 # associated to the same genotypes
-colnames(ls_mean_pheno_df)[
-  str_detect(colnames(ls_mean_pheno_df),
+colnames(ls_mean_bv_df)[
+  str_detect(colnames(ls_mean_bv_df),
     pattern = trait_
   )
 ] <- paste0(trait_, "_ls_mean")
 merged_df <- merge(
-  wiser_obj$wiser_phenotypes,
-  ls_mean_pheno_df,
+  wiser_obj$wiser_breeding_values,
+  ls_mean_bv_df,
   by = "Genotype"
 )
 
-colnames(blup_pheno_df)[
-  str_detect(colnames(blup_pheno_df),
+colnames(blup_bv_df)[
+  str_detect(colnames(blup_bv_df),
     pattern = trait_
   )
 ] <- paste0(trait_, "_blup")
 merged_df <- merge(
   merged_df,
-  blup_pheno_df,
+  blup_bv_df,
   by = "Genotype"
 )
 
-colnames(blup_pca_pheno_df)[
-  str_detect(colnames(blup_pca_pheno_df),
+colnames(blup_pca_bv_df)[
+  str_detect(colnames(blup_pca_bv_df),
     pattern = trait_
   )
 ] <- paste0(trait_, "_blup_pca")
 merged_df <- merge(
   merged_df,
-  blup_pca_pheno_df,
+  blup_pca_bv_df,
   by = "Genotype"
 )
 
@@ -441,7 +441,7 @@ df_result_ <- foreach(
       "LASSO_blups_pca_pa" = NA
     )
 
-    # training and prediction based on v_hat (i.e. wiser phenotypes)
+    # training and prediction based on v_hat (i.e. wiser estimated breeding values)
 
     # train and predict with Random Forest
     rf_model <- ranger(

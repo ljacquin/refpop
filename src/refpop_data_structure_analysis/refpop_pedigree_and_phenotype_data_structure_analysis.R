@@ -208,30 +208,30 @@ saveWidget(fig_x_y,
   )
 )
 
-# apply umap to pedigree and phenotype data
-pheno_df <- as.data.frame(fread(paste0(
+# apply umap to pedigree and breeding value data
+bv_df <- as.data.frame(fread(paste0(
   pheno_dir_path,
-  "adjusted_ls_mean_phenotypes.csv"
+  "adjusted_ls_mean_breeding_values.csv"
 )))
 
 # center and scale data for umap and replace few na (13 in dataframe)
-pheno_df[, selected_traits_] <- apply(scale(pheno_df[, selected_traits_],
+bv_df[, selected_traits_] <- apply(scale(bv_df[, selected_traits_],
   center = T,
   scale = T
 ), 2, impute_mean)
 
 
-# merge pheno_df and geno_fam_orig_df according to genotype
-pheno_df <- merge(pheno_df, geno_fam_orig_df, by = "Genotype", all = TRUE)
-pheno_df <- drop_na(pheno_df, any_of("Family"))
+# merge bv_df and geno_fam_orig_df according to genotype
+bv_df <- merge(bv_df, geno_fam_orig_df, by = "Genotype", all = TRUE)
+bv_df <- drop_na(bv_df, any_of("Family"))
 
 # remove non numeric variables and apply umap
-pheno_umap <- pheno_df[, -match(
+bv_umap <- bv_df[, -match(
   c("Genotype", "Family", "Origin"),
-  colnames(pheno_df)
+  colnames(bv_df)
 )]
 
-pheno_umap_2d <- data.frame(umap(pheno_umap,
+bv_umap_2d <- data.frame(umap(bv_umap,
   n_components = 2,
   random_state = random_state_umap_,
   n_neighbors = n_neighbors_umap_,
@@ -239,15 +239,15 @@ pheno_umap_2d <- data.frame(umap(pheno_umap,
 )[["layout"]])
 
 # plot umap with family as label
-pheno_umap_2d$label <- pheno_df$Family
-labels_ <- unique(pheno_df$Family)
+bv_umap_2d$label <- bv_df$Family
+labels_ <- unique(bv_df$Family)
 n_family <- length(labels_)
 
 # define colors for labels
 color_labels_ <- color_palette_family[1:n_family]
 names(color_labels_) <- labels_
 
-fig_title_ <- "UMAP 2D plot for REFPOP phenotype data"
+fig_title_ <- "UMAP 2D plot for REFPOP breeding value data"
 label_title_ <- "Family (except accession)"
 
 fig_x_y <- plot_ly(
@@ -260,8 +260,8 @@ fig_x_y <- plot_ly(
     yaxis = list(title = "second component")
   )
 # regroup by label
-for (label_ in unique(pheno_umap_2d$label)) {
-  data_subset <- pheno_umap_2d[pheno_umap_2d$label == label_, ]
+for (label_ in unique(bv_umap_2d$label)) {
+  data_subset <- bv_umap_2d[bv_umap_2d$label == label_, ]
   fig_x_y <- fig_x_y %>%
     add_trace(
       data = data_subset,
@@ -277,20 +277,20 @@ fig_x_y <- fig_x_y %>% layout(
 saveWidget(fig_x_y,
   file = paste0(
     output_pheno_graphics_path,
-    "complete_refpop_phenotype_umap_2d_family_as_label.html"
+    "complete_refpop_breeding_value_umap_2d_family_as_label.html"
   )
 )
 
 # plot umap with origin as label
-pheno_umap_2d$label <- pheno_df$Origin
-labels_ <- unique(pheno_df$Origin)
+bv_umap_2d$label <- bv_df$Origin
+labels_ <- unique(bv_df$Origin)
 n_origin <- length(labels_)
 
 # define colors for labels
 color_labels_ <- color_palette_origin[1:n_origin]
 names(color_labels_) <- labels_
 
-fig_title_ <- "UMAP 2D plot for REFPOP phenotype data"
+fig_title_ <- "UMAP 2D plot for REFPOP breeding value data"
 label_title_ <- "Origin"
 
 fig_x_y <- plot_ly(
@@ -303,8 +303,8 @@ fig_x_y <- plot_ly(
     yaxis = list(title = "second component")
   )
 # regroup by label
-for (label_ in unique(pheno_umap_2d$label)) {
-  data_subset <- pheno_umap_2d[pheno_umap_2d$label == label_, ]
+for (label_ in unique(bv_umap_2d$label)) {
+  data_subset <- bv_umap_2d[bv_umap_2d$label == label_, ]
   fig_x_y <- fig_x_y %>%
     add_trace(
       data = data_subset,
@@ -320,27 +320,27 @@ fig_x_y <- fig_x_y %>% layout(
 saveWidget(fig_x_y,
   file = paste0(
     output_pheno_graphics_path,
-    "complete_refpop_phenotype_umap_2d_origin_as_label.html"
+    "complete_refpop_breeding_value_umap_2d_origin_as_label.html"
   )
 )
 
-# merge pheno and pedig data
-pedig_pheno_df <- merge(pheno_df, pedig_incid_mat, by = "Genotype", all = F)
-pedig_pheno_df <- pedig_pheno_df[, -match(
+# merge breeding value and pedig data
+pedig_bv_df <- merge(bv_df, pedig_incid_mat, by = "Genotype", all = F)
+pedig_bv_df <- pedig_bv_df[, -match(
     c("Genotype", "Family", "Origin"),
-    colnames(pedig_pheno_df)
+    colnames(pedig_bv_df)
   )
 ]
-# umap pedigree phenotype plots
-pedig_pheno_umap_2d <- data.frame(umap(pedig_pheno_df,
+# umap pedigree breeding value plots
+pedig_bv_umap_2d <- data.frame(umap(pedig_bv_df,
   n_components = 2,
   random_state = random_state_umap_,
   n_neighbors = n_neighbors_umap_,
   min_dist = min_dist_
 )[["layout"]])
 
-# plot umap pedigree phenotype with family as label
-pedig_pheno_umap_2d$label <- pedig_df$Family
+# plot umap pedigree breeding value with family as label
+pedig_bv_umap_2d$label <- pedig_df$Family
 labels_ <- unique(pedig_df$Family)
 n_family <- length(labels_)
 
@@ -348,7 +348,7 @@ n_family <- length(labels_)
 color_labels_ <- color_palette_family[1:n_family]
 names(color_labels_) <- labels_
 
-fig_title_ <- "UMAP 2D plot for REFPOP pedigree and phenotype data"
+fig_title_ <- "UMAP 2D plot for REFPOP pedigree and breeding value data"
 label_title_ <- "Family (except accession)"
 
 fig_x_y <- plot_ly(
@@ -361,8 +361,8 @@ fig_x_y <- plot_ly(
     yaxis = list(title = "second component")
   )
 # regroup by label
-for (label_ in unique(pedig_pheno_umap_2d$label)) {
-  data_subset <- pedig_pheno_umap_2d[pedig_pheno_umap_2d$label == label_, ]
+for (label_ in unique(pedig_bv_umap_2d$label)) {
+  data_subset <- pedig_bv_umap_2d[pedig_bv_umap_2d$label == label_, ]
   fig_x_y <- fig_x_y %>%
     add_trace(
       data = data_subset,
@@ -378,12 +378,12 @@ fig_x_y <- fig_x_y %>% layout(
 saveWidget(fig_x_y,
   file = paste0(
     output_pedig_graphics_path,
-    "complete_refpop_pedigree_phenotype_umap_2d_family_as_label.html"
+    "complete_refpop_pedigree_breeding_value_umap_2d_family_as_label.html"
   )
 )
 
-# plot umap pedigree phenotype with origin as label
-pedig_pheno_umap_2d$label <- pedig_df$Origin
+# plot umap pedigree breeding value with origin as label
+pedig_bv_umap_2d$label <- pedig_df$Origin
 labels_ <- unique(pedig_df$Origin)
 n_origin <- length(labels_)
 
@@ -391,7 +391,7 @@ n_origin <- length(labels_)
 color_labels_ <- color_palette_origin[1:n_origin]
 names(color_labels_) <- labels_
 
-fig_title_ <- "UMAP 2D plot for REFPOP pedigree and phenotype data"
+fig_title_ <- "UMAP 2D plot for REFPOP pedigree and breeding value data"
 label_title_ <- "Origin"
 
 fig_x_y <- plot_ly(
@@ -404,8 +404,8 @@ fig_x_y <- plot_ly(
     yaxis = list(title = "second component")
   )
 # regroup by label
-for (label_ in unique(pedig_pheno_umap_2d$label)) {
-  data_subset <- pedig_pheno_umap_2d[pedig_pheno_umap_2d$label == label_, ]
+for (label_ in unique(pedig_bv_umap_2d$label)) {
+  data_subset <- pedig_bv_umap_2d[pedig_bv_umap_2d$label == label_, ]
   fig_x_y <- fig_x_y %>%
     add_trace(
       data = data_subset,
@@ -421,11 +421,11 @@ fig_x_y <- fig_x_y %>% layout(
 saveWidget(fig_x_y,
   file = paste0(
     output_pedig_graphics_path,
-    "complete_refpop_pedigree_phenotype_umap_2d_origin_as_label.html"
+    "complete_refpop_pedigree_breeding_value_umap_2d_origin_as_label.html"
   )
 )
 
-# perform pca for pedig_incid_mat, pheno_df and pedig_pheno_df
+# perform pca for pedig_incid_mat, bv_df and pedig_bv_df
 
 # pedig_incid_mat
 pedig_pca_obj_ <- pca(pedig_incid_mat,
@@ -528,13 +528,13 @@ saveWidget(fig_x_y, file = paste0(
   "complete_refpop_pedigree_pca_origin_as_label.html"
 ))
 
-# pheno_df
-pheno_df <- pedig_pheno_df[, selected_traits_]
-pheno_pca_obj_ <- pca(pheno_df,
+# bv_df
+bv_df <- pedig_bv_df[, selected_traits_]
+bv_pca_obj_ <- pca(bv_df,
   ncomp = 2, center = T, scale = T
 )
-pheno_pca_mat_ <- as.data.frame(pheno_pca_obj_$variates$X)
-pheno_pca_exp_var_ <- pheno_pca_obj_$prop_expl_var$X
+bv_pca_mat_ <- as.data.frame(bv_pca_obj_$variates$X)
+bv_pca_exp_var_ <- bv_pca_obj_$prop_expl_var$X
 
 # plot coordinates of individuals on two first pcs :
 
@@ -545,7 +545,7 @@ labels_ <- unique(pedig_df$Family)
 n_family <- length(labels_)
 color_labels_ <- color_palette_family[1:n_family]
 names(color_labels_) <- labels_
-pheno_pca_mat_$label <- pedig_df$Family
+bv_pca_mat_$label <- pedig_df$Family
 
 # create plot
 fig_x_y <- plot_ly(
@@ -553,19 +553,19 @@ fig_x_y <- plot_ly(
 ) %>%
   layout(
     plot_bgcolor = "#e5ecf6",
-    title = "PCA 2D plot for REFPOP phenotype data",
+    title = "PCA 2D plot for REFPOP breeding value data",
     xaxis = list(title = paste0(
-      names(pheno_pca_exp_var_)[1], ": ",
-      signif(100 * as.numeric(pheno_pca_exp_var_)[1], 4), "%"
+      names(bv_pca_exp_var_)[1], ": ",
+      signif(100 * as.numeric(bv_pca_exp_var_)[1], 4), "%"
     )),
     yaxis = list(title = paste0(
-      names(pheno_pca_exp_var_)[2], ": ",
-      signif(100 * as.numeric(pheno_pca_exp_var_)[2], 4), "%"
+      names(bv_pca_exp_var_)[2], ": ",
+      signif(100 * as.numeric(bv_pca_exp_var_)[2], 4), "%"
     ))
   )
 # regroup by label
-for (label_ in unique(pheno_pca_mat_$label)) {
-  data_subset <- pheno_pca_mat_[pheno_pca_mat_$label == label_, ]
+for (label_ in unique(bv_pca_mat_$label)) {
+  data_subset <- bv_pca_mat_[bv_pca_mat_$label == label_, ]
   fig_x_y <- fig_x_y %>%
     add_trace(
       data = data_subset,
@@ -581,7 +581,7 @@ fig_x_y <- fig_x_y %>% layout(
 # save graphics
 saveWidget(fig_x_y, file = paste0(
   output_pheno_graphics_path,
-  "complete_refpop_phenotype_pca_family_as_label.html"
+  "complete_refpop_breeding_value_pca_family_as_label.html"
 ))
 
 # plot for origin
@@ -591,7 +591,7 @@ labels_ <- unique(pedig_df$Origin)
 n_origin <- length(labels_)
 color_labels_ <- color_palette_origin[1:n_origin]
 names(color_labels_) <- labels_
-pheno_pca_mat_$label <- pedig_df$Origin
+bv_pca_mat_$label <- pedig_df$Origin
 
 # create plot
 fig_x_y <- plot_ly(
@@ -599,19 +599,19 @@ fig_x_y <- plot_ly(
 ) %>%
   layout(
     plot_bgcolor = "#e5ecf6",
-    title = "PCA 2D plot for REFPOP phenotype data",
+    title = "PCA 2D plot for REFPOP breeding value data",
     xaxis = list(title = paste0(
-      names(pheno_pca_exp_var_)[1], ": ",
-      signif(100 * as.numeric(pheno_pca_exp_var_)[1], 4), "%"
+      names(bv_pca_exp_var_)[1], ": ",
+      signif(100 * as.numeric(bv_pca_exp_var_)[1], 4), "%"
     )),
     yaxis = list(title = paste0(
-      names(pheno_pca_exp_var_)[2], ": ",
-      signif(100 * as.numeric(pheno_pca_exp_var_)[2], 4), "%"
+      names(bv_pca_exp_var_)[2], ": ",
+      signif(100 * as.numeric(bv_pca_exp_var_)[2], 4), "%"
     ))
   )
 # regroup by label
-for (label_ in unique(pheno_pca_mat_$label)) {
-  data_subset <- pheno_pca_mat_[pheno_pca_mat_$label == label_, ]
+for (label_ in unique(bv_pca_mat_$label)) {
+  data_subset <- bv_pca_mat_[bv_pca_mat_$label == label_, ]
   fig_x_y <- fig_x_y %>%
     add_trace(
       data = data_subset,
@@ -627,16 +627,16 @@ fig_x_y <- fig_x_y %>% layout(
 # save graphics
 saveWidget(fig_x_y, file = paste0(
   output_pheno_graphics_path,
-  "complete_refpop_phenotype_pca_origin_as_label.html"
+  "complete_refpop_breeding_value_pca_origin_as_label.html"
 ))
 
-# pedig_pheno_df
-pedig_pheno_pca_obj_ <- pca(
-  pedig_pheno_df,
+# pedig_bv_df
+pedig_bv_pca_obj_ <- pca(
+  pedig_bv_df,
   ncomp = 2, center = T, scale = T
 )
-pedig_pheno_pca_mat_ <- as.data.frame(pedig_pheno_pca_obj_$variates$X)
-pedig_pheno_pca_exp_var_ <- pedig_pheno_pca_obj_$prop_expl_var$X
+pedig_bv_pca_mat_ <- as.data.frame(pedig_bv_pca_obj_$variates$X)
+pedig_bv_pca_exp_var_ <- pedig_bv_pca_obj_$prop_expl_var$X
 
 # plot coordinates of individuals on two first pcs :
 
@@ -647,7 +647,7 @@ labels_ <- unique(pedig_df$Family)
 n_family <- length(labels_)
 color_labels_ <- color_palette_family[1:n_family]
 names(color_labels_) <- labels_
-pedig_pheno_pca_mat_$label <- pedig_df$Family
+pedig_bv_pca_mat_$label <- pedig_df$Family
 
 # create plot
 fig_x_y <- plot_ly(
@@ -655,19 +655,19 @@ fig_x_y <- plot_ly(
 ) %>%
   layout(
     plot_bgcolor = "#e5ecf6",
-    title = "PCA 2D plot for REFPOP pedigree and phenotype data",
+    title = "PCA 2D plot for REFPOP pedigree and breeding value data",
     xaxis = list(title = paste0(
-      names(pedig_pheno_pca_exp_var_)[1], ": ",
-      signif(100 * as.numeric(pedig_pheno_pca_exp_var_)[1], 4), "%"
+      names(pedig_bv_pca_exp_var_)[1], ": ",
+      signif(100 * as.numeric(pedig_bv_pca_exp_var_)[1], 4), "%"
     )),
     yaxis = list(title = paste0(
-      names(pedig_pheno_pca_exp_var_)[2], ": ",
-      signif(100 * as.numeric(pedig_pheno_pca_exp_var_)[2], 4), "%"
+      names(pedig_bv_pca_exp_var_)[2], ": ",
+      signif(100 * as.numeric(pedig_bv_pca_exp_var_)[2], 4), "%"
     ))
   )
 # regroup by label
-for (label_ in unique(pedig_pheno_pca_mat_$label)) {
-  data_subset <- pedig_pheno_pca_mat_[pedig_pheno_pca_mat_$label == label_, ]
+for (label_ in unique(pedig_bv_pca_mat_$label)) {
+  data_subset <- pedig_bv_pca_mat_[pedig_bv_pca_mat_$label == label_, ]
   fig_x_y <- fig_x_y %>%
     add_trace(
       data = data_subset,
@@ -683,7 +683,7 @@ fig_x_y <- fig_x_y %>% layout(
 # save graphics
 saveWidget(fig_x_y, file = paste0(
   output_pedig_graphics_path,
-  "complete_refpop_pedigree_phenotype_pca_family_as_label.html"
+  "complete_refpop_pedigree_breeding_value_pca_family_as_label.html"
 ))
 
 # plot for origin
@@ -693,7 +693,7 @@ labels_ <- unique(pedig_df$Origin)
 n_origin <- length(labels_)
 color_labels_ <- color_palette_origin[1:n_origin]
 names(color_labels_) <- labels_
-pedig_pheno_pca_mat_$label <- pedig_df$Origin
+pedig_bv_pca_mat_$label <- pedig_df$Origin
 
 # create plot
 fig_x_y <- plot_ly(
@@ -701,19 +701,19 @@ fig_x_y <- plot_ly(
 ) %>%
   layout(
     plot_bgcolor = "#e5ecf6",
-    title = "PCA 2D plot for REFPOP pedigree and phenotype data",
+    title = "PCA 2D plot for REFPOP pedigree and breeding value data",
     xaxis = list(title = paste0(
-      names(pedig_pheno_pca_exp_var_)[1], ": ",
-      signif(100 * as.numeric(pedig_pheno_pca_exp_var_)[1], 2), "%"
+      names(pedig_bv_pca_exp_var_)[1], ": ",
+      signif(100 * as.numeric(pedig_bv_pca_exp_var_)[1], 2), "%"
     )),
     yaxis = list(title = paste0(
-      names(pedig_pheno_pca_exp_var_)[2], ": ",
-      signif(100 * as.numeric(pedig_pheno_pca_exp_var_)[2], 2), "%"
+      names(pedig_bv_pca_exp_var_)[2], ": ",
+      signif(100 * as.numeric(pedig_bv_pca_exp_var_)[2], 2), "%"
     ))
   )
 # regroup by label
-for (label_ in unique(pedig_pheno_pca_mat_$label)) {
-  data_subset <- pedig_pheno_pca_mat_[pedig_pheno_pca_mat_$label == label_, ]
+for (label_ in unique(pedig_bv_pca_mat_$label)) {
+  data_subset <- pedig_bv_pca_mat_[pedig_bv_pca_mat_$label == label_, ]
   fig_x_y <- fig_x_y %>%
     add_trace(
       data = data_subset,
@@ -729,5 +729,5 @@ fig_x_y <- fig_x_y %>% layout(
 # save graphics
 saveWidget(fig_x_y, file = paste0(
   output_pedig_graphics_path,
-  "complete_refpop_pedigree_phenotype_pca_origin_as_label.html"
+  "complete_refpop_pedigree_breeding_value_pca_origin_as_label.html"
 ))

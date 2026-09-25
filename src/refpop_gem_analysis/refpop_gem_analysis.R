@@ -1441,27 +1441,3 @@ fwrite(common_geno_df, file = paste0(
   nrow(common_geno_df),
   "_common_genotypes.csv"
 ))
-
-#-------------------------------------------------------------------------------
-# # get wiser phenotypes
-# wiser_pheno_trait_ <- readRDS(
-#   paste0(
-#     pheno_dir_path_,
-#     "/wiser_phenotype_estimates/wiser_obj_linear_kernel_",
-#     trait_
-#   )
-# )
-# wiser_pheno_trait_ <- wiser_pheno_trait_$wiser_phenotypes
-# top_geno_wiser_pheno_trait_ <- head(wiser_pheno_trait_[
-#   order(-wiser_pheno_trait_$v_hat), ], n_sel_)
-#
-# intersect(top_geno_wiser_pheno_trait_$Genotype, top_genotypes_df$Genotype)
-#
-# df_all <- data.frame("Genotype" = merge_valid_dfs$Genotype,
-#                      "blue_weighted_mean" = merge_valid_dfs$blue_weighted_mean)
-#
-# merged_df_all <- merge(wiser_pheno_trait_,
-#                        df_all, by = "Genotype", all = F)
-#
-# cor(merged_df_all$v_hat, merged_df_all$blue_weighted_mean)
-# plot(merged_df_all$v_hat, merged_df_all$blue_weighted_mean)

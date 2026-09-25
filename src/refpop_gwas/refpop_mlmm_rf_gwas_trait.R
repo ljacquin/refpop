@@ -117,8 +117,8 @@ n_recompute_nvi <- 100
 geno_dir_path <- "../../data/genotype_data/"
 pheno_dir_path <- "../../data/phenotype_data/"
 
-# set path for wiser phenotypes estimated using whitening
-wiser_pheno_dir_path <- "../../data/phenotype_data/wiser_phenotype_estimates/"
+# set path for wiser estimated breeding values using whitening
+wiser_bv_dir_path <- "../../data/phenotype_data/wiser_breeding_value_estimates/"
 
 # output result path for genotype graphics
 output_gwas_results_path <- "../../results/gwas/"
@@ -162,19 +162,19 @@ if (!dir.exists(paste0(output_gwas_graphics_path, trait_))) {
   dir.create(paste0(output_gwas_graphics_path, trait_, "/ls_means"))
 }
 
-# get wiser and adjusted ls-means phenotypes, and genotype data (genomic data)
+# get wiser and adjusted ls-means estimated breeding values, and genotype data (genomic data)
 
-# get trait wiser phenotypes
+# get trait wiser estimated breeding values
 wiser_trait_ <- readRDS(paste0(
-  wiser_pheno_dir_path,
+  wiser_bv_dir_path,
   paste0("wiser_obj_linear_kernel_", trait_)
-))$wiser_phenotypes
+))$wiser_breeding_values
 colnames(wiser_trait_)[2] <- trait_
 
-# get trait ls-means phenotypes
+# get trait ls-means estimated breeding values
 ls_means_trait_ <- as.data.frame(fread(paste0(
   pheno_dir_path,
-  "adjusted_ls_mean_phenotypes.csv"
+  "adjusted_ls_mean_breeding_values.csv"
 )))[, c("Genotype", trait_)]
 
 # get marker data
@@ -247,7 +247,7 @@ names(wiser_y) <- wiser_trait_$Genotype
 
 # ---- mlmm gwas for wiser
 
-# fit mlmm forward stepwise regression algorithm for wiser phenotypes
+# fit mlmm forward stepwise regression algorithm for wiser estimated breeding values
 mlmm_obj_wiser_ <- mlmm_allmodels_(
   wiser_y, list(marker_df), list(k_mat),
   maxsteps = max_step_mlmm_fwd_reg_
@@ -278,7 +278,7 @@ manhattan_plot_done_ <- mlmm_manhattan_plot_(
   main_ =
     paste0(
       "MLMM GWAS of ", trait_,
-      " WISER phenotypes using a corrected Bonferroni threshold for 0.05"
+      " WISER estimated breeding values using a corrected Bonferroni threshold for 0.05"
     )
 )
 manhattan_plot_done_
@@ -310,7 +310,7 @@ deg_freed_step_opt_model_ <- sort(unique(mlmm_deg_freedom_wiser_[[
   optimal_model_associated_step_ + 1
 ]]))
 
-# make mlmm gwas qqplot for trait WISER estimated phenotypes
+# make mlmm gwas qqplot for trait WISER estimated breeding values
 qq_plot_done_ <- qqplot_f_distrib_mlmm_gwas_(
   p_val_obs_ = p_val_step_opt_model_,
   df1 = as.numeric(deg_freed_step_opt_model_[1]),
@@ -318,7 +318,7 @@ qq_plot_done_ <- qqplot_f_distrib_mlmm_gwas_(
   seed_ = 42,
   main_ = paste0(
     "MLMM GWAS Q-Q plot for ",
-    trait_, " WISER estimated phenotypes"
+    trait_, " WISER estimated breeding values"
   ),
   output_path_ = paste0(output_gwas_graphics_path, trait_, "/wiser/"),
   file_name_ = paste0(trait_, "_wiser_mlmm_qq_plot.png")
@@ -377,7 +377,7 @@ if (length(mlmm_signif_snps_wiser_) > 0) {
     geno_box_plot_ <- genotypes_boxplot_(
       X = marker_df,
       Y = wiser_y,
-      ylab_ = paste0(trait_, " WISER phenotypes"),
+      ylab_ = paste0(trait_, " WISER estimated breeding values"),
       xlab_ = paste0(
         "Genotype alleles combination on chromosome ",
         map_df$chromosome[match(snp_, map_df$snp.name)]
@@ -493,7 +493,7 @@ manhattan_ggplot_plotly_done_ <- manhattan_ggplot_plotly_(
   y_lab_ = "Normalized variable importance (NVI)",
   title_ = paste0(
     "Random forest GWAS of ", trait_,
-    " WISER phenotypes using a 0.001 threshold for a generalized Pareto distribution (GPD)"
+    " WISER estimated breeding values using a 0.001 threshold for a generalized Pareto distribution (GPD)"
   ),
   title_size_ = 16,
   axis_title_size_ = 14,
@@ -559,7 +559,7 @@ if (length(rf_signif_snps_wiser_) > 0) {
     geno_box_plot_ <- genotypes_boxplot_(
       X = marker_df,
       Y = wiser_y,
-      ylab_ = paste0(trait_, " WISER phenotypes"),
+      ylab_ = paste0(trait_, " WISER estimated breeding values"),
       xlab_ = paste0(
         "Genotype alleles combination on chromosome ",
         map_df$chromosome[match(snp_, map_df$snp.name)]
@@ -583,7 +583,7 @@ names(ls_means_y) <- ls_means_trait_$Genotype
 
 # ---- mlmm gwas for ls-means
 
-# fit mlmm forward stepwise regression algorithm for ls-means phenotypes
+# fit mlmm forward stepwise regression algorithm for ls-means estimated breeding values
 mlmm_obj_ls_means_ <- mlmm_allmodels_(
   ls_means_y, list(marker_df), list(k_mat),
   maxsteps = max_step_mlmm_fwd_reg_
@@ -614,7 +614,7 @@ manhattan_plot_done_ <- mlmm_manhattan_plot_(
   main_ =
     paste0(
       "MLMM GWAS of ", trait_,
-      " LS-means phenotypes using a corrected Bonferroni threshold for 0.05"
+      " LS-means estimated breeding values using a corrected Bonferroni threshold for 0.05"
     )
 )
 manhattan_plot_done_
@@ -649,7 +649,7 @@ deg_freed_step_opt_model_ <- sort(unique(mlmm_deg_freedom_ls_means_[[
   optimal_model_associated_step_ + 1
 ]]))
 
-# make mlmm gwas qqplot for trait LS-means estimated phenotypes
+# make mlmm gwas qqplot for trait LS-means estimated breeding values
 qq_plot_done_ <- qqplot_f_distrib_mlmm_gwas_(
   p_val_obs_ = p_val_step_opt_model_,
   df1 = as.numeric(deg_freed_step_opt_model_[1]),
@@ -657,7 +657,7 @@ qq_plot_done_ <- qqplot_f_distrib_mlmm_gwas_(
   seed_ = 42,
   main_ = paste0(
     "MLMM GWAS Q-Q plot for ",
-    trait_, " LS-means estimated phenotypes"
+    trait_, " LS-means estimated breeding values"
   ),
   output_path_ = paste0(output_gwas_graphics_path, trait_, "/ls_means/"),
   file_name_ = paste0(trait_, "_ls_means_mlmm_qq_plot.png")
@@ -717,7 +717,7 @@ if (length(mlmm_signif_snps_ls_means_) > 0) {
     geno_box_plot_ <- genotypes_boxplot_(
       X = marker_df,
       Y = ls_means_y,
-      ylab_ = paste0(trait_, " LS-means phenotypes"),
+      ylab_ = paste0(trait_, " LS-means breeding values"),
       xlab_ = paste0(
         "Genotype alleles combination on chromosome ",
         map_df$chromosome[match(snp_, map_df$snp.name)]
@@ -833,7 +833,7 @@ manhattan_ggplot_plotly_done_ <- manhattan_ggplot_plotly_(
   y_lab_ = "Normalized variable importance (NVI)",
   title_ = paste0(
     "Random forest GWAS of ", trait_,
-    " LS-means phenotypes using a 0.001 threshold for a generalized Pareto distribution (GPD)"
+    " LS-means estimated breeding values using a 0.001 threshold for a generalized Pareto distribution (GPD)"
   ),
   title_size_ = 16,
   axis_title_size_ = 14,
@@ -899,7 +899,7 @@ if (length(rf_signif_snps_ls_means_) > 0) {
     geno_box_plot_ <- genotypes_boxplot_(
       X = marker_df,
       Y = ls_means_y,
-      ylab_ = paste0(trait_, " LS-means phenotypes"),
+      ylab_ = paste0(trait_, " LS-means estimated breeding values"),
       xlab_ = paste0(
         "Genotype alleles combination on chromosome ",
         map_df$chromosome[match(snp_, map_df$snp.name)]
