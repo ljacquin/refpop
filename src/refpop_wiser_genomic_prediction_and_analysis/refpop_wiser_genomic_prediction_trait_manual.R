@@ -37,18 +37,18 @@ if (use_tensorflow_or_umap) {
 library(MASS)
 library(data.table)
 library(stringr)
-library(lme4)
+# library(lme4)
 library(tidyr)
-library(FactoMineR)
+# library(FactoMineR)
 library(doParallel)
 library(doRNG)
 library(robustbase)
 library(foreach)
 library(parallel)
-library(missForest)
+# library(missForest)
 library(Matrix)
 library(matrixcalc)
-library(rgl)
+# library(rgl)
 library(Rfast)
 library(cvTools)
 library(ggplot2)
@@ -60,7 +60,7 @@ library(kernlab)
 library(whitening)
 library(glmnet)
 library(ranger)
-library(mixOmics)
+# library(mixOmics)
 library(future)
 library(future.apply)
 
@@ -145,9 +145,11 @@ if (use_subset_list) {
 kernels_ <- c("linear", "identity")
 
 # get kernel and trait arguments
-args <- commandArgs(trailingOnly = T)
-kernel_num <- as.integer(args[1])
-trait_num <- as.integer(args[2])
+# args <- commandArgs(trailingOnly = T)
+# kernel_num <- as.integer(args[1])
+# trait_num <- as.integer(args[2])
+kernel_num <- 1
+trait_num <- 12
 
 # kernel type, i.e. "linear" or "identity" for genomic covariance matrix
 # (i.e. Gram matrix). NB. "identity" is not recommended due to hypothesis of
@@ -521,10 +523,9 @@ df_result_ <- foreach(
 
     # train and predict with LASSO
     cv_fit_lasso_model <- cv.glmnet(
-      intercept = T, y = v_hat[idx_train],
+      y = v_hat[idx_train],
       x = as.matrix(omic_df[idx_train, ]),
-      type.measure = "mse", alpha = 1.0, nfold = 10,
-      parallel = T
+      type.measure = "mse", alpha = 1.0, nfold = 10
     )
     f_hat_val_lasso <- predict(cv_fit_lasso_model,
       newx = as.matrix(omic_df[idx_val, ]),
@@ -615,10 +616,9 @@ df_result_ <- foreach(
 
     # train and predict with LASSO
     cv_fit_lasso_model <- cv.glmnet(
-      intercept = T, y = trait_ls_mean[idx_train],
+      y = trait_ls_mean[idx_train],
       x = as.matrix(omic_df[idx_train, ]),
-      type.measure = "mse", alpha = 1.0, nfold = 10,
-      parallel = T
+      type.measure = "mse", alpha = 1.0, nfold = 10
     )
     f_hat_val_lasso <- predict(cv_fit_lasso_model,
       newx = as.matrix(omic_df[idx_val, ]),
@@ -709,10 +709,9 @@ df_result_ <- foreach(
 
     # train and predict with LASSO
     cv_fit_lasso_model <- cv.glmnet(
-      intercept = T, y = trait_blup[idx_train],
+      y = trait_blup[idx_train],
       x = as.matrix(omic_df[idx_train, ]),
-      type.measure = "mse", alpha = 1.0, nfold = 10,
-      parallel = T
+      type.measure = "mse", alpha = 1.0, nfold = 10
     )
     f_hat_val_lasso <- predict(cv_fit_lasso_model,
       newx = as.matrix(omic_df[idx_val, ]),
@@ -803,10 +802,9 @@ df_result_ <- foreach(
 
     # train and predict with LASSO
     cv_fit_lasso_model <- cv.glmnet(
-      intercept = T, y = trait_blup_pca[idx_train],
+      y = trait_blup_pca[idx_train],
       x = as.matrix(omic_df[idx_train, ]),
-      type.measure = "mse", alpha = 1.0, nfold = 10,
-      parallel = T
+      type.measure = "mse", alpha = 1.0, nfold = 10
     )
     f_hat_val_lasso <- predict(cv_fit_lasso_model,
       newx = as.matrix(omic_df[idx_val, ]),
@@ -902,14 +900,14 @@ saveWidget(violin_box_plots_pa_, file = paste0(
 ))
 
 # add stats and save predictive ability results
-df_pa_ <- signif(apply(df_pa_, 2, as.numeric), 2)
+df_pa_ <- apply(df_pa_, 2, as.numeric)
 rownames(df_pa_) <- paste0("gp_scenario_", 1:nrow(df_pa_))
 
 df_stat <- as.data.frame(rbind(
   apply(df_pa_, 2, function(x) median(x, na.rm = TRUE)),
   apply(df_pa_, 2, function(x) IQR(x, na.rm = TRUE))
 ))
-df_stat <- signif(apply(df_stat, 2, as.numeric), 2)
+df_stat <- apply(df_stat, 2, as.numeric)
 rownames(df_stat) <- c("pa_median", "pa_iqr")
 df_stat <- as.data.frame(df_stat)
 
@@ -997,14 +995,14 @@ saveWidget(violin_box_plots_h2_, file = paste0(
 ))
 
 # add stats and save h2 results
-df_h2_ <- signif(apply(df_h2_, 2, as.numeric), 2)
+df_h2_ <- apply(df_h2_, 2, as.numeric)
 rownames(df_h2_) <- paste0("gp_scenario_", 1:nrow(df_h2_))
 
 df_stat <- as.data.frame(rbind(
   apply(df_h2_, 2, function(x) median(x, na.rm = TRUE)),
   apply(df_h2_, 2, function(x) IQR(x, na.rm = TRUE))
 ))
-df_stat <- signif(apply(df_stat, 2, as.numeric), 2)
+df_stat <- apply(df_stat, 2, as.numeric)
 rownames(df_stat) <- c("h2_median", "h2_iqr")
 df_stat <- as.data.frame(df_stat)
 

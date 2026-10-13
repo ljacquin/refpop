@@ -3,6 +3,7 @@
 # refpop
 
 ##### Licence, status and metrics
+[![DOI](https://zenodo.org/badge/785635028.svg)](https://doi.org/10.5281/zenodo.23344278)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![Lifecycle:Experimental](https://img.shields.io/badge/Lifecycle-Experimental-339999)]()
 [![Project Status: Active – The project has reached a stable, usable state and is being actively developed.](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
